@@ -48,8 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['__action']) && $_POST
     $draft_students_json = (string)($_POST['draft_students'] ?? '');
     $draft_students = [];
     if ($draft_students_json !== '') {
-        try { $draft_students = json_decode($draft_students_json, true, 512, JSON_THROW_ON_ERROR); }
-        catch (Throwable $e) { $errors[] = 'ÃÂÃÂµÃÂ²ÃÂ°ÃÂ»ÃÂ¸ÃÂ´ÃÂ½ÃÂ¸ ÃÂ´ÃÂ°ÃÂ½ÃÂ½ÃÂ¸ ÃÂ·ÃÂ° Ã‘Æ’Ã‘â€¡ÃÂµÃÂ½ÃÂ¸Ã‘â€ ÃÂ¸Ã‘â€šÃÂµ.'; $draft_students = []; }
+        $draft_students = json_decode($draft_students_json, true); if (!is_array($draft_students)) { $draft_students = []; $errors[] = 'Невалидни данни за учениците.'; }
     }
 
     if ($name === '') $errors[] = 'ÃÅ“ÃÂ¾ÃÂ»Ã‘Â, ÃÂ²Ã‘Å ÃÂ²ÃÂµÃÂ´ÃÂµÃ‘â€šÃÂµ ÃÂ¸ÃÂ¼ÃÂµ ÃÂ½ÃÂ° ÃÂºÃÂ»ÃÂ°Ã‘ÂÃÂ°.';
@@ -211,7 +210,7 @@ if ($editing) {
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title><?=  ? 'Ð ÐµÐ´Ð°ÐºÑ†Ð¸Ñ Ð½Ð° ÐºÐ»Ð°Ñ' : 'ÐÐ¾Ð² ÐºÐ»Ð°Ñ' ?> â€” TestGramatikov</title>
+    <title><?= $editing ? 'Редакция на клас' : 'Нов клас' ?> — TestGramatikov</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
