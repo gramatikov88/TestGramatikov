@@ -103,6 +103,8 @@ if ($editing && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['__action'
             $stmt->execute([':cid'=>$class_id, ':sid'=>$student_id]);
             $pdo->commit();
             $saved = true;
+            header('Location: classes_create.php?id=' . (int)$class_id . '#students');
+            exit;
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             $errors[] = 'Грешка при добавяне на ученик: '.$e->getMessage();
@@ -124,6 +126,8 @@ if ($editing && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['__action'
                 $stmt = $pdo->prepare('INSERT IGNORE INTO class_students (class_id, student_id) VALUES (:cid, :sid)');
                 $stmt->execute([':cid' => $class_id, ':sid' => $student_id]);
                 $saved = true;
+                header('Location: classes_create.php?id=' . (int)$class_id . '#students');
+                exit;
             }
         } catch (Throwable $e) {
             $errors[] = 'Грешка при добавяне на ученик: ' . $e->getMessage();
