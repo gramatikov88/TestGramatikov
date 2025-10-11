@@ -342,6 +342,34 @@ if ($editing) {
         $('#new_email,#new_first,#new_last').val('');
         sync(); render();
       });
+
+      // При натискане на Запази: автоматично добавяме избрания ученик
+      // и/или въведения ръчно към черновата преди изпращане.
+      $('form').on('submit', function(){
+        // добави избора от dropdown, ако не е добавен изрично
+        try {
+          var data = $sel.select2 ? $sel.select2('data') : [];
+          if (data && data.length) {
+            var d = data[0];
+            if (!draft.some(function(x){ return x.id == d.id; })) {
+              draft.push({ id: parseInt(d.id,10), text: d.text });
+            }
+            $sel.val(null).trigger('change');
+          }
+        } catch(e) {}
+        // ако има попълнени ръчни полета – добави ги
+        try {
+          var email = ($('#new_email').val()||'').trim();
+          var first = ($('#new_first').val()||'').trim();
+          var last  = ($('#new_last').val()||'').trim();
+          if (email && first && last) {
+            draft.push({ email: email, first_name: first, last_name: last });
+            $('#new_email,#new_first,#new_last').val('');
+          }
+        } catch(e) {}
+        sync();
+        return true;
+      });
       render();
     })();
     </script>
