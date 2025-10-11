@@ -20,11 +20,14 @@ function random_password($length = 10): string {
     return $out;
 }
 
-$class_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-if ($class_id === 0 && isset($_POST['id'])) { // fallback, ако сървърът е изрязал query string при POST
+$class_id = null;
+if (isset($_GET['id'])) {
+    $class_id = (int)$_GET['id'];
+} elseif (isset($_POST['id'])) { // fallback, ако сървърът е изрязал query string при POST
     $class_id = (int)$_POST['id'];
 }
-$editing = $class_id > 0;
+// В тази база id може да бъде 0 (валиден запис). Режим "редакция" е активен, когато има подаден параметър id.
+$editing = ($class_id !== null);
 
 $errors = [];
 $saved = false;
