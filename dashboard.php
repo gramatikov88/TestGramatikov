@@ -373,13 +373,13 @@ if ($pdo) {
                                 <?php foreach ($teacher['classes'] as $c): ?>
                                     <div class="list-group-item d-flex justify-content-between align-items-center">
                                         <div>
-                                            <a class="text-decoration-none" href="classes_create.php?id=<?= (int)$c['id'] ?>">
+                                            <a class="text-decoration-none" href="classes_create.php?id=<?= (int)($c['c_id'] ?? ($c['id'] ?? 0)) ?>">
                                                 <?= htmlspecialchars($c['grade'] . $c['section']) ?> • <?= htmlspecialchars($c['school_year']) ?>
                                                 <span class="text-muted small ms-2"><?= htmlspecialchars($c['name']) ?></span>
                                             </a>
                                         </div>
                                         <div class="d-flex gap-2">
-                                            <a class="btn btn-sm btn-outline-primary" href="classes_create.php?id=<?= (int)$c['id'] ?>#students"><i class="bi bi-person-plus"></i> Добави ученици</a>
+                                            <a class="btn btn-sm btn-outline-primary" href="classes_create.php?id=<?= (int)($c['c_id'] ?? ($c['id'] ?? 0)) ?>#students"><i class="bi bi-person-plus"></i> Добави ученици</a>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
