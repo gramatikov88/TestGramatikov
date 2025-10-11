@@ -82,7 +82,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['__action'] ?? '') === 'sav
             }
 
             // Добавяне/създаване на ученици от черновата
-            if ($class_id && $draft_students) {
+            // В тази база id може да бъде 0, затова не ползваме truthy-проверка на $class_id
+            if ($editing && !empty($draft_students)) {
                 foreach ($draft_students as $ds) {
                     if (isset($ds['id']) && (int)$ds['id'] > 0) {
                         $sid = (int)$ds['id'];
