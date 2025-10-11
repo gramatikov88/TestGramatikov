@@ -36,7 +36,7 @@ if ($editing) {
     $stmt = $pdo->prepare('SELECT * FROM classes WHERE id = :id AND teacher_id = :tid');
     $stmt->execute([':id' => $class_id, ':tid' => (int)$user['id']]);
     $class = $stmt->fetch();
-    if (!$class) { $errors[] = 'Класът не е намерен или нямате достъп.'; $editing = false; $class_id = 0; }
+    if (!$class) { header('Location: dashboard.php'); exit; }
 }
 
 // Запис на клас (и едновременно добавяне на ученици)
