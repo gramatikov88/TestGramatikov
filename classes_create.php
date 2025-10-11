@@ -39,6 +39,16 @@ if ($editing) {
     $stmt = $pdo->prepare('SELECT * FROM classes WHERE id = :id AND teacher_id = :tid');
     $stmt->execute([':id' => $class_id, ':tid' => (int)$user['id']]);
     $class = $stmt->fetch();
+    // Ако са възможни дублирани id, опитай да уточниш по created_at
+    if ($class && isset($_GET['created_at'])) {
+        $ca = (string)$_GET['created_at'];
+        if ($ca !== '' && isset($class['created_at']) && $class['created_at'] !== $ca) {
+            $stmt = $pdo->prepare('SELECT * FROM classes WHERE id = :id AND teacher_id = :tid AND created_at = :ca');
+            $stmt->execute([':id'=>$class_id, ':tid'=>(int)$user['id'], ':ca'=>$ca]);
+            $row = $stmt->fetch();
+            if ($row) { $class = $row; }
+        }
+    }
     if (!$class) { header('Location: dashboard.php'); exit; }
 }
 
@@ -64,11 +74,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['__action'] ?? '') === 'sav
         try {
             $pdo->beginTransaction();
             if ($editing) {
-                $stmt = $pdo->prepare('UPDATE classes SET name=:name, grade=:grade, section=:section, school_year=:sy, description=:desc WHERE id=:id AND teacher_id=:tid');
-                $stmt->execute([
+                $stmt = $pdo->prepare('UPDATE classes SET name=:name, grade=:grade, section=:section, school_year=:sy, description=:desc WHERE id=:id AND teacher_id=:tid' . (isset($_POST['orig_created_at']) && $_POST['orig_created_at'] !== '' ? ' AND created_at = :orig_ca' : ''));
+                $paramsUpd = [
                     ':name'=>$name, ':grade'=>$grade, ':section'=>$section, ':sy'=>$school_year, ':desc'=>$description,
                     ':id'=>$class_id, ':tid'=>(int)$user['id']
-                ]);
+                ];
+                if (isset($_POST['orig_created_at']) && $_POST['orig_created_at'] !== '') { $paramsUpd[':orig_ca'] = (string)$_POST['orig_created_at']; }
+                $stmt->execute($paramsUpd);
             } else {
                 // Базата няма AUTO_INCREMENT. Изчисляваме следващото id ръчно.
                 $nextId = (int)$pdo->query('SELECT IFNULL(MAX(id), -1) + 1 FROM classes')->fetchColumn();
@@ -225,6 +237,8 @@ if ($editing) {
         </div>
         <div class="card-footer bg-white d-flex justify-content-end">
             <input type="hidden" name="id" value="<?= (int)$class_id ?>" />
+            <input type="hidden" name="orig_id" value="<?= (int)$class_id ?>" />
+            <input type="hidden" name="orig_created_at" value="<?= htmlspecialchars($class['created_at'] ?? ($_GET['created_at'] ?? '')) ?>" />
             <input type="hidden" name="draft_students" id="draft_students" value="<?= htmlspecialchars($_POST['draft_students'] ?? '[]') ?>" />
             <input type="hidden" name="__action" value="save_class" />
             <button class="btn btn-primary" type="submit"><i class="bi bi-check2-circle me-1"></i>Запази</button>
