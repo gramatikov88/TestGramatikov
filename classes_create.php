@@ -70,11 +70,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['__action'] ?? '') === 'sav
                     ':id'=>$class_id, ':tid'=>(int)$user['id']
                 ]);
             } else {
-                $stmt = $pdo->prepare('INSERT INTO classes (teacher_id, name, grade, section, school_year, description) VALUES (:tid,:name,:grade,:section,:sy,:desc)');
+                // Базата няма AUTO_INCREMENT. Изчисляваме следващото id ръчно.
+                $nextId = (int)$pdo->query('SELECT IFNULL(MAX(id), -1) + 1 FROM classes')->fetchColumn();
+                $stmt = $pdo->prepare('INSERT INTO classes (id, teacher_id, name, grade, section, school_year, description) VALUES (:id,:tid,:name,:grade,:section,:sy,:desc)');
                 $stmt->execute([
-                    ':tid'=>(int)$user['id'], ':name'=>$name, ':grade'=>$grade, ':section'=>$section, ':sy'=>$school_year, ':desc'=>$description
+                    ':id'=>$nextId, ':tid'=>(int)$user['id'], ':name'=>$name, ':grade'=>$grade, ':section'=>$section, ':sy'=>$school_year, ':desc'=>$description
                 ]);
-                $class_id = (int)$pdo->lastInsertId();
+                $class_id = $nextId;
                 $editing = true;
                 $stmt = $pdo->prepare('SELECT * FROM classes WHERE id = :id AND teacher_id = :tid');
                 $stmt->execute([':id' => $class_id, ':tid' => (int)$user['id']]);
@@ -85,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['__action'] ?? '') === 'sav
             // В тази база id може да бъде 0, затова не ползваме truthy-проверка на $class_id
             if ($editing && !empty($draft_students)) {
                 foreach ($draft_students as $ds) {
-                    if (isset($ds['id']) && (int)$ds['id'] > 0) {
+                    if (isset($ds['id']) && $ds['id'] !== '' && is_numeric($ds['id'])) {
                         $sid = (int)$ds['id'];
                         $chk = $pdo->prepare('SELECT 1 FROM users WHERE id = :id AND role = "student"');
                         $chk->execute([':id'=>$sid]);
@@ -105,12 +107,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['__action'] ?? '') === 'sav
                         if ($u['role'] !== 'student') { continue; }
                         $sid = (int)$u['id'];
                     } else {
+                        // Базата няма AUTO_INCREMENT за users – генерираме id ръчно.
+                        $nextUid = (int)$pdo->query('SELECT IFNULL(MAX(id), -1) + 1 FROM users')->fetchColumn();
                         $pwd = random_password(10);
                         $hash = password_hash($pwd, PASSWORD_DEFAULT);
-                        $pdo->prepare('INSERT INTO users (role, email, password_hash, first_name, last_name) VALUES ("student", :email, :hash, :first, :last)')->execute([
-                            ':email'=>$email, ':hash'=>$hash, ':first'=>$first, ':last'=>$last
+                        $pdo->prepare('INSERT INTO users (id, role, email, password_hash, first_name, last_name) VALUES (:id, "student", :email, :hash, :first, :last)')->execute([
+                            ':id'=>$nextUid, ':email'=>$email, ':hash'=>$hash, ':first'=>$first, ':last'=>$last
                         ]);
-                        $sid = (int)$pdo->lastInsertId();
+                        $sid = $nextUid;
                         $created_accounts[] = ['email'=>$email, 'password'=>$pwd, 'first_name'=>$first, 'last_name'=>$last];
                     }
                     $pdo->prepare('INSERT IGNORE INTO class_students (class_id, student_id) VALUES (:cid,:sid)')->execute([':cid'=>$class_id, ':sid'=>$sid]);
