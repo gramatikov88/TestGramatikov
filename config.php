@@ -3,9 +3,9 @@
 
 // Database credentials (edit here or set environment variables)
 define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
-define('DB_NAME', getenv('DB_NAME') ?: 'testgramatikov');
-define('DB_USER', getenv('DB_USER') ?: 'root');
-define('DB_PASS', getenv('DB_PASS') ?: '');
+define('DB_NAME', getenv('DB_NAME') ?: 'shortlyq_testgramatikov');
+define('DB_USER', getenv('DB_USER') ?: 'shortlyq');
+define('DB_PASS', getenv('DB_PASS') ?: ':Y0ENz5l[3Us1r');
 
 // Lazy PDO singleton
 function db(): PDO {
