@@ -69,7 +69,7 @@ if ($pdo) {
             }
         }
         // Teacher: classes (initial load; refined below by filters)
-        $stmt = $pdo->prepare('SELECT id AS c_id, id, grade, section, school_year, name FROM classes WHERE teacher_id = :tid ORDER BY school_year DESC, grade, section');
+        $stmt = $pdo->prepare('SELECT id, grade, section, school_year, name FROM classes WHERE teacher_id = :tid ORDER BY school_year DESC, grade, section');
         $stmt->execute([':tid' => (int)$user['id']]);
         $teacher['classes'] = $stmt->fetchAll();
 
@@ -123,7 +123,7 @@ if ($pdo) {
         $ca_sort = $_GET['ca_sort'] ?? '';
 
         // Re-query classes with filters
-        $clsSql = 'SELECT id AS c_id, id, grade, section, school_year, name FROM classes WHERE teacher_id = :tid';
+        $clsSql = 'SELECT id, grade, section, school_year, name FROM classes WHERE teacher_id = :tid';
         $params = [':tid'=>(int)$user['id']];
         if ($c_q !== '') { $clsSql .= ' AND (name LIKE :q OR section LIKE :q OR CONCAT(grade, section) LIKE :q)'; $params[':q'] = '%'.$c_q.'%'; }
         $order = ' ORDER BY school_year DESC, grade, section';
@@ -373,13 +373,13 @@ if ($pdo) {
                                 <?php foreach ($teacher['classes'] as $c): ?>
                                     <div class="list-group-item d-flex justify-content-between align-items-center">
                                         <div>
-                                            <a class="text-decoration-none" href="classes_create.php?id=<?= (int)($c['c_id'] ?? ($c['id'] ?? 0)) ?>">
+                                            <a class="text-decoration-none" href="classes_create.php?id=<?= (int)$c['id'] ?>">
                                                 <?= htmlspecialchars($c['grade'] . $c['section']) ?> • <?= htmlspecialchars($c['school_year']) ?>
                                                 <span class="text-muted small ms-2"><?= htmlspecialchars($c['name']) ?></span>
                                             </a>
                                         </div>
                                         <div class="d-flex gap-2">
-                                            <a class="btn btn-sm btn-outline-primary" href="classes_create.php?id=<?= (int)($c['c_id'] ?? ($c['id'] ?? 0)) ?>#students"><i class="bi bi-person-plus"></i> Добави ученици</a>
+                                            <a class="btn btn-sm btn-outline-primary" href="classes_create.php?id=<?= (int)$c['id'] ?>#students"><i class="bi bi-person-plus"></i> Добави ученици</a>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
