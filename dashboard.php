@@ -70,6 +70,7 @@ if ($pdo) {
         }
         // Teacher: classes (initial load; refined below by filters)
         $stmt = $pdo->prepare('SELECT * FROM classes WHERE teacher_id = :tid ORDER BY school_year DESC, grade, section');
+        $stmt = $pdo->prepare('SELECT id AS c_id, id, grade, section, school_year, name FROM classes WHERE teacher_id = :tid ORDER BY school_year DESC, grade, section');
         $stmt->execute([':tid' => (int)$user['id']]);
         $teacher['classes'] = $stmt->fetchAll();
 
