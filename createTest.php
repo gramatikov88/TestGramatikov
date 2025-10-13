@@ -8,24 +8,28 @@ if (empty($_SESSION['user']) || ($_SESSION['user']['role'] ?? null) !== 'teacher
     exit;
 }
 $user = $_SESSION['user'];
-$pdo  = db();
+$pdo = db();
 
 /* ---------------- Helpers ---------------- */
-function norm_visibility(?string $v): string {
-    $v = strtolower(trim((string)$v));
-    return in_array($v, ['private','shared'], true) ? $v : 'private';
+function norm_visibility(?string $v): string
+{
+    $v = strtolower(trim((string) $v));
+    return in_array($v, ['private', 'shared'], true) ? $v : 'private';
 }
-function to_int($v, $min = null, $max = null) {
-    $x = (int)$v;
-    if ($min !== null && $x < $min) $x = $min;
-    if ($max !== null && $x > $max) $x = $max;
+function to_int($v, $min = null, $max = null)
+{
+    $x = (int) $v;
+    if ($min !== null && $x < $min)
+        $x = $min;
+    if ($max !== null && $x > $max)
+        $x = $max;
     return $x;
 }
 
 /* ---------------- Page state ---------------- */
 $errors = [];
-$saved  = false;
-$test_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$saved = false;
+$test_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $editing = $test_id > 0;
 $test = null;
 $questions = [];
@@ -56,12 +60,12 @@ if ($editing) {
         $ansStmt->execute([':qid' => $r['question_id']]);
         $answers = $ansStmt->fetchAll();
         $questions[] = [
-            'question_id' => (int)$r['question_id'],
-            'content'     => $r['q_content'],
-            'type'        => $r['q_type'] ?: 'single',
-            'points'      => (int)$r['points'],
-            'answers'     => array_map(function($a){
-                return ['content'=>$a['content'], 'is_correct'=>(int)$a['is_correct']];
+            'question_id' => (int) $r['question_id'],
+            'content' => $r['q_content'],
+            'type' => $r['q_type'] ?: 'single',
+            'points' => (int) $r['points'],
+            'answers' => array_map(function ($a) {
+                return ['content' => $a['content'], 'is_correct' => (int) $a['is_correct']];
             }, $answers),
         ];
     }
@@ -70,43 +74,49 @@ if ($editing) {
 /* ---------------- Handle POST ---------------- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Основни полета
-    $title        = trim((string)($_POST['title'] ?? ''));
-    $description  = trim((string)($_POST['description'] ?? ''));
-    $visibility   = norm_visibility($_POST['visibility'] ?? 'private');
-    $status       = in_array(($_POST['status'] ?? 'draft'), ['draft','published'], true) ? $_POST['status'] : 'draft';
-    $time_limit   = isset($_POST['time_limit_sec']) ? to_int($_POST['time_limit_sec'], 0, 86400) : null;
+    $title = trim((string) ($_POST['title'] ?? ''));
+    $description = trim((string) ($_POST['description'] ?? ''));
+    $visibility = norm_visibility($_POST['visibility'] ?? 'private');
+    $status = in_array(($_POST['status'] ?? 'draft'), ['draft', 'published'], true) ? $_POST['status'] : 'draft';
+    $time_limit = isset($_POST['time_limit_sec']) ? to_int($_POST['time_limit_sec'], 0, 86400) : null;
     $max_attempts = to_int($_POST['max_attempts'] ?? 0, 0, 100);
-    $is_randomized= !empty($_POST['is_randomized']) ? 1 : 0;
-    $theme        = trim((string)($_POST['theme'] ?? 'default'));
+    $is_randomized = !empty($_POST['is_randomized']) ? 1 : 0;
+    $theme = trim((string) ($_POST['theme'] ?? 'default'));
 
     // Въпроси (очакваме масив)
     $questions = $_POST['questions'] ?? [];
 
-    if ($title === '') $errors[] = 'Моля, въведете заглавие на теста.';
-    if (!is_array($questions) || count($questions) === 0) $errors[] = 'Добавете поне един въпрос.';
+    if ($title === '')
+        $errors[] = 'Моля, въведете заглавие на теста.';
+    if (!is_array($questions) || count($questions) === 0)
+        $errors[] = 'Добавете поне един въпрос.';
 
     // Базова валидация на всеки въпрос/отговори
     $orderCtr = 1;
     foreach ($questions as $idx => $q) {
-        $q_content = trim((string)($q['content'] ?? ''));
-        $q_type    = in_array(($q['type'] ?? 'single'), ['single','multiple'], true) ? $q['type'] : 'single';
-        $q_points  = to_int($q['points'] ?? 1, 0, 1000);
-        $ans       = $q['answers'] ?? [];
+        $q_content = trim((string) ($q['content'] ?? ''));
+        $q_type = in_array(($q['type'] ?? 'single'), ['single', 'multiple'], true) ? $q['type'] : 'single';
+        $q_points = to_int($q['points'] ?? 1, 0, 1000);
+        $ans = $q['answers'] ?? [];
 
-        if ($q_content === '') $errors[] = "Въпрос #".($idx+1).": липсва съдържание.";
-        if (!is_array($ans) || count($ans) < 2) $errors[] = "Въпрос #".($idx+1).": въведете поне 2 отговора.";
+        if ($q_content === '')
+            $errors[] = "Въпрос #" . ($idx + 1) . ": липсва съдържание.";
+        if (!is_array($ans) || count($ans) < 2)
+            $errors[] = "Въпрос #" . ($idx + 1) . ": въведете поне 2 отговора.";
 
         $correctCount = 0;
         foreach ($ans as $aIdx => $a) {
-            $a_content = trim((string)($a['content'] ?? ''));
+            $a_content = trim((string) ($a['content'] ?? ''));
             $a_correct = !empty($a['is_correct']) ? 1 : 0;
-            if ($a_content === '') $errors[] = "Въпрос #".($idx+1).", Отговор #".($aIdx+1).": съдържанието е празно.";
-            if ($a_correct) $correctCount++;
+            if ($a_content === '')
+                $errors[] = "Въпрос #" . ($idx + 1) . ", Отговор #" . ($aIdx + 1) . ": съдържанието е празно.";
+            if ($a_correct)
+                $correctCount++;
         }
         if ($q_type === 'single' && $correctCount !== 1) {
-            $errors[] = "Въпрос #".($idx+1).": за 'единичен избор' трябва да има точно 1 верен отговор.";
+            $errors[] = "Въпрос #" . ($idx + 1) . ": за 'единичен избор' трябва да има точно 1 верен отговор.";
         } elseif ($q_type === 'multiple' && $correctCount === 0) {
-            $errors[] = "Въпрос #".($idx+1).": за 'множествен избор' трябва да има поне 1 верен отговор.";
+            $errors[] = "Въпрос #" . ($idx + 1) . ": за 'множествен избор' трябва да има поне 1 верен отговор.";
         }
         $orderCtr++;
     }
@@ -126,18 +136,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([
                     ':title' => $title,
                     ':descr' => $description !== '' ? $description : null,
-                    ':vis'   => $visibility,
-                    ':st'    => $status,
-                    ':tls'   => ($time_limit !== null ? $time_limit : null),
-                    ':maxa'  => $max_attempts,
-                    ':rand'  => $is_randomized,
+                    ':vis' => $visibility,
+                    ':st' => $status,
+                    ':tls' => ($time_limit !== null ? $time_limit : null),
+                    ':maxa' => $max_attempts,
+                    ':rand' => $is_randomized,
                     ':theme' => $theme !== '' ? $theme : 'default',
-                    ':id'    => $test_id,
-                    ':tid'   => $user['id'],
+                    ':id' => $test_id,
+                    ':tid' => $user['id'],
                 ]);
 
                 // Изтрий старите връзки и (по избор) въпроси, ако са orphan (тук само чистим връзките)
-                $pdo->prepare('DELETE FROM test_questions WHERE test_id = :tid')->execute([':tid'=>$test_id]);
+                $pdo->prepare('DELETE FROM test_questions WHERE test_id = :tid')->execute([':tid' => $test_id]);
             } else {
                 // Създай тест – БЕЗ id колона (AUTO_INCREMENT да работи)
                 $stmt = $pdo->prepare('
@@ -145,19 +155,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     VALUES (:tid, :title, :descr, :vis, :st, :tls, :maxa, :rand, :theme)
                 ');
                 $stmt->execute([
-                    ':tid'   => $user['id'],
+                    ':tid' => $user['id'],
                     ':title' => $title,
                     ':descr' => $description !== '' ? $description : null,
-                    ':vis'   => $visibility,
-                    ':st'    => $status,
-                    ':tls'   => ($time_limit !== null ? $time_limit : null),
-                    ':maxa'  => $max_attempts,
-                    ':rand'  => $is_randomized,
+                    ':vis' => $visibility,
+                    ':st' => $status,
+                    ':tls' => ($time_limit !== null ? $time_limit : null),
+                    ':maxa' => $max_attempts,
+                    ':rand' => $is_randomized,
                     ':theme' => $theme !== '' ? $theme : 'default',
                 ]);
 
                 // lastInsertId() трябва да върне > 0; ако не – таблицата няма AUTO_INCREMENT
-                $test_id = (int)$pdo->lastInsertId();
+                $test_id = (int) $pdo->lastInsertId();
                 if ($test_id <= 0) {
                     throw new RuntimeException('Таблица tests вероятно няма AUTO_INCREMENT. Моля изпълнете ALTER: ALTER TABLE tests MODIFY id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT;');
                 }
@@ -171,18 +181,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $insLink = $pdo->prepare('INSERT INTO test_questions (test_id, question_id, points, order_index) VALUES (:tid, :qid, :points, :ord)');
 
             foreach ($questions as $q) {
-                $q_content = trim((string)$q['content']);
-                $q_type    = in_array(($q['type'] ?? 'single'), ['single','multiple'], true) ? $q['type'] : 'single';
-                $q_points  = to_int($q['points'] ?? 1, 0, 1000);
-                $answers   = $q['answers'];
+                $q_content = trim((string) $q['content']);
+                $q_type = in_array(($q['type'] ?? 'single'), ['single', 'multiple'], true) ? $q['type'] : 'single';
+                $q_points = to_int($q['points'] ?? 1, 0, 1000);
+                $answers = $q['answers'];
 
                 // нов въпрос
                 $insQ->execute([
-                    ':tid'     => $user['id'],
+                    ':tid' => $user['id'],
                     ':content' => $q_content,
-                    ':type'    => $q_type,
+                    ':type' => $q_type,
                 ]);
-                $qid = (int)$pdo->lastInsertId();
+                $qid = (int) $pdo->lastInsertId();
                 if ($qid <= 0) {
                     throw new RuntimeException('question_bank няма AUTO_INCREMENT.');
                 }
@@ -191,26 +201,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $aOrder = 1;
                 foreach ($answers as $a) {
                     $insA->execute([
-                        ':qid'       => $qid,
-                        ':content'   => trim((string)$a['content']),
-                        ':is_correct'=> !empty($a['is_correct']) ? 1 : 0,
-                        ':ord'       => $aOrder++,
+                        ':qid' => $qid,
+                        ':content' => trim((string) $a['content']),
+                        ':is_correct' => !empty($a['is_correct']) ? 1 : 0,
+                        ':ord' => $aOrder++,
                     ]);
                 }
 
                 // връзка тест-въпрос
                 $insLink->execute([
-                    ':tid'    => $test_id,
-                    ':qid'    => $qid,
+                    ':tid' => $test_id,
+                    ':qid' => $qid,
                     ':points' => $q_points,
-                    ':ord'    => $order++,
+                    ':ord' => $order++,
                 ]);
             }
 
             $pdo->commit();
             $saved = true;
         } catch (Throwable $e) {
-            if ($pdo->inTransaction()) $pdo->rollBack();
+            if ($pdo->inTransaction())
+                $pdo->rollBack();
             $errors[] = 'Грешка при запис: ' . $e->getMessage();
         }
     }
@@ -218,25 +229,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 /* ---------------- View state ---------------- */
 $view = [
-    'title'        => $test['title']        ?? '',
-    'description'  => $test['description']  ?? '',
-    'visibility'   => $test['visibility']   ?? 'private',
-    'status'       => $test['status']       ?? 'draft',
-    'time_limit'   => isset($test['time_limit_sec']) ? (int)$test['time_limit_sec'] : '',
-    'max_attempts' => isset($test['max_attempts']) ? (int)$test['max_attempts'] : 0,
-    'is_randomized'=> !empty($test['is_randomized']) ? 1 : 0,
-    'theme'        => $test['theme']        ?? 'default',
+    'title' => $test['title'] ?? '',
+    'description' => $test['description'] ?? '',
+    'visibility' => $test['visibility'] ?? 'private',
+    'status' => $test['status'] ?? 'draft',
+    'time_limit' => isset($test['time_limit_sec']) ? (int) $test['time_limit_sec'] : '',
+    'max_attempts' => isset($test['max_attempts']) ? (int) $test['max_attempts'] : 0,
+    'is_randomized' => !empty($test['is_randomized']) ? 1 : 0,
+    'theme' => $test['theme'] ?? 'default',
 ];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // sticky от POST
-    $view['title']        = htmlspecialchars($title ?? $view['title']);
-    $view['description']  = htmlspecialchars($description ?? $view['description']);
-    $view['visibility']   = htmlspecialchars($visibility ?? $view['visibility']);
-    $view['status']       = htmlspecialchars($status ?? $view['status']);
-    $view['time_limit']   = htmlspecialchars((string)($time_limit ?? $view['time_limit']));
-    $view['max_attempts'] = htmlspecialchars((string)($max_attempts ?? $view['max_attempts']));
-    $view['is_randomized']= !empty($is_randomized) ? 1 : 0;
-    $view['theme']        = htmlspecialchars($theme ?? $view['theme']);
+    $view['title'] = htmlspecialchars($title ?? $view['title']);
+    $view['description'] = htmlspecialchars($description ?? $view['description']);
+    $view['visibility'] = htmlspecialchars($visibility ?? $view['visibility']);
+    $view['status'] = htmlspecialchars($status ?? $view['status']);
+    $view['time_limit'] = htmlspecialchars((string) ($time_limit ?? $view['time_limit']));
+    $view['max_attempts'] = htmlspecialchars((string) ($max_attempts ?? $view['max_attempts']));
+    $view['is_randomized'] = !empty($is_randomized) ? 1 : 0;
+    $view['theme'] = htmlspecialchars($theme ?? $view['theme']);
 }
 ?>
 <!DOCTYPE html>
@@ -263,11 +274,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <?php if ($saved): ?>
-        <div class="alert alert-success">Тестът е запазен. ID: <strong><?= (int)$test_id ?></strong></div>
+            <div class="alert alert-success">Тестът е запазен. ID: <strong><?= (int) $test_id ?></strong></div>
     <?php endif; ?>
 
     <?php if ($errors): ?>
-        <div class="alert alert-danger"><ul class="m-0 ps-3"><?php foreach ($errors as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?></ul></div>
+            <div class="alert alert-danger"><ul class="m-0 ps-3"><?php foreach ($errors as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?></ul></div>
     <?php endif; ?>
 
     <form method="post" class="card shadow-sm mb-4" id="testForm">
@@ -280,8 +291,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="col-md-6">
                 <label class="form-label">Видимост</label>
                 <select name="visibility" class="form-select">
-                    <option value="private" <?= $view['visibility']==='private'?'selected':''; ?>>Само аз</option>
-                    <option value="shared"  <?= $view['visibility']==='shared'?'selected':''; ?>>Споделен</option>
+                    <option value="private" <?= $view['visibility'] === 'private' ? 'selected' : ''; ?>>Само аз</option>
+                    <option value="shared"  <?= $view['visibility'] === 'shared' ? 'selected' : ''; ?>>Споделен</option>
                 </select>
             </div>
             <div class="col-12">
@@ -291,8 +302,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="col-md-3">
                 <label class="form-label">Статус</label>
                 <select name="status" class="form-select">
-                    <option value="draft"     <?= $view['status']==='draft'?'selected':''; ?>>Чернова</option>
-                    <option value="published" <?= $view['status']==='published'?'selected':''; ?>>Публикуван</option>
+                    <option value="draft"     <?= $view['status'] === 'draft' ? 'selected' : ''; ?>>Чернова</option>
+                    <option value="published" <?= $view['status'] === 'published' ? 'selected' : ''; ?>>Публикуван</option>
                 </select>
             </div>
             <div class="col-md-3">
@@ -305,7 +316,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="col-md-3 d-flex align-items-end">
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="is_randomized" name="is_randomized" <?= $view['is_randomized'] ? 'checked':''; ?> />
+                    <input class="form-check-input" type="checkbox" id="is_randomized" name="is_randomized" <?= $view['is_randomized'] ? 'checked' : ''; ?> />
                     <label class="form-check-label" for="is_randomized">Разбъркване</label>
                 </div>
             </div>
@@ -319,87 +330,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card-body">
             <div id="questions">
                 <?php if ($questions): ?>
-                    <?php foreach ($questions as $qi => $q): ?>
+                        <?php foreach ($questions as $qi => $q): ?>
+                                <div class="q-card" data-q>
+                                    <div class="row g-2">
+                                        <div class="col-md-8">
+                                            <label class="form-label">Текст на въпроса</label>
+                                            <input type="text" name="questions[<?= $qi ?>][content]" class="form-control" value="<?= htmlspecialchars($q['content']) ?>" required />
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Тип</label>
+                                            <select name="questions[<?= $qi ?>][type]" class="form-select">
+                                                <option value="single"   <?= ($q['type'] === 'single') ? 'selected' : ''; ?>>Единичен избор</option>
+                                                <option value="multiple" <?= ($q['type'] === 'multiple') ? 'selected' : ''; ?>>Множествен избор</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Точки</label>
+                                            <input type="number" name="questions[<?= $qi ?>][points]" class="form-control" min="0" value="<?= (int) $q['points'] ?>" />
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-2" data-answers>
+                                        <?php foreach ($q['answers'] as $ai => $a): ?>
+                                                <div class="answer-row" data-answer>
+                                                    <input type="text" name="questions[<?= $qi ?>][answers][<?= $ai ?>][content]" value="<?= htmlspecialchars($a['content']) ?>" class="form-control" placeholder="Отговор..." required />
+                                                    <div class="form-check d-flex align-items-center">
+                                                        <input class="form-check-input" type="checkbox" name="questions[<?= $qi ?>][answers][<?= $ai ?>][is_correct]" <?= !empty($a['is_correct']) ? 'checked' : ''; ?> />
+                                                        <label class="form-check-label ms-1">Верен</label>
+                                                    </div>
+                                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="rmAnswer(this)"><i class="bi bi-x"></i></button>
+                                                </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addAnswer(this)">Добави отговор</button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm float-end" onclick="rmQuestion(this)">Премахни въпроса</button>
+                                    </div>
+                                </div>
+                        <?php endforeach; ?>
+                <?php else: ?>
+                        <!-- Празен стартов блок -->
                         <div class="q-card" data-q>
                             <div class="row g-2">
                                 <div class="col-md-8">
                                     <label class="form-label">Текст на въпроса</label>
-                                    <input type="text" name="questions[<?= $qi ?>][content]" class="form-control" value="<?= htmlspecialchars($q['content']) ?>" required />
+                                    <input type="text" name="questions[0][content]" class="form-control" required />
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label">Тип</label>
-                                    <select name="questions[<?= $qi ?>][type]" class="form-select">
-                                        <option value="single"   <?= ($q['type']==='single')?'selected':''; ?>>Единичен избор</option>
-                                        <option value="multiple" <?= ($q['type']==='multiple')?'selected':''; ?>>Множествен избор</option>
+                                    <select name="questions[0][type]" class="form-select">
+                                        <option value="single">Единичен избор</option>
+                                        <option value="multiple">Множествен избор</option>
                                     </select>
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label">Точки</label>
-                                    <input type="number" name="questions[<?= $qi ?>][points]" class="form-control" min="0" value="<?= (int)$q['points'] ?>" />
+                                    <input type="number" name="questions[0][points]" class="form-control" min="0" value="1" />
                                 </div>
                             </div>
-
                             <div class="mt-2" data-answers>
-                                <?php foreach ($q['answers'] as $ai => $a): ?>
-                                    <div class="answer-row" data-answer>
-                                        <input type="text" name="questions[<?= $qi ?>][answers][<?= $ai ?>][content]" value="<?= htmlspecialchars($a['content']) ?>" class="form-control" placeholder="Отговор..." required />
-                                        <div class="form-check d-flex align-items-center">
-                                            <input class="form-check-input" type="checkbox" name="questions[<?= $qi ?>][answers][<?= $ai ?>][is_correct]" <?= !empty($a['is_correct'])?'checked':''; ?> />
-                                            <label class="form-check-label ms-1">Верен</label>
-                                        </div>
-                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="rmAnswer(this)"><i class="bi bi-x"></i></button>
+                                <div class="answer-row" data-answer>
+                                    <input type="text" name="questions[0][answers][0][content]" class="form-control" placeholder="Отговор..." required />
+                                    <div class="form-check d-flex align-items-center">
+                                        <input class="form-check-input" type="checkbox" name="questions[0][answers][0][is_correct]" />
+                                        <label class="form-check-label ms-1">Верен</label>
                                     </div>
-                                <?php endforeach; ?>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="rmAnswer(this)"><i class="bi bi-x"></i></button>
+                                </div>
+                                <div class="answer-row" data-answer>
+                                    <input type="text" name="questions[0][answers][1][content]" class="form-control" placeholder="Отговор..." required />
+                                    <div class="form-check d-flex align-items-center">
+                                        <input class="form-check-input" type="checkbox" name="questions[0][answers][1][is_correct]" />
+                                        <label class="form-check-label ms-1">Верен</label>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="rmAnswer(this)"><i class="bi bi-x"></i></button>
+                                </div>
                             </div>
                             <div class="mt-2">
                                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addAnswer(this)">Добави отговор</button>
                                 <button type="button" class="btn btn-outline-danger btn-sm float-end" onclick="rmQuestion(this)">Премахни въпроса</button>
                             </div>
                         </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <!-- Празен стартов блок -->
-                    <div class="q-card" data-q>
-                        <div class="row g-2">
-                            <div class="col-md-8">
-                                <label class="form-label">Текст на въпроса</label>
-                                <input type="text" name="questions[0][content]" class="form-control" required />
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label">Тип</label>
-                                <select name="questions[0][type]" class="form-select">
-                                    <option value="single">Единичен избор</option>
-                                    <option value="multiple">Множествен избор</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label">Точки</label>
-                                <input type="number" name="questions[0][points]" class="form-control" min="0" value="1" />
-                            </div>
-                        </div>
-                        <div class="mt-2" data-answers>
-                            <div class="answer-row" data-answer>
-                                <input type="text" name="questions[0][answers][0][content]" class="form-control" placeholder="Отговор..." required />
-                                <div class="form-check d-flex align-items-center">
-                                    <input class="form-check-input" type="checkbox" name="questions[0][answers][0][is_correct]" />
-                                    <label class="form-check-label ms-1">Верен</label>
-                                </div>
-                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="rmAnswer(this)"><i class="bi bi-x"></i></button>
-                            </div>
-                            <div class="answer-row" data-answer>
-                                <input type="text" name="questions[0][answers][1][content]" class="form-control" placeholder="Отговор..." required />
-                                <div class="form-check d-flex align-items-center">
-                                    <input class="form-check-input" type="checkbox" name="questions[0][answers][1][is_correct]" />
-                                    <label class="form-check-label ms-1">Верен</label>
-                                </div>
-                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="rmAnswer(this)"><i class="bi bi-x"></i></button>
-                            </div>
-                        </div>
-                        <div class="mt-2">
-                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addAnswer(this)">Добави отговор</button>
-                            <button type="button" class="btn btn-outline-danger btn-sm float-end" onclick="rmQuestion(this)">Премахни въпроса</button>
-                        </div>
-                    </div>
                 <?php endif; ?>
             </div>
 
