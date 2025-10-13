@@ -25,6 +25,15 @@ function to_int($v, $min = null, $max = null)
         $x = $max;
     return $x;
 }
+function map_ui_to_qtype(string $ui): string
+{
+    // DB enum: single_choice | multiple_choice | true_false | short_answer | numeric
+    return $ui === 'multiple' ? 'multiple_choice' : 'single_choice';
+}
+function map_qtype_to_ui(?string $qt): string
+{
+    return $qt === 'multiple_choice' ? 'multiple' : 'single';
+}
 
 /* ---------------- Page state ---------------- */
 $errors = [];
@@ -35,7 +44,7 @@ $test = null;
 $questions = [];
 
 if ($editing) {
-    // Зареди тест само ако е собственик
+    // Лоуд на тест само ако е собственик
     $stmt = $pdo->prepare('SELECT * FROM tests WHERE id = :id AND owner_teacher_id = :tid');
     $stmt->execute([':id' => $test_id, ':tid' => $user['id']]);
     $test = $stmt->fetch();
@@ -43,9 +52,9 @@ if ($editing) {
         header('Location: createTest.php');
         exit;
     }
-    // Зареди въпросите за визуализация/редакция
+    // Лоуд на въпросите
     $q = $pdo->prepare('
-        SELECT qb.id AS question_id, qb.content AS q_content, qb.type AS q_type,
+        SELECT qb.id AS question_id, qb.body AS q_body, qb.qtype AS qtype,
                tq.points, tq.order_index
         FROM test_questions tq
         JOIN question_bank qb ON qb.id = tq.question_id
@@ -61,9 +70,9 @@ if ($editing) {
         $answers = $ansStmt->fetchAll();
         $questions[] = [
             'question_id' => (int) $r['question_id'],
-            'content' => $r['q_content'],
-            'type' => $r['q_type'] ?: 'single',
-            'points' => (int) $r['points'],
+            'content' => $r['q_body'],
+            'type' => map_qtype_to_ui($r['qtype']),
+            'points' => (float) $r['points'],
             'answers' => array_map(function ($a) {
                 return ['content' => $a['content'], 'is_correct' => (int) $a['is_correct']];
             }, $answers),
@@ -83,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $is_randomized = !empty($_POST['is_randomized']) ? 1 : 0;
     $theme = trim((string) ($_POST['theme'] ?? 'default'));
 
-    // Въпроси (очакваме масив)
+    // Въпроси (масив)
     $questions = $_POST['questions'] ?? [];
 
     if ($title === '')
@@ -91,12 +100,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!is_array($questions) || count($questions) === 0)
         $errors[] = 'Добавете поне един въпрос.';
 
-    // Базова валидация на всеки въпрос/отговори
-    $orderCtr = 1;
+    // Валидация на всеки въпрос/отговори
     foreach ($questions as $idx => $q) {
         $q_content = trim((string) ($q['content'] ?? ''));
-        $q_type = in_array(($q['type'] ?? 'single'), ['single', 'multiple'], true) ? $q['type'] : 'single';
-        $q_points = to_int($q['points'] ?? 1, 0, 1000);
+        $q_type_ui = in_array(($q['type'] ?? 'single'), ['single', 'multiple'], true) ? $q['type'] : 'single';
+        $q_points = (float) ($q['points'] ?? 1);
         $ans = $q['answers'] ?? [];
 
         if ($q_content === '')
@@ -113,12 +121,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($a_correct)
                 $correctCount++;
         }
-        if ($q_type === 'single' && $correctCount !== 1) {
+        if ($q_type_ui === 'single' && $correctCount !== 1) {
             $errors[] = "Въпрос #" . ($idx + 1) . ": за 'единичен избор' трябва да има точно 1 верен отговор.";
-        } elseif ($q_type === 'multiple' && $correctCount === 0) {
+        } elseif ($q_type_ui === 'multiple' && $correctCount === 0) {
             $errors[] = "Въпрос #" . ($idx + 1) . ": за 'множествен избор' трябва да има поне 1 верен отговор.";
         }
-        $orderCtr++;
     }
 
     if (!$errors) {
@@ -146,10 +153,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ':tid' => $user['id'],
                 ]);
 
-                // Изтрий старите връзки и (по избор) въпроси, ако са orphan (тук само чистим връзките)
+                // Изчисти старите връзки тест-въпрос
                 $pdo->prepare('DELETE FROM test_questions WHERE test_id = :tid')->execute([':tid' => $test_id]);
             } else {
-                // Създай тест – БЕЗ id колона (AUTO_INCREMENT да работи)
+                // Създай тест (AUTO_INCREMENT)
                 $stmt = $pdo->prepare('
                     INSERT INTO tests (owner_teacher_id, title, description, visibility, status, time_limit_sec, max_attempts, is_randomized, theme)
                     VALUES (:tid, :title, :descr, :vis, :st, :tls, :maxa, :rand, :theme)
@@ -166,35 +173,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ':theme' => $theme !== '' ? $theme : 'default',
                 ]);
 
-                // lastInsertId() трябва да върне > 0; ако не – таблицата няма AUTO_INCREMENT
                 $test_id = (int) $pdo->lastInsertId();
                 if ($test_id <= 0) {
-                    throw new RuntimeException('Таблица tests вероятно няма AUTO_INCREMENT. Моля изпълнете ALTER: ALTER TABLE tests MODIFY id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT;');
+                    throw new RuntimeException('Таблица tests вероятно няма AUTO_INCREMENT за id.');
                 }
                 $editing = true;
             }
 
-            // Вкарай въпросите и отговорите
+            // Вкарай въпросите/отговорите
             $order = 1;
-            $insQ = $pdo->prepare('INSERT INTO question_bank (owner_teacher_id, content, type) VALUES (:tid, :content, :type)');
+            $insQ = $pdo->prepare('INSERT INTO question_bank (owner_teacher_id, visibility, qtype, body) VALUES (:tid, :vis, :qtype, :body)');
             $insA = $pdo->prepare('INSERT INTO answers (question_id, content, is_correct, order_index) VALUES (:qid, :content, :is_correct, :ord)');
             $insLink = $pdo->prepare('INSERT INTO test_questions (test_id, question_id, points, order_index) VALUES (:tid, :qid, :points, :ord)');
 
             foreach ($questions as $q) {
                 $q_content = trim((string) $q['content']);
-                $q_type = in_array(($q['type'] ?? 'single'), ['single', 'multiple'], true) ? $q['type'] : 'single';
-                $q_points = to_int($q['points'] ?? 1, 0, 1000);
+                $q_type_ui = in_array(($q['type'] ?? 'single'), ['single', 'multiple'], true) ? $q['type'] : 'single';
+                $q_points = (float) ($q['points'] ?? 1);
                 $answers = $q['answers'];
 
-                // нов въпрос
+                // нов въпрос (съобразено със schema: qtype, body)
                 $insQ->execute([
                     ':tid' => $user['id'],
-                    ':content' => $q_content,
-                    ':type' => $q_type,
+                    ':vis' => $visibility,                         // ползваме видимостта на теста
+                    ':qtype' => map_ui_to_qtype($q_type_ui),         // single_choice / multiple_choice
+                    ':body' => $q_content,                          // текст на въпроса
                 ]);
                 $qid = (int) $pdo->lastInsertId();
                 if ($qid <= 0) {
-                    throw new RuntimeException('question_bank няма AUTO_INCREMENT.');
+                    throw new RuntimeException('question_bank няма AUTO_INCREMENT за id.');
                 }
 
                 // отговори
@@ -239,7 +246,7 @@ $view = [
     'theme' => $test['theme'] ?? 'default',
 ];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // sticky от POST
+    // sticky
     $view['title'] = htmlspecialchars($title ?? $view['title']);
     $view['description'] = htmlspecialchars($description ?? $view['description']);
     $view['visibility'] = htmlspecialchars($visibility ?? $view['visibility']);
@@ -252,6 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="bg">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -259,116 +267,149 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        .answer-row { display:flex; gap:.5rem; margin-bottom:.5rem; }
-        .answer-row input[type="text"]{ flex:1; }
-        .q-card { border:1px solid #e9ecef; border-radius:.5rem; padding:1rem; margin-bottom:1rem; }
+        .answer-row {
+            display: flex;
+            gap: .5rem;
+            margin-bottom: .5rem;
+        }
+
+        .answer-row input[type="text"] {
+            flex: 1;
+        }
+
+        .q-card {
+            border: 1px solid #e9ecef;
+            border-radius: .5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
+
 <body>
-<?php include __DIR__ . '/components/header.php'; ?>
+    <?php include __DIR__ . '/components/header.php'; ?>
 
-<main class="container my-4 my-md-5">
-    <div class="d-flex align-items-center justify-content-between mb-3">
-        <h1 class="h4 m-0"><?= $editing ? 'Редакция на тест' : 'Създаване на тест' ?></h1>
-        <a href="dashboard.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Назад</a>
-    </div>
-
-    <?php if ($saved): ?>
-            <div class="alert alert-success">Тестът е запазен. ID: <strong><?= (int) $test_id ?></strong></div>
-    <?php endif; ?>
-
-    <?php if ($errors): ?>
-            <div class="alert alert-danger"><ul class="m-0 ps-3"><?php foreach ($errors as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?></ul></div>
-    <?php endif; ?>
-
-    <form method="post" class="card shadow-sm mb-4" id="testForm">
-        <div class="card-header bg-white"><strong>Основни данни</strong></div>
-        <div class="card-body row g-3">
-            <div class="col-md-6">
-                <label class="form-label">Заглавие</label>
-                <input type="text" name="title" class="form-control" value="<?= $view['title'] ?>" required />
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">Видимост</label>
-                <select name="visibility" class="form-select">
-                    <option value="private" <?= $view['visibility'] === 'private' ? 'selected' : ''; ?>>Само аз</option>
-                    <option value="shared"  <?= $view['visibility'] === 'shared' ? 'selected' : ''; ?>>Споделен</option>
-                </select>
-            </div>
-            <div class="col-12">
-                <label class="form-label">Описание</label>
-                <textarea name="description" rows="2" class="form-control"><?= $view['description'] ?></textarea>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Статус</label>
-                <select name="status" class="form-select">
-                    <option value="draft"     <?= $view['status'] === 'draft' ? 'selected' : ''; ?>>Чернова</option>
-                    <option value="published" <?= $view['status'] === 'published' ? 'selected' : ''; ?>>Публикуван</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Лимит време (сек)</label>
-                <input type="number" name="time_limit_sec" class="form-control" min="0" value="<?= $view['time_limit'] ?>" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Макс. опити</label>
-                <input type="number" name="max_attempts" class="form-control" min="0" value="<?= $view['max_attempts'] ?>" />
-            </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="is_randomized" name="is_randomized" <?= $view['is_randomized'] ? 'checked' : ''; ?> />
-                    <label class="form-check-label" for="is_randomized">Разбъркване</label>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Тема</label>
-                <input type="text" name="theme" class="form-control" value="<?= $view['theme'] ?>" />
-            </div>
+    <main class="container my-4 my-md-5">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h1 class="h4 m-0"><?= $editing ? 'Редакция на тест' : 'Създаване на тест' ?></h1>
+            <a href="dashboard.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Назад</a>
         </div>
 
-        <div class="card-header bg-white border-top"><strong>Въпроси</strong></div>
-        <div class="card-body">
-            <div id="questions">
-                <?php if ($questions): ?>
-                        <?php foreach ($questions as $qi => $q): ?>
-                                <div class="q-card" data-q>
-                                    <div class="row g-2">
-                                        <div class="col-md-8">
-                                            <label class="form-label">Текст на въпроса</label>
-                                            <input type="text" name="questions[<?= $qi ?>][content]" class="form-control" value="<?= htmlspecialchars($q['content']) ?>" required />
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="form-label">Тип</label>
-                                            <select name="questions[<?= $qi ?>][type]" class="form-select">
-                                                <option value="single"   <?= ($q['type'] === 'single') ? 'selected' : ''; ?>>Единичен избор</option>
-                                                <option value="multiple" <?= ($q['type'] === 'multiple') ? 'selected' : ''; ?>>Множествен избор</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="form-label">Точки</label>
-                                            <input type="number" name="questions[<?= $qi ?>][points]" class="form-control" min="0" value="<?= (int) $q['points'] ?>" />
-                                        </div>
-                                    </div>
+        <?php if ($saved): ?>
+            <div class="alert alert-success">Тестът е запазен. ID: <strong><?= (int) $test_id ?></strong></div>
+        <?php endif; ?>
 
-                                    <div class="mt-2" data-answers>
-                                        <?php foreach ($q['answers'] as $ai => $a): ?>
-                                                <div class="answer-row" data-answer>
-                                                    <input type="text" name="questions[<?= $qi ?>][answers][<?= $ai ?>][content]" value="<?= htmlspecialchars($a['content']) ?>" class="form-control" placeholder="Отговор..." required />
-                                                    <div class="form-check d-flex align-items-center">
-                                                        <input class="form-check-input" type="checkbox" name="questions[<?= $qi ?>][answers][<?= $ai ?>][is_correct]" <?= !empty($a['is_correct']) ? 'checked' : ''; ?> />
-                                                        <label class="form-check-label ms-1">Верен</label>
-                                                    </div>
-                                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="rmAnswer(this)"><i class="bi bi-x"></i></button>
-                                                </div>
-                                        <?php endforeach; ?>
+        <?php if ($errors): ?>
+            <div class="alert alert-danger">
+                <ul class="m-0 ps-3"><?php foreach ($errors as $e): ?>
+                        <li><?= htmlspecialchars($e) ?></li><?php endforeach; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
+
+        <form method="post" class="card shadow-sm mb-4" id="testForm">
+            <div class="card-header bg-white"><strong>Основни данни</strong></div>
+            <div class="card-body row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Заглавие</label>
+                    <input type="text" name="title" class="form-control" value="<?= $view['title'] ?>" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Видимост</label>
+                    <select name="visibility" class="form-select">
+                        <option value="private" <?= $view['visibility'] === 'private' ? 'selected' : '' ?>>Само аз</option>
+                        <option value="shared" <?= $view['visibility'] === 'shared' ? 'selected' : '' ?>>Споделен</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Описание</label>
+                    <textarea name="description" rows="2" class="form-control"><?= $view['description'] ?></textarea>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Статус</label>
+                    <select name="status" class="form-select">
+                        <option value="draft" <?= $view['status'] === 'draft' ? 'selected' : '' ?>>Чернова</option>
+                        <option value="published" <?= $view['status'] === 'published' ? 'selected' : '' ?>>Публикуван
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Лимит време (сек)</label>
+                    <input type="number" name="time_limit_sec" class="form-control" min="0"
+                        value="<?= $view['time_limit'] ?>" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Макс. опити</label>
+                    <input type="number" name="max_attempts" class="form-control" min="0"
+                        value="<?= $view['max_attempts'] ?>" />
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="is_randomized" name="is_randomized"
+                            <?= $view['is_randomized'] ? 'checked' : '' ?> />
+                        <label class="form-check-label" for="is_randomized">Разбъркване</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Тема</label>
+                    <input type="text" name="theme" class="form-control" value="<?= $view['theme'] ?>" />
+                </div>
+            </div>
+
+            <div class="card-header bg-white border-top"><strong>Въпроси</strong></div>
+            <div class="card-body">
+                <div id="questions">
+                    <?php if ($questions): ?>
+                        <?php foreach ($questions as $qi => $q): ?>
+                            <div class="q-card" data-q>
+                                <div class="row g-2">
+                                    <div class="col-md-8">
+                                        <label class="form-label">Текст на въпроса</label>
+                                        <input type="text" name="questions[<?= $qi ?>][content]" class="form-control"
+                                            value="<?= htmlspecialchars($q['content']) ?>" required />
                                     </div>
-                                    <div class="mt-2">
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addAnswer(this)">Добави отговор</button>
-                                        <button type="button" class="btn btn-outline-danger btn-sm float-end" onclick="rmQuestion(this)">Премахни въпроса</button>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Тип</label>
+                                        <select name="questions[<?= $qi ?>][type]" class="form-select">
+                                            <option value="single" <?= ($q['type'] === 'single') ? 'selected' : '' ?>>Единичен
+                                                избор</option>
+                                            <option value="multiple" <?= ($q['type'] === 'multiple') ? 'selected' : '' ?>>
+                                                Множествен избор</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Точки</label>
+                                        <input type="number" step="0.01" name="questions[<?= $qi ?>][points]"
+                                            class="form-control" min="0" value="<?= (float) $q['points'] ?>" />
                                     </div>
                                 </div>
+
+                                <div class="mt-2" data-answers>
+                                    <?php foreach ($q['answers'] as $ai => $a): ?>
+                                        <div class="answer-row" data-answer>
+                                            <input type="text" name="questions[<?= $qi ?>][answers][<?= $ai ?>][content]"
+                                                value="<?= htmlspecialchars($a['content']) ?>" class="form-control"
+                                                placeholder="Отговор..." required />
+                                            <div class="form-check d-flex align-items-center">
+                                                <input class="form-check-input" type="checkbox"
+                                                    name="questions[<?= $qi ?>][answers][<?= $ai ?>][is_correct]"
+                                                    <?= !empty($a['is_correct']) ? 'checked' : '' ?> />
+                                                <label class="form-check-label ms-1">Верен</label>
+                                            </div>
+                                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="rmAnswer(this)"><i
+                                                    class="bi bi-x"></i></button>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                                        onclick="addAnswer(this)">Добави отговор</button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm float-end"
+                                        onclick="rmQuestion(this)">Премахни въпроса</button>
+                                </div>
+                            </div>
                         <?php endforeach; ?>
-                <?php else: ?>
+                    <?php else: ?>
                         <!-- Празен стартов блок -->
                         <div class="q-card" data-q>
                             <div class="row g-2">
@@ -385,89 +426,94 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label">Точки</label>
-                                    <input type="number" name="questions[0][points]" class="form-control" min="0" value="1" />
+                                    <input type="number" step="0.01" name="questions[0][points]" class="form-control"
+                                        min="0" value="1" />
                                 </div>
                             </div>
                             <div class="mt-2" data-answers>
                                 <div class="answer-row" data-answer>
-                                    <input type="text" name="questions[0][answers][0][content]" class="form-control" placeholder="Отговор..." required />
+                                    <input type="text" name="questions[0][answers][0][content]" class="form-control"
+                                        placeholder="Отговор..." required />
                                     <div class="form-check d-flex align-items-center">
-                                        <input class="form-check-input" type="checkbox" name="questions[0][answers][0][is_correct]" />
+                                        <input class="form-check-input" type="checkbox"
+                                            name="questions[0][answers][0][is_correct]" />
                                         <label class="form-check-label ms-1">Верен</label>
                                     </div>
-                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="rmAnswer(this)"><i class="bi bi-x"></i></button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="rmAnswer(this)"><i
+                                            class="bi bi-x"></i></button>
                                 </div>
                                 <div class="answer-row" data-answer>
-                                    <input type="text" name="questions[0][answers][1][content]" class="form-control" placeholder="Отговор..." required />
+                                    <input type="text" name="questions[0][answers][1][content]" class="form-control"
+                                        placeholder="Отговор..." required />
                                     <div class="form-check d-flex align-items-center">
-                                        <input class="form-check-input" type="checkbox" name="questions[0][answers][1][is_correct]" />
+                                        <input class="form-check-input" type="checkbox"
+                                            name="questions[0][answers][1][is_correct]" />
                                         <label class="form-check-label ms-1">Верен</label>
                                     </div>
-                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="rmAnswer(this)"><i class="bi bi-x"></i></button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="rmAnswer(this)"><i
+                                            class="bi bi-x"></i></button>
                                 </div>
                             </div>
                             <div class="mt-2">
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addAnswer(this)">Добави отговор</button>
-                                <button type="button" class="btn btn-outline-danger btn-sm float-end" onclick="rmQuestion(this)">Премахни въпроса</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                    onclick="addAnswer(this)">Добави отговор</button>
+                                <button type="button" class="btn btn-outline-danger btn-sm float-end"
+                                    onclick="rmQuestion(this)">Премахни въпроса</button>
                             </div>
                         </div>
-                <?php endif; ?>
+                    <?php endif; ?>
+                </div>
+
+                <button type="button" class="btn btn-outline-primary" onclick="addQuestion()">Добави въпрос</button>
             </div>
 
-            <button type="button" class="btn btn-outline-primary" onclick="addQuestion()">Добави въпрос</button>
-        </div>
+            <div class="card-footer bg-white d-flex justify-content-end gap-2">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Запази
+                    теста</button>
+            </div>
+        </form>
+    </main>
 
-        <div class="card-footer bg-white d-flex justify-content-end gap-2">
-            <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Запази теста</button>
+    <footer class="border-top py-4">
+        <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+            <div class="text-muted">© <?= date('Y'); ?> TestGramatikov</div>
+            <div class="d-flex gap-3 small">
+                <a class="text-decoration-none" href="terms.php">Условия</a>
+                <a class="text-decoration-none" href="privacy.php">Поверителност</a>
+                <a class="text-decoration-none" href="contact.php">Контакт</a>
+            </div>
         </div>
-    </form>
-</main>
-
-<footer class="border-top py-4">
-    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-        <div class="text-muted">© <?= date('Y'); ?> TestGramatikov</div>
-        <div class="d-flex gap-3 small">
-            <a class="text-decoration-none" href="terms.php">Условия</a>
-            <a class="text-decoration-none" href="privacy.php">Поверителност</a>
-            <a class="text-decoration-none" href="contact.php">Контакт</a>
-        </div>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // динамика за въпроси/отговори
-        function renumber() {
-            const qs = document.querySelectorAll('[data-q]');
-            qs.forEach((qEl, qi) => {
-                // въпрос
-                qEl.querySelectorAll('input, select, textarea').forEach(inp => {
-                    inp.name = inp.name.replace(/questions\[\d+\]/, 'questions['+qi+']');
-                });
-                // отговори
-                const as = qEl.querySelectorAll('[data-answer]');
-                as.forEach((aEl, ai) => {
-                    aEl.querySelectorAll('input').forEach(inp => {
-                        inp.name = inp.name
-                            .replace(/questions\[\d+\]\[answers\]\[\d+\]/, 'questions['+qi+'][answers]['+ai+']');
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            // динамика за въпроси/отговори
+            function renumber() {
+                const qs = document.querySelectorAll('[data-q]');
+                qs.forEach((qEl, qi) => {
+                    qEl.querySelectorAll('input, select, textarea').forEach(inp => {
+                        inp.name = inp.name.replace(/questions\[\d+\]/, 'questions[' + qi + ']');
+                    });
+                    const as = qEl.querySelectorAll('[data-answer]');
+                    as.forEach((aEl, ai) => {
+                        aEl.querySelectorAll('input').forEach(inp => {
+                            inp.name = inp.name.replace(/questions\[\d+\]\[answers\]\[\d+\]/, 'questions[' + qi + '][answers][' + ai + ']');
+                        });
                     });
                 });
-            });
-        }
-        function addQuestion() {
-            const wrap = document.getElementById('questions');
-            const tmpl = wrap.querySelector('[data-q]').cloneNode(true);
-            // изчисти стойности
-            tmpl.querySelectorAll('input[type="text"]').forEach(i=>i.value='');
-            tmpl.querySelectorAll('textarea').forEach(i=>i.value='');
-            tmpl.querySelectorAll('input[type="number"]').forEach(i=>i.value='1');
-            tmpl.querySelectorAll('input[type="checkbox"]').forEach(i=>i.checked=false);
-            // остави само два отговора
-            const answersWrap = tmpl.querySelector('[data-answers]');
-            answersWrap.innerHTML = '';
-            for (let k=0;k<2;k++){
-                const row = document.createElement('div');
-                row.className='answer-row';
-                row.setAttribute('data-answer','');
-                row.innerHTML = `
+            }
+            function addQuestion() {
+                const wrap = document.getElementById('questions');
+                const tmpl = wrap.querySelector('[data-q]').cloneNode(true);
+                tmpl.querySelectorAll('input[type="text"]').forEach(i => i.value = '');
+                tmpl.querySelectorAll('textarea').forEach(i => i.value = '');
+                tmpl.querySelectorAll('input[type="number"]').forEach(i => i.value = '1');
+                tmpl.querySelectorAll('input[type="checkbox"]').forEach(i => i.checked = false);
+                const answersWrap = tmpl.querySelector('[data-answers]');
+                answersWrap.innerHTML = '';
+                for (let k = 0; k < 2; k++) {
+                    const row = document.createElement('div');
+                    row.className = 'answer-row';
+                    row.setAttribute('data-answer', '');
+                    row.innerHTML = `
                     <input type="text" class="form-control" name="questions[0][answers][${k}][content]" placeholder="Отговор..." required />
                     <div class="form-check d-flex align-items-center">
                         <input class="form-check-input" type="checkbox" name="questions[0][answers][${k}][is_correct]" />
@@ -475,24 +521,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     <button type="button" class="btn btn-outline-danger btn-sm" onclick="rmAnswer(this)"><i class="bi bi-x"></i></button>
                 `;
-                answersWrap.appendChild(row);
+                    answersWrap.appendChild(row);
+                }
+                wrap.appendChild(tmpl);
+                renumber();
             }
-            wrap.appendChild(tmpl);
-            renumber();
-        }
-        function rmQuestion(btn) {
-            const card = btn.closest('[data-q]');
-            const wrap = document.getElementById('questions');
-            if (wrap.querySelectorAll('[data-q]').length<=1) { alert('Трябва да има поне един въпрос.'); return; }
-            card.remove(); renumber();
-        }
-        function addAnswer(btn) {
-            const answersWrap = btn.closest('[data-q]').querySelector('[data-answers]');
-            const qi = Array.from(document.querySelectorAll('[data-q]')).indexOf(btn.closest('[data-q]'));
-            const ai = answersWrap.querySelectorAll('[data-answer]').length;
-            const row = document.createElement('div');
-            row.className='answer-row'; row.setAttribute('data-answer','');
-            row.innerHTML = `
+            function rmQuestion(btn) {
+                const card = btn.closest('[data-q]');
+                const wrap = document.getElementById('questions');
+                if (wrap.querySelectorAll('[data-q]').length <= 1) { alert('Трябва да има поне един въпрос.'); return; }
+                card.remove(); renumber();
+            }
+            function addAnswer(btn) {
+                const qEl = btn.closest('[data-q]');
+                const answersWrap = qEl.querySelector('[data-answers]');
+                const qi = Array.from(document.querySelectorAll('[data-q]')).indexOf(qEl);
+                const ai = answersWrap.querySelectorAll('[data-answer]').length;
+                const row = document.createElement('div');
+                row.className = 'answer-row'; row.setAttribute('data-answer', '');
+                row.innerHTML = `
                 <input type="text" class="form-control" name="questions[${qi}][answers][${ai}][content]" placeholder="Отговор..." required />
                 <div class="form-check d-flex align-items-center">
                     <input class="form-check-input" type="checkbox" name="questions[${qi}][answers][${ai}][is_correct]" />
@@ -500,14 +547,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="rmAnswer(this)"><i class="bi bi-x"></i></button>
             `;
-            answersWrap.appendChild(row);
-        }
-        function rmAnswer(btn) {
-            const answersWrap = btn.closest('[data-answers]');
-            if (answersWrap.querySelectorAll('[data-answer]').length<=2) { alert('Поне 2 отговора са задължителни.'); return; }
-            btn.closest('[data-answer]').remove(); renumber();
-        }
-    </script>
-</footer>
+                answersWrap.appendChild(row);
+            }
+            function rmAnswer(btn) {
+                const answersWrap = btn.closest('[data-answers]');
+                if (answersWrap.querySelectorAll('[data-answer]').length <= 2) { alert('Поне 2 отговора са задължителни.'); return; }
+                btn.closest('[data-answer]').remove(); renumber();
+            }
+        </script>
+    </footer>
 </body>
+
 </html>
