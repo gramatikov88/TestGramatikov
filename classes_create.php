@@ -11,6 +11,9 @@ if (empty($_SESSION['user']) || ($_SESSION['user']['role'] ?? null) !== 'teacher
 $user = $_SESSION['user'];
 $pdo = db();
 
+/**
+ * Генерира силна временна парола за нов ученик.
+ */
 function random_password(int $length = 10): string {
     $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
     $out = '';
@@ -21,20 +24,28 @@ function random_password(int $length = 10): string {
 }
 
 $class_id = isset($_GET['id']) ? (int)$_GET['id'] : (int)($_POST['class_id'] ?? 0);
-$editing = $class_id > 0;
+$editing  = $class_id > 0;
+
 $errors = [];
 $saved = false;
-$created_password = null;
 
+// flash съобщения
+$created_passwords = [];
 if (!empty($_SESSION['flash_saved'])) {
     $saved = true;
     unset($_SESSION['flash_saved']);
 }
-if (!empty($_SESSION['flash_created_password'])) {
-    $created_password = $_SESSION['flash_created_password'];
-    unset($_SESSION['flash_created_password']);
+if (!empty($_SESSION['flash_created_passwords']) && is_array($_SESSION['flash_created_passwords'])) {
+    $created_passwords = $_SESSION['flash_created_passwords'];
+    unset($_SESSION['flash_created_passwords']);
 }
 
+// Подготви структура за „опашка“ от ученици при нов клас
+if (!isset($_SESSION['pending_students']) || !is_array($_SESSION['pending_students'])) {
+    $_SESSION['pending_students'] = [];
+}
+
+// Зареди клас при редакция
 $class = null;
 if ($editing) {
     $stmt = $pdo->prepare('SELECT * FROM classes WHERE id = :id AND teacher_id = :tid');
@@ -46,41 +57,147 @@ if ($editing) {
     }
 }
 
+/**
+ * Помощна функция: създава/намира ученик и го добавя към даден class_id.
+ * Връща масив с:
+ *  - 'created_password' => ?string (ако е създаден нов акаунт)
+ */
+function ensure_student_in_class(PDO $pdo, int $class_id, string $email, string $first, string $last): array {
+    $email = mb_strtolower(trim($email));
+    $first = trim($first);
+    $last  = trim($last);
+
+    $created_password = null;
+
+    $pdo->beginTransaction();
+
+    try {
+        $stmt = $pdo->prepare('SELECT id, role FROM users WHERE email = :email LIMIT 1');
+        $stmt->execute([':email' => $email]);
+        $existing = $stmt->fetch();
+
+        if ($existing) {
+            if ($existing['role'] !== 'student') {
+                throw new RuntimeException('Съществува потребител с този имейл, който не е ученик.');
+            }
+            $student_id = (int)$existing['id'];
+        } else {
+            $pwd = random_password();
+            $created_password = $pwd;
+            $hash = password_hash($pwd, PASSWORD_DEFAULT);
+            $stmt = $pdo->prepare('INSERT INTO users (role, email, password_hash, first_name, last_name) 
+                                   VALUES ("student", :email, :hash, :first, :last)');
+            $stmt->execute([
+                ':email' => $email,
+                ':hash'  => $hash,
+                ':first' => $first,
+                ':last'  => $last,
+            ]);
+            $student_id = (int)$pdo->lastInsertId();
+        }
+
+        $stmt = $pdo->prepare('INSERT IGNORE INTO class_students (class_id, student_id) VALUES (:cid, :sid)');
+        $stmt->execute([':cid' => $class_id, ':sid' => $student_id]);
+
+        $pdo->commit();
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) { $pdo->rollBack(); }
+        throw $e;
+    }
+
+    return ['created_password' => $created_password];
+}
+
+/**
+ * Валидация на вход за ученик (обща за двете форми).
+ */
+function validate_student_payload(array $post, array &$errors): ?array {
+    $email = mb_strtolower(trim((string)($post['email'] ?? '')));
+    $first = trim((string)($post['first_name'] ?? ''));
+    $last  = trim((string)($post['last_name'] ?? ''));
+
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) { $errors[] = 'Въведете валиден имейл.'; }
+    if ($first === '') { $errors[] = 'Въведете име.'; }
+    if ($last === '')  { $errors[] = 'Въведете фамилия.'; }
+
+    if ($errors) return null;
+    return ['email' => $email, 'first_name' => $first, 'last_name' => $last];
+}
+
+// === ДЕЙСТВИЯ ===
+
+// 1) Запис/създаване на клас
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['__action'] ?? '') === 'save_class') {
-    $name = trim((string)($_POST['name'] ?? ''));
-    $grade = max(1, (int)($_POST['grade'] ?? 1));
-    $section = trim((string)($_POST['section'] ?? ''));
+    $name        = trim((string)($_POST['name'] ?? ''));
+    $grade       = max(1, (int)($_POST['grade'] ?? 1));
+    $section     = trim((string)($_POST['section'] ?? ''));
     $school_year = (int)($_POST['school_year'] ?? date('Y'));
     $description = trim((string)($_POST['description'] ?? ''));
 
-    if ($name === '') { $errors[] = 'Моля, въведете име на класа.'; }
+    if ($name === '')    { $errors[] = 'Моля, въведете име на класа.'; }
     if ($section === '') { $errors[] = 'Моля, въведете паралелка (буква).'; }
 
     if (!$errors) {
         try {
             if ($editing) {
-                $stmt = $pdo->prepare('UPDATE classes SET name=:name, grade=:grade, section=:section, school_year=:sy, description=:desc WHERE id=:id AND teacher_id=:tid');
+                $stmt = $pdo->prepare('UPDATE classes 
+                    SET name=:name, grade=:grade, section=:section, school_year=:sy, description=:desc 
+                    WHERE id=:id AND teacher_id=:tid');
                 $stmt->execute([
                     ':name' => $name,
-                    ':grade' => $grade,
-                    ':section' => $section,
-                    ':sy' => $school_year,
+                    ':grade'=> $grade,
+                    ':section'=>$section,
+                    ':sy'   => $school_year,
                     ':desc' => $description,
-                    ':id' => $class_id,
-                    ':tid' => (int)$user['id'],
+                    ':id'   => $class_id,
+                    ':tid'  => (int)$user['id'],
                 ]);
             } else {
-                $stmt = $pdo->prepare('INSERT INTO classes (teacher_id, name, grade, section, school_year, description) VALUES (:tid,:name,:grade,:section,:sy,:desc)');
+                // Създай клас
+                $stmt = $pdo->prepare('INSERT INTO classes (teacher_id, name, grade, section, school_year, description) 
+                                       VALUES (:tid,:name,:grade,:section,:sy,:desc)');
                 $stmt->execute([
-                    ':tid' => (int)$user['id'],
+                    ':tid'  => (int)$user['id'],
                     ':name' => $name,
-                    ':grade' => $grade,
-                    ':section' => $section,
-                    ':sy' => $school_year,
+                    ':grade'=> $grade,
+                    ':section'=>$section,
+                    ':sy'   => $school_year,
                     ':desc' => $description,
                 ]);
                 $class_id = (int)$pdo->lastInsertId();
+                $editing = true; // вече имаме клас
+
+                // Ако има чакащи ученици (опашка) — добави ги
+                $pwds = [];
+                if (!empty($_SESSION['pending_students'])) {
+                    foreach ($_SESSION['pending_students'] as $queued) {
+                        try {
+                            $res = ensure_student_in_class(
+                                $pdo,
+                                $class_id,
+                                $queued['email'],
+                                $queued['first_name'],
+                                $queued['last_name']
+                            );
+                            if (!empty($res['created_password'])) {
+                                $pwds[] = [
+                                    'email'    => $queued['email'],
+                                    'password' => $res['created_password']
+                                ];
+                            }
+                        } catch (Throwable $e) {
+                            // Не прекъсваме целия процес, а само отбелязваме грешка
+                            $errors[] = 'Грешка при добавяне на ученик ' . htmlspecialchars($queued['email']) . ': ' . $e->getMessage();
+                        }
+                    }
+                    // Изчисти опашката
+                    $_SESSION['pending_students'] = [];
+                }
+                if ($pwds) {
+                    $_SESSION['flash_created_passwords'] = $pwds;
+                }
             }
+
             $_SESSION['flash_saved'] = 1;
             header('Location: classes_create.php?id=' . $class_id);
             exit;
@@ -94,70 +211,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['__action'] ?? '') === 'sav
     }
 }
 
+// 2) Добавяне на ученик към СЪЩЕСТВУВАЩ клас (старият ти работещ поток – запазен)
 if ($editing && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['__action'] ?? '') === 'add_student') {
-    $email = mb_strtolower(trim((string)($_POST['email'] ?? '')));
-    $first = trim((string)($_POST['first_name'] ?? ''));
-    $last = trim((string)($_POST['last_name'] ?? ''));
-
-    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) { $errors[] = 'Въведете валиден имейл.'; }
-    if ($first === '') { $errors[] = 'Въведете име.'; }
-    if ($last === '') { $errors[] = 'Въведете фамилия.'; }
-
-    if (!$errors) {
+    $payload = validate_student_payload($_POST, $errors);
+    if ($payload && !$errors) {
         try {
-            $pdo->beginTransaction();
-            $stmt = $pdo->prepare('SELECT id, role FROM users WHERE email = :email LIMIT 1');
-            $stmt->execute([':email' => $email]);
-            $existing = $stmt->fetch();
-
-            if ($existing) {
-                if ($existing['role'] !== 'student') {
-                    throw new RuntimeException('Съществува потребител с този имейл, който не е ученик.');
-                }
-                $student_id = (int)$existing['id'];
-            } else {
-                $pwd = random_password();
-                $created_password = $pwd;
-                $hash = password_hash($pwd, PASSWORD_DEFAULT);
-                $stmt = $pdo->prepare('INSERT INTO users (role, email, password_hash, first_name, last_name) VALUES ("student", :email, :hash, :first, :last)');
-                $stmt->execute([
-                    ':email' => $email,
-                    ':hash' => $hash,
-                    ':first' => $first,
-                    ':last' => $last,
-                ]);
-                $student_id = (int)$pdo->lastInsertId();
+            $res = ensure_student_in_class($pdo, $class_id, $payload['email'], $payload['first_name'], $payload['last_name']);
+            $pwds = [];
+            if (!empty($res['created_password'])) {
+                $pwds[] = ['email' => $payload['email'], 'password' => $res['created_password']];
             }
-
-            $stmt = $pdo->prepare('INSERT IGNORE INTO class_students (class_id, student_id) VALUES (:cid, :sid)');
-            $stmt->execute([':cid' => $class_id, ':sid' => $student_id]);
-            $pdo->commit();
-
             $_SESSION['flash_saved'] = 1;
-            if ($created_password) { $_SESSION['flash_created_password'] = $created_password; }
+            if ($pwds) { $_SESSION['flash_created_passwords'] = $pwds; }
             header('Location: classes_create.php?id=' . $class_id . '#students');
             exit;
         } catch (Throwable $e) {
-            if ($pdo->inTransaction()) { $pdo->rollBack(); }
             $errors[] = 'Грешка при добавяне на ученик: ' . $e->getMessage();
         }
     }
 }
 
+// 3) „Опашка“: добавяне на ученик ДОКАТО СЪЗДАВАМЕ НОВ клас (нямаме още $class_id)
+if (!$editing && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['__action'] ?? '') === 'queue_student') {
+    $payload = validate_student_payload($_POST, $errors);
+    if ($payload && !$errors) {
+        $_SESSION['pending_students'][] = $payload;
+        // Мек „флаш“: да се покаже успешна нотификация
+        $_SESSION['flash_saved'] = 1;
+        header('Location: classes_create.php');
+        exit;
+    }
+}
+
+// 4) Премахване на ученик от съществуващ клас
 if ($editing && isset($_GET['remove_student'])) {
     $sid = (int)$_GET['remove_student'];
-    $pdo->prepare('DELETE cs FROM class_students cs JOIN classes c ON c.id = cs.class_id AND c.teacher_id = :tid WHERE cs.class_id = :cid AND cs.student_id = :sid')
+    $pdo->prepare('DELETE cs 
+        FROM class_students cs 
+        JOIN classes c ON c.id = cs.class_id AND c.teacher_id = :tid 
+        WHERE cs.class_id = :cid AND cs.student_id = :sid')
         ->execute([':tid' => (int)$user['id'], ':cid' => $class_id, ':sid' => $sid]);
     header('Location: classes_create.php?id=' . $class_id . '#students');
     exit;
 }
 
+// 5) Премахване на ученик от „опашката“ (нов клас)
+if (!$editing && isset($_GET['remove_queued'])) {
+    $idx = (int)$_GET['remove_queued'];
+    if (isset($_SESSION['pending_students'][$idx])) {
+        unset($_SESSION['pending_students'][$idx]);
+        $_SESSION['pending_students'] = array_values($_SESSION['pending_students']); // преподреди индексите
+    }
+    header('Location: classes_create.php#students');
+    exit;
+}
+
+// Зареди ученици за визуализация
 $students = [];
 if ($editing) {
     $stmt = $pdo->prepare('SELECT u.id, u.first_name, u.last_name, u.email
-                            FROM class_students cs JOIN users u ON u.id = cs.student_id
-                            WHERE cs.class_id = :cid
-                            ORDER BY u.first_name, u.last_name');
+                           FROM class_students cs 
+                           JOIN users u ON u.id = cs.student_id
+                           WHERE cs.class_id = :cid
+                           ORDER BY u.first_name, u.last_name');
     $stmt->execute([':cid' => $class_id]);
     $students = $stmt->fetchAll();
 }
@@ -181,10 +297,32 @@ if ($editing) {
         <a href="dashboard.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Назад</a>
     </div>
 
-    <?php if ($saved): ?><div class="alert alert-success">Данните са запазени.</div><?php endif; ?>
-    <?php if ($created_password): ?><div class="alert alert-info">Създаден е нов ученик. Временна парола: <strong><?= htmlspecialchars($created_password) ?></strong></div><?php endif; ?>
-    <?php if ($errors): ?><div class="alert alert-danger"><ul class="m-0 ps-3"><?php foreach ($errors as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?></ul></div><?php endif; ?>
+    <?php if ($saved): ?>
+        <div class="alert alert-success">Данните са запазени.</div>
+    <?php endif; ?>
 
+    <?php if (!empty($created_passwords)): ?>
+        <div class="alert alert-info">
+            <div class="fw-semibold mb-1">Създадени са нови ученици. Временни пароли:</div>
+            <ul class="mb-0">
+                <?php foreach ($created_passwords as $cp): ?>
+                    <li><?= htmlspecialchars($cp['email']) ?> — <strong><?= htmlspecialchars($cp['password']) ?></strong></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($errors): ?>
+        <div class="alert alert-danger">
+            <ul class="m-0 ps-3">
+                <?php foreach ($errors as $e): ?>
+                    <li><?= htmlspecialchars($e) ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    <?php endif; ?>
+
+    <!-- Форма: основни данни за класа -->
     <form method="post" action="classes_create.php<?= $editing ? '?id='.(int)$class_id : '' ?>" class="card shadow-sm mb-4">
         <div class="card-header bg-white"><strong>Основни данни за класа</strong></div>
         <div class="card-body row g-3">
@@ -211,19 +349,25 @@ if ($editing) {
         </div>
         <div class="card-footer bg-white d-flex justify-content-end">
             <input type="hidden" name="class_id" value="<?= (int)$class_id ?>" />
-            <button class="btn btn-primary" type="submit" name="__action" value="save_class"><i class="bi bi-check2-circle me-1"></i>Запази</button>
+            <button class="btn btn-primary" type="submit" name="__action" value="save_class">
+                <i class="bi bi-check2-circle me-1"></i>Запази
+            </button>
         </div>
     </form>
 
-    <?php if ($editing): ?>
+    <!-- Блок „Ученици“: работи както при редакция, така и при нов клас (опашка) -->
     <a id="students"></a>
     <div class="row g-3">
         <div class="col-lg-6">
             <div class="card shadow-sm h-100">
-                <div class="card-header bg-white"><strong>Добавяне на ученик</strong></div>
-                <form method="post" action="classes_create.php?id=<?= (int)$class_id ?>#students">
+                <div class="card-header bg-white">
+                    <strong><?= $editing ? 'Добавяне на ученик' : 'Добавяне на ученик (ще се запази при създаване на класа)' ?></strong>
+                </div>
+                <form method="post" action="classes_create.php<?= $editing ? ('?id='.(int)$class_id) : '' ?>#students">
                     <div class="card-body row g-3">
-                        <input type="hidden" name="class_id" value="<?= (int)$class_id ?>" />
+                        <?php if ($editing): ?>
+                            <input type="hidden" name="class_id" value="<?= (int)$class_id ?>" />
+                        <?php endif; ?>
                         <div class="col-md-6">
                             <label class="form-label">Имейл</label>
                             <input type="email" name="email" class="form-control" placeholder="email@domain.com" required />
@@ -238,30 +382,70 @@ if ($editing) {
                         </div>
                     </div>
                     <div class="card-footer bg-white d-flex justify-content-end">
-                        <button class="btn btn-outline-primary" type="submit" name="__action" value="add_student"><i class="bi bi-person-plus me-1"></i>Добави</button>
+                        <?php if ($editing): ?>
+                            <button class="btn btn-outline-primary" type="submit" name="__action" value="add_student">
+                                <i class="bi bi-person-plus me-1"></i>Добави
+                            </button>
+                        <?php else: ?>
+                            <button class="btn btn-outline-primary" type="submit" name="__action" value="queue_student">
+                                <i class="bi bi-person-plus me-1"></i>Добави в списъка
+                            </button>
+                        <?php endif; ?>
                     </div>
                 </form>
             </div>
         </div>
+
         <div class="col-lg-6">
             <div class="card shadow-sm h-100">
                 <div class="card-header bg-white"><strong>Ученици в класа</strong></div>
-                <div class="list-group list-group-flush scroll-area">
-                    <?php if (!$students): ?><div class="list-group-item text-muted">Няма добавени ученици.</div><?php endif; ?>
-                    <?php foreach ($students as $s): ?>
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="fw-semibold"><?= htmlspecialchars($s['first_name'] . ' ' . $s['last_name']) ?></div>
-                                <div class="text-muted small"><?= htmlspecialchars($s['email']) ?></div>
+
+                <?php if ($editing): ?>
+                    <div class="list-group list-group-flush scroll-area">
+                        <?php if (!$students): ?>
+                            <div class="list-group-item text-muted">Няма добавени ученици.</div>
+                        <?php endif; ?>
+                        <?php foreach ($students as $s): ?>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold"><?= htmlspecialchars($s['first_name'] . ' ' . $s['last_name']) ?></div>
+                                    <div class="text-muted small"><?= htmlspecialchars($s['email']) ?></div>
+                                </div>
+                                <a class="btn btn-sm btn-outline-danger"
+                                   href="classes_create.php?id=<?= (int)$class_id ?>&remove_student=<?= (int)$s['id'] ?>"
+                                   onclick="return confirm('Премахване на ученика от класа?');">
+                                   <i class="bi bi-x"></i>
+                                </a>
                             </div>
-                            <a class="btn btn-sm btn-outline-danger" href="classes_create.php?id=<?= (int)$class_id ?>&remove_student=<?= (int)$s['id'] ?>" onclick="return confirm('Премахване на ученика от класа?');"><i class="bi bi-x"></i></a>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <!-- Визуализация на „опашката“ при нов клас -->
+                    <div class="list-group list-group-flush scroll-area">
+                        <?php if (empty($_SESSION['pending_students'])): ?>
+                            <div class="list-group-item text-muted">Все още няма добавени ученици. Добави ги отляво и натисни „Запази“ за класа.</div>
+                        <?php else: ?>
+                            <?php foreach ($_SESSION['pending_students'] as $idx => $ps): ?>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-semibold">
+                                            <?= htmlspecialchars(($ps['first_name'] ?? '') . ' ' . ($ps['last_name'] ?? '')) ?>
+                                        </div>
+                                        <div class="text-muted small"><?= htmlspecialchars($ps['email'] ?? '') ?></div>
+                                    </div>
+                                    <a class="btn btn-sm btn-outline-danger"
+                                       href="classes_create.php?remove_queued=<?= (int)$idx ?>#students"
+                                       onclick="return confirm('Премахване на ученика от списъка?');">
+                                        <i class="bi bi-x"></i>
+                                    </a>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
-    <?php endif; ?>
 </main>
 
 <footer class="border-top py-4">
