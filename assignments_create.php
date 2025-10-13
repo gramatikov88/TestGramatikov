@@ -42,12 +42,15 @@ $classesStmt->execute([':tid' => $user['id']]);
 $classes = $classesStmt->fetchAll();
 
 // Ученици от класовете на учителя (distinct)
+// ВАЖНО: допускам и NULL статус, защото новите ученици нямат зададен 'active'
 $studentsStmt = $pdo->prepare('
-    SELECT DISTINCT u.id, u.first_name, u.last_name
+    SELECT DISTINCT u.id, u.first_name, u.last_name, u.email
     FROM users u
     JOIN class_students cs ON cs.student_id = u.id
-    JOIN classes c ON c.id = cs.class_id
-    WHERE u.role = "student" AND c.teacher_id = :tid AND u.status = "active"
+    JOIN classes c       ON c.id = cs.class_id
+    WHERE u.role = "student"
+      AND c.teacher_id = :tid
+      AND (u.status IS NULL OR u.status = "active")
     ORDER BY u.first_name, u.last_name
 ');
 $studentsStmt->execute([':tid' => $user['id']]);
@@ -119,7 +122,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($form['test_id'] <= 0) {
         $errors[] = 'Изберете тест.';
     } elseif (!in_array($form['test_id'], $allowed_test_ids, true)) {
-        // Избран е тест, но не е сред позволените
         $errors[] = 'Избраният тест не е достъпен.';
     }
     if (!$form['class_ids'] && !$form['student_ids']) {
@@ -267,7 +269,8 @@ if (isset($_GET['delete'])) {
 
         <?php if ($errors): ?>
             <div class="alert alert-danger">
-                <ul class="m-0 ps-3"><?php foreach ($errors as $e): ?>
+                <ul class="m-0 ps-3">
+                    <?php foreach ($errors as $e): ?>
                         <li><?= htmlspecialchars($e) ?></li><?php endforeach; ?>
                 </ul>
             </div>
@@ -333,8 +336,9 @@ if (isset($_GET['delete'])) {
                 </div>
             </div>
 
-            <div class="card-header bg-white border-top"><strong>Класове</strong> <span class="text-muted small">(по
-                    избор)</span></div>
+            <div class="card-header bg-white border-top">
+                <strong>Класове</strong> <span class="text-muted small">(по избор)</span>
+            </div>
             <div class="card-body">
                 <div class="scroll-area">
                     <?php foreach ($classes as $c): ?>
@@ -351,8 +355,9 @@ if (isset($_GET['delete'])) {
                 </div>
             </div>
 
-            <div class="card-header bg-white border-top"><strong>Ученици</strong> <span class="text-muted small">(по
-                    избор)</span></div>
+            <div class="card-header bg-white border-top">
+                <strong>Ученици</strong> <span class="text-muted small">(по избор)</span>
+            </div>
             <div class="card-body">
                 <div class="scroll-area">
                     <?php foreach ($students as $s): ?>
@@ -362,9 +367,14 @@ if (isset($_GET['delete'])) {
                                 value="<?= (int) $s['id'] ?>" id="st<?= (int) $s['id'] ?>" <?= $isChecked ? 'checked' : '' ?> />
                             <label class="form-check-label" for="st<?= (int) $s['id'] ?>">
                                 <?= htmlspecialchars($s['first_name'] . ' ' . $s['last_name']) ?>
+                                <span class="text-muted small"> (<?= htmlspecialchars($s['email']) ?>)</span>
                             </label>
                         </div>
                     <?php endforeach; ?>
+                    <?php if (!$students): ?>
+                        <div class="text-muted small">Няма намерени ученици във ваши класове. Уверете се, че сте добавили
+                            ученици към клас и че не са архивирани.</div>
+                    <?php endif; ?>
                 </div>
             </div>
 
