@@ -52,16 +52,27 @@ function ensure_attempts_grade(PDO $pdo): void {
         if (!$has) {
             try { $pdo->exec('ALTER TABLE attempts ADD COLUMN teacher_grade TINYINT NULL AFTER max_score'); } catch (Throwable $e) {}
         }
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = :db AND TABLE_NAME = "attempts" AND COLUMN_NAME = "strict_violation"');
+        $stmt->execute([':db' => DB_NAME]);
+        if ((int)$stmt->fetchColumn() === 0) {
+            try { $pdo->exec('ALTER TABLE attempts ADD COLUMN strict_violation TINYINT(1) NOT NULL DEFAULT 0 AFTER teacher_grade'); } catch (Throwable $e) {}
+        }
     } catch (Throwable $e) {
         // ignore
     }
     $done = true;
 }
 
-// Ensure tests.theme and question_bank media columns exist
+// Ensure tests extra columns and question_bank media columns exist
 function ensure_test_theme_and_q_media(PDO $pdo): void {
     static $done = false; if ($done) return; $done = true;
     try {
+        // tests.is_strict_mode
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = :db AND TABLE_NAME = "tests" AND COLUMN_NAME = "is_strict_mode"');
+        $stmt->execute([':db' => DB_NAME]);
+        if ((int)$stmt->fetchColumn() === 0) {
+            try { $pdo->exec("ALTER TABLE tests ADD COLUMN is_strict_mode TINYINT(1) NOT NULL DEFAULT 0 AFTER is_randomized"); } catch (Throwable $e) {}
+        }
         // tests.theme
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = :db AND TABLE_NAME = "tests" AND COLUMN_NAME = "theme"');
         $stmt->execute([':db' => DB_NAME]);
