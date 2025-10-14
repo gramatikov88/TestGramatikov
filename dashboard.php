@@ -269,7 +269,7 @@ if ($pdo) {
             $teacher['class_stats'] = $stmt->fetchAll();
         } catch (Throwable $e) {
             // ignore
-    } else {
+        }
         // Student: classes
         $stmt = $pdo->prepare('SELECT c.*
                                FROM classes c
@@ -703,7 +703,6 @@ if ($pdo) {
                                     $overviewLink = 'assignment_overview.php?id=' . (int)$assignment['id'];
                                     if ($primaryClassId > 0) {
                                         $overviewLink .= '&class_id=' . $primaryClassId;
-                                    }
                                     ?>
                                     <div class="list-group-item d-flex justify-content-between align-items-start">
                                         <div class="me-3">
@@ -715,23 +714,23 @@ if ($pdo) {
                                             </div>
                                             <div class="text-muted small">
                                                 <?php if (!empty($assignment['due_at'])): ?>
-                                                    D"D_: <?= htmlspecialchars($assignment['due_at']) ?>
+                                                    Ð”Ð¾: <?= htmlspecialchars($assignment['due_at']) ?>
                                                 <?php elseif (!empty($assignment['close_at'])): ?>
-                                                    D-D��,D�D_�?D�D�D_: <?= htmlspecialchars($assignment['close_at']) ?>
+                                                    Ð—Ð°Ñ‚Ð²Ð¾Ñ€ÐµÐ½Ð¾: <?= htmlspecialchars($assignment['close_at']) ?>
                                                 <?php else: ?>
-                                                    D`D�D� D�D_�?D_��D�D� D��?D�D�D� �?�?D_D�
+                                                    Ð‘ÐµÐ· Ð¿Ð¾ÑÐ¾Ñ‡ÐµÐ½ ÐºÑ€Ð°ÐµÐ½ ÑÑ€Ð¾Ðº
                                                 <?php endif; ?>
                                             </div>
                                             <div class="text-muted small">
-                                                DYD_D'D�D'D�D�D,: <?= $submittedCount ?> / Dz�+D�D�D�D�D,: <?= $gradedCount ?>
+                                                ÐŸÐ¾Ð´Ð°Ð´ÐµÐ½Ð¸: <?= $submittedCount ?> / ÐžÑ†ÐµÐ½ÐµÐ½Ð¸: <?= $gradedCount ?>
                                             </div>
                                             <?php if ($needsGrade > 0): ?>
-                                                <span class="badge bg-warning text-dark mt-2">D-D� D_�+D�D��?D�D�D�D�: <?= $needsGrade ?></span>
+                                                <span class="badge bg-warning text-dark mt-2">Ð—Ð° Ð¾Ñ†ÐµÐ½ÑÐ²Ð°Ð½Ðµ: <?= $needsGrade ?></span>
                                             <?php endif; ?>
                                         </div>
                                         <div class="d-flex flex-column align-items-end gap-2">
-                                            <span class="badge bg-secondary">DoD,D�D�D�D_</span>
-                                            <a class="btn btn-sm btn-outline-secondary" href="assignments_create.php?id=<?= (int)$assignment['id'] ?>"><i class="bi bi-clipboard-check"></i> Dz�+D�D�D,</a>
+                                            <span class="badge bg-secondary">ÐœÐ¸Ð½Ð°Ð»Ð¾</span>
+                                            <a class="btn btn-sm btn-outline-secondary" href="assignments_create.php?id=<?= (int)$assignment['id'] ?>"><i class="bi bi-clipboard-check"></i> ÐžÑ†ÐµÐ½Ð¸</a>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
