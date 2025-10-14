@@ -44,13 +44,15 @@ $classes = $classesStmt->fetchAll();
 // Ученици от класовете на учителя (distinct)
 // ВАЖНО: допускам и NULL статус, защото новите ученици нямат зададен 'active'
 $studentsStmt = $pdo->prepare('
-    SELECT DISTINCT u.id, u.first_name, u.last_name, u.email
+    SELECT u.id, u.first_name, u.last_name, u.email,
+           GROUP_CONCAT(DISTINCT cs.class_id) AS class_ids
     FROM users u
     JOIN class_students cs ON cs.student_id = u.id
     JOIN classes c       ON c.id = cs.class_id
     WHERE u.role = "student"
       AND c.teacher_id = :tid
       AND (u.status IS NULL OR u.status = "active")
+    GROUP BY u.id, u.first_name, u.last_name, u.email
     ORDER BY u.first_name, u.last_name
 ');
 $studentsStmt->execute([':tid' => $user['id']]);
@@ -360,14 +362,18 @@ if (isset($_GET['delete'])) {
             </div>
             <div class="card-body">
                 <div class="scroll-area">
-                    <?php foreach ($students as $s): ?>
-                        <?php $isChecked = in_array((int) $s['id'], $form['student_ids'], true); ?>
-                        <div class="form-check">
+                    <?php foreach ($students as $s):
+                        $isChecked = in_array((int) $s['id'], $form['student_ids'], true);
+                        $classIdsRaw = (string)($s['class_ids'] ?? '');
+                        $classIdsArr = $classIdsRaw !== '' ? array_filter(array_map('intval', explode(',', $classIdsRaw))) : [];
+                        $classIdsAttr = htmlspecialchars(implode(' ', $classIdsArr));
+                        ?>
+                        <div class="form-check" data-student-row data-class-ids="<?= $classIdsAttr ?>">
                             <input class="form-check-input" type="checkbox" name="student_ids[]"
                                 value="<?= (int) $s['id'] ?>" id="st<?= (int) $s['id'] ?>" <?= $isChecked ? 'checked' : '' ?> />
                             <label class="form-check-label" for="st<?= (int) $s['id'] ?>">
                                 <?= htmlspecialchars($s['first_name'] . ' ' . $s['last_name']) ?>
-                                <span class="text-muted small"> (<?= htmlspecialchars($s['email']) ?>)</span>
+                                <span class="text-muted small">(<?= htmlspecialchars($s['email']) ?>)</span>
                             </label>
                         </div>
                     <?php endforeach; ?>
@@ -423,8 +429,45 @@ if (isset($_GET['delete'])) {
                 <a class="text-decoration-none" href="contact.php">Контакт</a>
             </div>
         </div>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    (function () {
+        const classCheckboxes = Array.from(document.querySelectorAll('input[name="class_ids[]"]'));
+        const studentRows = Array.from(document.querySelectorAll('[data-student-row]'));
+        if (!classCheckboxes.length || !studentRows.length) {
+            return;
+        }
+
+        function getSelectedClassIds() {
+            return classCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+        }
+
+        function updateStudentVisibility() {
+            const selectedIds = getSelectedClassIds();
+            const hasSelection = selectedIds.length > 0;
+            studentRows.forEach(row => {
+                const checkbox = row.querySelector('input[type="checkbox"]');
+                const attr = (row.getAttribute('data-class-ids') || '').trim();
+                const rowClassIds = attr !== '' ? attr.split(/\s+/) : [];
+
+                const shouldShow = !hasSelection || rowClassIds.some(id => selectedIds.includes(id));
+
+                if (shouldShow) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                    if (checkbox) {
+                        checkbox.checked = false;
+                    }
+                }
+            });
+        }
+
+        classCheckboxes.forEach(cb => cb.addEventListener('change', updateStudentVisibility));
+        updateStudentVisibility();
+    })();
+    </script>
+</footer>
 </body>
 
 </html>
