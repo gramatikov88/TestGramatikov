@@ -45,7 +45,7 @@ $teacher = [
     'recent_attempts' => [],
     'recent_attempts_meta' => [
         'page' => 1,
-        'per_page' => 10,
+        'per_page' => 5,
         'pages' => 1,
         'total' => 0,
     ],
@@ -173,7 +173,7 @@ if ($pdo) {
         $teacher['tests'] = $stmt->fetchAll();
 
         // Re-query recent attempts with filters + pagination
-        $attemptsPerPage = 10;
+        $attemptsPerPage = 5;
         $aSelect = 'SELECT atp.id, atp.student_id, atp.submitted_at, atp.started_at, atp.score_obtained, atp.max_score, atp.teacher_grade,
                            a.title AS assignment_title, u.first_name, u.last_name';
         $aFrom = ' FROM attempts atp
@@ -221,9 +221,11 @@ if ($pdo) {
         $assignSql = 'SELECT a.id, a.title, a.open_at, a.due_at, a.close_at,
                              SUM(CASE WHEN atp.status IN ("submitted","graded") THEN 1 ELSE 0 END) AS submitted_count,
                              SUM(CASE WHEN atp.status = "graded" OR atp.teacher_grade IS NOT NULL THEN 1 ELSE 0 END) AS graded_count,
-                             SUM(CASE WHEN atp.status = "submitted" AND atp.teacher_grade IS NULL THEN 1 ELSE 0 END) AS needs_grade
+                             SUM(CASE WHEN atp.status = "submitted" AND atp.teacher_grade IS NULL THEN 1 ELSE 0 END) AS needs_grade,
+                             MIN(ac.class_id) AS primary_class_id
                       FROM assignments a
                       LEFT JOIN attempts atp ON atp.assignment_id = a.id
+                      LEFT JOIN assignment_classes ac ON ac.assignment_id = a.id
                       WHERE a.assigned_by_teacher_id = :tid';
         $assignParams = [':tid'=>(int)$user['id']];
         if ($a_q !== '') { $assignSql .= ' AND a.title LIKE :assign_q'; $assignParams[':assign_q'] = '%'.$a_q.'%'; }
@@ -559,7 +561,7 @@ if ($pdo) {
                             $attemptPage = max(1, (int)($attemptMeta['page'] ?? 1));
                             $attemptPages = max(1, (int)($attemptMeta['pages'] ?? 1));
                             $attemptTotal = max(0, (int)($attemptMeta['total'] ?? 0));
-                            $attemptPerPage = max(1, (int)($attemptMeta['per_page'] ?? 10));
+                            $attemptPerPage = max(1, (int)($attemptMeta['per_page'] ?? 5));
                             $attemptCountOnPage = count($teacher['recent_attempts']);
                             $attemptFrom = $attemptCountOnPage ? (($attemptPage - 1) * $attemptPerPage + 1) : 0;
                             $attemptTo = $attemptCountOnPage ? ($attemptFrom + $attemptCountOnPage - 1) : 0;
@@ -659,7 +661,17 @@ if ($pdo) {
                                     $submittedCount = (int)($assignment['submitted_count'] ?? 0);
                                     $gradedCount = (int)($assignment['graded_count'] ?? 0);
                                     $needsGrade = (int)($assignment['needs_grade'] ?? 0);
+                                    $primaryClassId = isset($assignment['primary_class_id']) ? (int)$assignment['primary_class_id'] : 0;
+                                    $overviewLink = 'assignment_overview.php?id=' . (int)$assignment['id'];
+                                    if ($primaryClassId > 0) {
+                                        $overviewLink .= '&class_id=' . $primaryClassId;
+                                    }
                                     $status = $assignment['status'] ?? 'current';
+                                    $primaryClassId = isset($assignment['primary_class_id']) ? (int)$assignment['primary_class_id'] : 0;
+                                    $overviewLink = 'assignment_overview.php?id=' . (int)$assignment['id'];
+                                    if ($primaryClassId > 0) {
+                                        $overviewLink .= '&class_id=' . $primaryClassId;
+                                    }
                                     $badgeClass = 'bg-success';
                                     $badgeLabel = 'Текущо';
                                     if ($status === 'upcoming') {
@@ -670,7 +682,7 @@ if ($pdo) {
                                     <div class="list-group-item d-flex justify-content-between align-items-start">
                                         <div class="me-3">
                                             <div class="fw-semibold">
-                                                <a class="text-decoration-none" href="assignments_create.php?id=<?= (int)$assignment['id'] ?>"><?= htmlspecialchars($assignment['title']) ?></a>
+                                                <a class="text-decoration-none" href="<?= htmlspecialchars($overviewLink) ?>"><?= htmlspecialchars($assignment['title']) ?></a>
                                             </div>
                                             <div class="text-muted small">
                                                 <?php if (!empty($assignment['open_at'])): ?>
@@ -690,7 +702,7 @@ if ($pdo) {
                                             <?php endif; ?>
                                         </div>
                                         <div class="d-flex flex-column align-items-end gap-2">
-                                            <span class="badge <?= $badgeClass ?>"><?= $badgeLabel ?></span>
+                                            <span class="badge <?= $badgeClass ?>"><?= $status === 'upcoming' ? 'Предстоящо' : 'Текущо' ?></span>
                                             <a class="btn btn-sm btn-outline-primary" href="assignments_create.php?id=<?= (int)$assignment['id'] ?>"><i class="bi bi-pencil"></i> Отвори</a>
                                         </div>
                                     </div>
@@ -717,7 +729,7 @@ if ($pdo) {
                                     <div class="list-group-item d-flex justify-content-between align-items-start">
                                         <div class="me-3">
                                             <div class="fw-semibold">
-                                                <a class="text-decoration-none" href="assignments_create.php?id=<?= (int)$assignment['id'] ?>"><?= htmlspecialchars($assignment['title']) ?></a>
+                                                <a class="text-decoration-none" href="<?= htmlspecialchars($overviewLink) ?>"><?= htmlspecialchars($assignment['title']) ?></a>
                                             </div>
                                             <div class="text-muted small">
                                                 <?php if (!empty($assignment['due_at'])): ?>
