@@ -26,11 +26,31 @@ function grade_from_percent(?float $percent): ?int {
     return 2;
 }
 
+function normalize_filter_datetime(string $value): string {
+    $value = trim($value);
+    if ($value === '') {
+        return '';
+    }
+    $value = str_replace('T', ' ', $value);
+    if (strlen($value) === 16) {
+        $value .= ':00';
+    }
+    return $value;
+}
+
 // Initialize containers
 $teacher = [
     'classes' => [],
     'tests' => [],
     'recent_attempts' => [],
+    'recent_attempts_meta' => [
+        'page' => 1,
+        'per_page' => 10,
+        'pages' => 1,
+        'total' => 0,
+    ],
+    'assignments_current' => [],
+    'assignments_past' => [],
     'class_stats' => [],
 ];
 $student = [
@@ -42,7 +62,7 @@ $student = [
 
 // Persist teacher dashboard filters in session
 if ($user['role'] === 'teacher') {
-    $filter_keys = ['c_q','c_sort','t_q','t_subject','t_visibility','t_status','t_sort','a_q','a_from','a_to','a_sort','ca_class_id','ca_sort'];
+    $filter_keys = ['c_q','c_sort','t_q','t_subject','t_visibility','t_status','t_sort','a_q','a_from','a_to','a_sort','a_page','ca_class_id','ca_sort'];
     if (isset($_GET['reset'])) {
         unset($_SESSION['dash_filters']);
         header('Location: dashboard.php');
@@ -115,9 +135,12 @@ if ($pdo) {
         $c_sort = $_GET['c_sort'] ?? '';
 
         $a_q = isset($_GET['a_q']) ? trim((string)$_GET['a_q']) : '';
-        $a_from = (string)($_GET['a_from'] ?? '');
-        $a_to = (string)($_GET['a_to'] ?? '');
+        $a_from_raw = (string)($_GET['a_from'] ?? '');
+        $a_to_raw = (string)($_GET['a_to'] ?? '');
+        $a_from = $a_from_raw !== '' ? normalize_filter_datetime($a_from_raw) : '';
+        $a_to = $a_to_raw !== '' ? normalize_filter_datetime($a_to_raw) : '';
         $a_sort = $_GET['a_sort'] ?? '';
+        $a_page = max(1, (int)($_GET['a_page'] ?? 1));
 
         $ca_class_id = (isset($_GET['ca_class_id']) && $_GET['ca_class_id'] !== '') ? (int)$_GET['ca_class_id'] : null;
         $ca_sort = $_GET['ca_sort'] ?? '';
@@ -149,22 +172,102 @@ if ($pdo) {
         $stmt->execute($tParams);
         $teacher['tests'] = $stmt->fetchAll();
 
-        // Re-query recent attempts with filters
-        $aSql = 'SELECT atp.id, atp.student_id, atp.submitted_at, atp.started_at, atp.score_obtained, atp.max_score, atp.teacher_grade,
-                        a.title AS assignment_title, u.first_name, u.last_name
-                 FROM attempts atp
-                 JOIN assignments a ON a.id = atp.assignment_id
-                 JOIN users u ON u.id = atp.student_id
-                 WHERE a.assigned_by_teacher_id = :tid AND atp.status IN ("submitted","graded")';
+        // Re-query recent attempts with filters + pagination
+        $attemptsPerPage = 10;
+        $aSelect = 'SELECT atp.id, atp.student_id, atp.submitted_at, atp.started_at, atp.score_obtained, atp.max_score, atp.teacher_grade,
+                           a.title AS assignment_title, u.first_name, u.last_name';
+        $aFrom = ' FROM attempts atp
+                   JOIN assignments a ON a.id = atp.assignment_id
+                   JOIN users u ON u.id = atp.student_id
+                   WHERE a.assigned_by_teacher_id = :tid AND atp.status IN ("submitted","graded")';
         $aParams = [':tid'=>(int)$user['id']];
-        if ($a_q !== '') { $aSql .= ' AND (a.title LIKE :aq OR u.first_name LIKE :aq OR u.last_name LIKE :aq)'; $aParams[':aq'] = '%'.$a_q.'%'; }
-        if ($a_from !== '') { $aSql .= ' AND COALESCE(atp.submitted_at, atp.started_at) >= :af'; $aParams[':af'] = $a_from; }
-        if ($a_to !== '') { $aSql .= ' AND COALESCE(atp.submitted_at, atp.started_at) <= :at'; $aParams[':at'] = $a_to; }
+        if ($a_q !== '') { $aFrom .= ' AND (a.title LIKE :aq OR u.first_name LIKE :aq OR u.last_name LIKE :aq)'; $aParams[':aq'] = '%'.$a_q.'%'; }
+        if ($a_from !== '') { $aFrom .= ' AND COALESCE(atp.submitted_at, atp.started_at) >= :af'; $aParams[':af'] = $a_from; }
+        if ($a_to !== '') { $aFrom .= ' AND COALESCE(atp.submitted_at, atp.started_at) <= :at'; $aParams[':at'] = $a_to; }
         $aOrder = ' ORDER BY COALESCE(atp.submitted_at, atp.started_at) DESC';
         if ($a_sort === 'date_asc') $aOrder = ' ORDER BY COALESCE(atp.submitted_at, atp.started_at) ASC';
-        $stmt = $pdo->prepare($aSql . $aOrder . ' LIMIT 50');
-        $stmt->execute($aParams);
+        $countStmt = $pdo->prepare('SELECT COUNT(*)' . $aFrom);
+        foreach ($aParams as $param => $value) {
+            $countStmt->bindValue($param, $value);
+        }
+        $countStmt->execute();
+        $totalAttempts = (int)$countStmt->fetchColumn();
+        $totalPages = $totalAttempts > 0 ? (int)ceil($totalAttempts / $attemptsPerPage) : 1;
+        if ($totalPages < 1) {
+            $totalPages = 1;
+        }
+        if ($totalAttempts === 0) {
+            $a_page = 1;
+        } elseif ($a_page > $totalPages) {
+            $a_page = $totalPages;
+        }
+        $offset = ($a_page - 1) * $attemptsPerPage;
+        $stmt = $pdo->prepare($aSelect . $aFrom . $aOrder . ' LIMIT :limit OFFSET :offset');
+        foreach ($aParams as $param => $value) {
+            $stmt->bindValue($param, $value);
+        }
+        $stmt->bindValue(':limit', $attemptsPerPage, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
         $teacher['recent_attempts'] = $stmt->fetchAll();
+        $teacher['recent_attempts_meta'] = [
+            'page' => $a_page,
+            'per_page' => $attemptsPerPage,
+            'pages' => $totalPages,
+            'total' => $totalAttempts,
+        ];
+
+        // Assignments overview (current and past)
+        $assignSql = 'SELECT a.id, a.title, a.open_at, a.due_at, a.close_at,
+                             SUM(CASE WHEN atp.status IN ("submitted","graded") THEN 1 ELSE 0 END) AS submitted_count,
+                             SUM(CASE WHEN atp.status = "graded" OR atp.teacher_grade IS NOT NULL THEN 1 ELSE 0 END) AS graded_count,
+                             SUM(CASE WHEN atp.status = "submitted" AND atp.teacher_grade IS NULL THEN 1 ELSE 0 END) AS needs_grade
+                      FROM assignments a
+                      LEFT JOIN attempts atp ON atp.assignment_id = a.id
+                      WHERE a.assigned_by_teacher_id = :tid';
+        $assignParams = [':tid'=>(int)$user['id']];
+        if ($a_q !== '') { $assignSql .= ' AND a.title LIKE :assign_q'; $assignParams[':assign_q'] = '%'.$a_q.'%'; }
+        if ($a_from !== '') { $assignSql .= ' AND COALESCE(a.close_at, a.due_at, a.open_at) >= :assign_from'; $assignParams[':assign_from'] = $a_from; }
+        if ($a_to !== '') { $assignSql .= ' AND COALESCE(a.close_at, a.due_at, a.open_at) <= :assign_to'; $assignParams[':assign_to'] = $a_to; }
+        $assignSql .= ' GROUP BY a.id
+                        ORDER BY COALESCE(a.close_at, a.due_at, a.open_at, NOW()) DESC, a.id DESC
+                        LIMIT 50';
+        $stmt = $pdo->prepare($assignSql);
+        $stmt->execute($assignParams);
+        $assignmentRows = $stmt->fetchAll();
+        $now = date('Y-m-d H:i:s');
+        $currentAssignments = [];
+        $pastAssignments = [];
+        foreach ($assignmentRows as $row) {
+            $row['submitted_count'] = (int)($row['submitted_count'] ?? 0);
+            $row['graded_count'] = (int)($row['graded_count'] ?? 0);
+            $row['needs_grade'] = (int)($row['needs_grade'] ?? 0);
+            $openAt = $row['open_at'] ?? null;
+            $dueAt = $row['due_at'] ?? null;
+            $closeAt = $row['close_at'] ?? null;
+
+            $isPast = false;
+            if ($closeAt && $closeAt < $now) {
+                $isPast = true;
+            } elseif (!$closeAt && $dueAt && $dueAt < $now) {
+                $isPast = true;
+            }
+
+            if ($isPast) {
+                $row['status'] = 'past';
+                $pastAssignments[] = $row;
+            } else {
+                $isOpen = !$openAt || $openAt <= $now;
+                if ($isOpen) {
+                    $row['status'] = 'current';
+                } else {
+                    $row['status'] = 'upcoming';
+                }
+                $currentAssignments[] = $row;
+            }
+        }
+        $teacher['assignments_current'] = array_slice($currentAssignments, 0, 8);
+        $teacher['assignments_past'] = array_slice($pastAssignments, 0, 8);
 
         // Re-query class analytics with filters
         try {
@@ -451,6 +554,69 @@ if ($pdo) {
                                     </div>
                                 <?php endforeach; ?>
                             </div>
+                            <?php
+                            $attemptMeta = $teacher['recent_attempts_meta'] ?? ['page' => 1, 'pages' => 1, 'total' => 0, 'per_page' => max(1, count($teacher['recent_attempts']))];
+                            $attemptPage = max(1, (int)($attemptMeta['page'] ?? 1));
+                            $attemptPages = max(1, (int)($attemptMeta['pages'] ?? 1));
+                            $attemptTotal = max(0, (int)($attemptMeta['total'] ?? 0));
+                            $attemptPerPage = max(1, (int)($attemptMeta['per_page'] ?? 10));
+                            $attemptCountOnPage = count($teacher['recent_attempts']);
+                            $attemptFrom = $attemptCountOnPage ? (($attemptPage - 1) * $attemptPerPage + 1) : 0;
+                            $attemptTo = $attemptCountOnPage ? ($attemptFrom + $attemptCountOnPage - 1) : 0;
+                            $paginationWindow = 5;
+                            $halfWindow = (int)floor($paginationWindow / 2);
+                            $startPage = max(1, $attemptPage - $halfWindow);
+                            $endPage = min($attemptPages, $startPage + $paginationWindow - 1);
+                            $startPage = max(1, $endPage - $paginationWindow + 1);
+                            $queryWithoutPage = $_GET;
+                            unset($queryWithoutPage['a_page']);
+                            $buildAttemptPageUrl = function (int $page) use ($queryWithoutPage) {
+                                $params = $queryWithoutPage;
+                                if ($page > 1) {
+                                    $params['a_page'] = $page;
+                                } else {
+                                    unset($params['a_page']);
+                                }
+                                $qs = http_build_query($params);
+                                return 'dashboard.php' . ($qs ? '?' . $qs : '');
+                            };
+                            ?>
+                            <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center mt-3 gap-2">
+                                <?php if ($attemptTotal > 0): ?>
+                                    <small class="text-muted">Показани <?= $attemptFrom ?>-<?= $attemptTo ?> от <?= $attemptTotal ?></small>
+                                <?php else: ?>
+                                    <span></span>
+                                <?php endif; ?>
+                                <?php if ($attemptPages > 1): ?>
+                                    <nav aria-label="Пагинация последни опити">
+                                        <ul class="pagination pagination-sm mb-0">
+                                            <li class="page-item <?= $attemptPage <= 1 ? 'disabled' : '' ?>">
+                                                <?php if ($attemptPage <= 1): ?>
+                                                    <span class="page-link">Пред</span>
+                                                <?php else: ?>
+                                                    <a class="page-link" href="<?= htmlspecialchars($buildAttemptPageUrl($attemptPage - 1)) ?>">Пред</a>
+                                                <?php endif; ?>
+                                            </li>
+                                            <?php for ($p = $startPage; $p <= $endPage; $p++): ?>
+                                                <li class="page-item <?= $p === $attemptPage ? 'active' : '' ?>">
+                                                    <?php if ($p === $attemptPage): ?>
+                                                        <span class="page-link"><?= $p ?></span>
+                                                    <?php else: ?>
+                                                        <a class="page-link" href="<?= htmlspecialchars($buildAttemptPageUrl($p)) ?>"><?= $p ?></a>
+                                                    <?php endif; ?>
+                                                </li>
+                                            <?php endfor; ?>
+                                            <li class="page-item <?= $attemptPage >= $attemptPages ? 'disabled' : '' ?>">
+                                                <?php if ($attemptPage >= $attemptPages): ?>
+                                                    <span class="page-link">След</span>
+                                                <?php else: ?>
+                                                    <a class="page-link" href="<?= htmlspecialchars($buildAttemptPageUrl($attemptPage + 1)) ?>">След</a>
+                                                <?php endif; ?>
+                                            </li>
+                                        </ul>
+                                    </nav>
+                                <?php endif; ?>
+                            </div>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -470,6 +636,109 @@ if ($pdo) {
                                             <div class="text-muted small">Задание #<?= (int)$cs['assignment_id'] ?></div>
                                         </div>
                                         <span class="badge bg-primary"><?= (float)$cs['avg_percent'] ?>%</span>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 g-md-4 mt-1 mt-md-2">
+            <div class="col-lg-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white"><strong>Текущи задания</strong></div>
+                    <div class="card-body">
+                        <?php if (empty($teacher['assignments_current'])): ?>
+                            <div class="text-muted">Няма текущи или предстоящи задания.</div>
+                        <?php else: ?>
+                            <div class="list-group">
+                                <?php foreach ($teacher['assignments_current'] as $assignment): ?>
+                                    <?php
+                                    $submittedCount = (int)($assignment['submitted_count'] ?? 0);
+                                    $gradedCount = (int)($assignment['graded_count'] ?? 0);
+                                    $needsGrade = (int)($assignment['needs_grade'] ?? 0);
+                                    $status = $assignment['status'] ?? 'current';
+                                    $badgeClass = 'bg-success';
+                                    $badgeLabel = 'Текущо';
+                                    if ($status === 'upcoming') {
+                                        $badgeClass = 'bg-warning text-dark';
+                                        $badgeLabel = 'Предстоящо';
+                                    }
+                                    ?>
+                                    <div class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="me-3">
+                                            <div class="fw-semibold">
+                                                <a class="text-decoration-none" href="assignments_create.php?id=<?= (int)$assignment['id'] ?>"><?= htmlspecialchars($assignment['title']) ?></a>
+                                            </div>
+                                            <div class="text-muted small">
+                                                <?php if (!empty($assignment['open_at'])): ?>
+                                                    От: <?= htmlspecialchars($assignment['open_at']) ?>
+                                                <?php endif; ?>
+                                                <?php if (!empty($assignment['due_at'])): ?>
+                                                    <span class="ms-2">До: <?= htmlspecialchars($assignment['due_at']) ?></span>
+                                                <?php elseif (!empty($assignment['close_at'])): ?>
+                                                    <span class="ms-2">Затваряне: <?= htmlspecialchars($assignment['close_at']) ?></span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div class="text-muted small">
+                                                Подадени: <?= $submittedCount ?> / Оценени: <?= $gradedCount ?>
+                                            </div>
+                                            <?php if ($needsGrade > 0): ?>
+                                                <span class="badge bg-warning text-dark mt-2">За оценяване: <?= $needsGrade ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="d-flex flex-column align-items-end gap-2">
+                                            <span class="badge <?= $badgeClass ?>"><?= $badgeLabel ?></span>
+                                            <a class="btn btn-sm btn-outline-primary" href="assignments_create.php?id=<?= (int)$assignment['id'] ?>"><i class="bi bi-pencil"></i> Отвори</a>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white"><strong>Минали задания</strong></div>
+                    <div class="card-body">
+                        <?php if (empty($teacher['assignments_past'])): ?>
+                            <div class="text-muted">Няма приключили задания.</div>
+                        <?php else: ?>
+                            <div class="list-group">
+                                <?php foreach ($teacher['assignments_past'] as $assignment): ?>
+                                    <?php
+                                    $submittedCount = (int)($assignment['submitted_count'] ?? 0);
+                                    $gradedCount = (int)($assignment['graded_count'] ?? 0);
+                                    $needsGrade = (int)($assignment['needs_grade'] ?? 0);
+                                    ?>
+                                    <div class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="me-3">
+                                            <div class="fw-semibold">
+                                                <a class="text-decoration-none" href="assignments_create.php?id=<?= (int)$assignment['id'] ?>"><?= htmlspecialchars($assignment['title']) ?></a>
+                                            </div>
+                                            <div class="text-muted small">
+                                                <?php if (!empty($assignment['due_at'])): ?>
+                                                    До: <?= htmlspecialchars($assignment['due_at']) ?>
+                                                <?php elseif (!empty($assignment['close_at'])): ?>
+                                                    Затворено: <?= htmlspecialchars($assignment['close_at']) ?>
+                                                <?php else: ?>
+                                                    Без посочен краен срок
+                                                <?php endif; ?>
+                                            </div>
+                                            <div class="text-muted small">
+                                                Подадени: <?= $submittedCount ?> / Оценени: <?= $gradedCount ?>
+                                            </div>
+                                            <?php if ($needsGrade > 0): ?>
+                                                <span class="badge bg-warning text-dark mt-2">За оценяване: <?= $needsGrade ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="d-flex flex-column align-items-end gap-2">
+                                            <span class="badge bg-secondary">Минало</span>
+                                            <a class="btn btn-sm btn-outline-secondary" href="assignments_create.php?id=<?= (int)$assignment['id'] ?>"><i class="bi bi-clipboard-check"></i> Оцени</a>
+                                        </div>
                                     </div>
                                 <?php endforeach; ?>
                             </div>
