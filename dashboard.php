@@ -270,7 +270,7 @@ if ($pdo) {
         } catch (Throwable $e) {
             // ignore
         }
-        // Student: classes
+    } else if ($user['role'] === 'student') {
         $stmt = $pdo->prepare('SELECT c.*
                                FROM classes c
                                JOIN class_students cs ON cs.class_id = c.id
@@ -294,7 +294,7 @@ if ($pdo) {
                                LIMIT 20');
         $stmt->execute([':sid' => (int)$user['id']]);
         $student['open_assignments'] = $stmt->fetchAll();
-
+    }
         // Map latest attempt per open assignment
         $student['open_attempts_map'] = [];
         if (!empty($student['open_assignments'])) {
