@@ -15,7 +15,6 @@ try { $pdo = db(); ensure_attempts_grade($pdo); ensure_subjects_scope($pdo); } c
 function percent($score, $max) {
     if ($score === null || $max === null || $max <= 0) return null;
     return round(($score / $max) * 100, 2);
-}
 
 function grade_from_percent(?float $percent): ?int {
     if ($percent === null) return null;
@@ -24,19 +23,15 @@ function grade_from_percent(?float $percent): ?int {
     if ($percent >= 65) return 4;
     if ($percent >= 50) return 3;
     return 2;
-}
 
 function normalize_filter_datetime(string $value): string {
     $value = trim($value);
     if ($value === '') {
         return '';
-    }
     $value = str_replace('T', ' ', $value);
     if (strlen($value) === 16) {
         $value .= ':00';
-    }
     return $value;
-}
 
 // Initialize containers
 $teacher = [
@@ -67,23 +62,12 @@ if ($user['role'] === 'teacher') {
         unset($_SESSION['dash_filters']);
         header('Location: dashboard.php');
         exit;
-    }
     if (!empty($_GET)) {
         $save = [];
-        foreach ($filter_keys as $k) {
-            if (array_key_exists($k, $_GET)) {
-                $save[$k] = $_GET[$k];
-            }
-        }
-        if ($save) {
-            $_SESSION['dash_filters'] = $save;
-        }
+        foreach ($filter_keys as $k) { if (array_key_exists($k, $_GET)) { $save[$k] = $_GET[$k]; } }
+        if ($save) { $_SESSION['dash_filters'] = $save; }
     } elseif (!empty($_SESSION['dash_filters'])) {
-        foreach ($_SESSION['dash_filters'] as $k => $v) {
-            $_GET[$k] = $v;
-        }
-    }
-}
+        foreach ($_SESSION['dash_filters'] as $k => $v) { $_GET[$k] = $v; }
 
 if ($pdo) {
     if ($user['role'] === 'teacher') {
@@ -94,7 +78,6 @@ if ($pdo) {
             if ($attempt_id > 0 && ($grade === null || ($grade >= 2 && $grade <= 6))) {
                 $upd = $pdo->prepare('UPDATE attempts atp JOIN assignments a ON a.id = atp.assignment_id SET atp.teacher_grade = :g WHERE atp.id = :id AND a.assigned_by_teacher_id = :tid');
                 $upd->execute([':g' => $grade, ':id' => $attempt_id, ':tid' => (int)$user['id']]);
-            }
         // Teacher: classes (initial load; refined below by filters)
         $stmt = $pdo->prepare('SELECT id, grade, section, school_year, name, created_at FROM classes WHERE teacher_id = :tid ORDER BY school_year DESC, grade, section');
         $stmt->execute([':tid' => (int)$user['id']]);
@@ -115,8 +98,7 @@ if ($pdo) {
                                ORDER BY COALESCE(atp.submitted_at, atp.started_at) DESC
                                LIMIT 20');
         $stmt->execute([':tid' => (int)$user['id']]);
-            $teacher['recent_attempts'] = $stmt->fetchAll();
-        }
+        $teacher['recent_attempts'] = $stmt->fetchAll();
 
         // Teacher: class stats via view (if present)
         try {
@@ -288,7 +270,7 @@ if ($pdo) {
         } catch (Throwable $e) {
             // ignore
         }
-    } else if ($user['role'] === 'student') {
+    } else {    
         $stmt = $pdo->prepare('SELECT c.*
                                FROM classes c
                                JOIN class_students cs ON cs.class_id = c.id
@@ -312,7 +294,7 @@ if ($pdo) {
                                LIMIT 20');
         $stmt->execute([':sid' => (int)$user['id']]);
         $student['open_assignments'] = $stmt->fetchAll();
-    }
+
         // Map latest attempt per open assignment
         $student['open_attempts_map'] = [];
         if (!empty($student['open_assignments'])) {
