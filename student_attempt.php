@@ -169,4 +169,3 @@ $grade = grade_from_percent($p);
 </footer>
 </body>
 </html>
-

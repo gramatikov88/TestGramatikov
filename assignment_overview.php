@@ -163,7 +163,7 @@ if ($selectedClassId) {
     }
 }
 
-$pageTitle = 'Ð—Ð°Ð´Ð°Ð½Ð¸Ðµ: ' . $assignment['title'];
+$pageTitle = 'Задание: ' . $assignment['title'];
 ?>
 <!DOCTYPE html>
 <html lang="bg">
@@ -180,21 +180,21 @@ $pageTitle = 'Ð—Ð°Ð´Ð°Ð½Ð¸Ðµ: ' . $assignment['title'];
         <div>
             <h1 class="h3 mb-1"><?= htmlspecialchars($assignment['title']) ?><?php if ($strict_mode_active): ?><span class="badge bg-danger ms-2">Стриктен режим</span><?php endif; ?></h1>
             <div class="text-muted small">
-                Ð¢ÐµÑÑ‚: <?= htmlspecialchars($assignment['test_title']) ?>
+                Тест: <?= htmlspecialchars($assignment['test_title']) ?>
                 <?php if ($selectedClassLabel): ?>
-                    <span class="ms-2">| ÐšÐ»Ð°Ñ: <?= htmlspecialchars($selectedClassLabel) ?></span>
+                    <span class="ms-2">| Клас: <?= htmlspecialchars($selectedClassLabel) ?></span>
                 <?php endif; ?>
             </div>
         <div class="d-flex gap-2">
-            <a class="btn btn-outline-secondary" href="dashboard.php"><i class="bi bi-arrow-left"></i> ÐÐ°Ð·Ð°Ð´</a>
-            <a class="btn btn-primary" href="assignments_create.php?id=<?= (int)$assignment['id'] ?>"><i class="bi bi-pencil-square"></i> Ð ÐµÐ´Ð°ÐºÑ†Ð¸Ñ</a>
+            <a class="btn btn-outline-secondary" href="dashboard.php"><i class="bi bi-arrow-left"></i> Назад</a>
+            <a class="btn btn-primary" href="assignments_create.php?id=<?= (int)$assignment['id'] ?>"><i class="bi bi-pencil-square"></i> Редакция</a>
     </div>
 
     <?php if ($classes): ?>
         <form method="get" class="row gy-2 gx-2 align-items-end mb-4">
             <input type="hidden" name="id" value="<?= (int)$assignment['id'] ?>" />
             <div class="col-sm-6 col-md-4 col-lg-3">
-                <label for="class_id" class="form-label small mb-1">ÐšÐ»Ð°Ñ</label>
+                <label for="class_id" class="form-label small mb-1">Клас</label>
                 <select name="class_id" id="class_id" class="form-select" onchange="this.form.submit()">
                     <?php foreach ($classes as $option): ?>
                         <option value="<?= (int)$option['id'] ?>" <?= (int)$option['id'] === $selectedClassId ? 'selected' : '' ?>>
@@ -205,14 +205,14 @@ $pageTitle = 'Ð—Ð°Ð´Ð°Ð½Ð¸Ðµ: ' . $assignment['title'];
             </div>
             <?php if (count($classes) > 1): ?>
                 <div class="col-12 col-sm-auto">
-                    <button type="submit" class="btn btn-outline-primary"><i class="bi bi-arrow-repeat"></i> ÐžÐ±Ð½Ð¾Ð²Ð¸</button>
+                    <button type="submit" class="btn btn-outline-primary"><i class="bi bi-arrow-repeat"></i> Обнови</button>
                 </div>
             <?php endif; ?>
         </form>
     <?php elseif (!$classes): ?>
         <div class="alert alert-info d-flex align-items-center gap-2">
             <i class="bi bi-info-circle-fill"></i>
-            <div>Ð—Ð°Ð´Ð°Ð½Ð¸ÐµÑ‚Ð¾ Ðµ Ð²ÑŠÐ·Ð»Ð¾Ð¶ÐµÐ½Ð¾ Ð¸Ð½Ð´Ð¸Ð²Ð¸Ð´ÑƒÐ°Ð»Ð½Ð¾ Ð½Ð° ÑƒÑ‡ÐµÐ½Ð¸Ñ†Ð¸, Ð±ÐµÐ· ÐºÐ¾Ð½ÐºÑ€ÐµÑ‚ÐµÐ½ ÐºÐ»Ð°Ñ.</div>
+            <div>Заданието е възложено индивидуално на ученици, без конкретен клас.</div>
     <?php endif; ?>
 
     <div class="row g-3 g-md-4 mb-4">
@@ -261,35 +261,35 @@ $pageTitle = 'Ð—Ð°Ð´Ð°Ð½Ð¸Ðµ: ' . $assignment['title'];
         <div class="col-lg-7">
             <div class="card shadow-sm h-100">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <strong>Ð ÐµÐ·ÑƒÐ»Ñ‚Ð°Ñ‚Ð¸ Ð¿Ð¾ Ð¾Ð¿Ð¸Ñ‚Ð¸</strong>
+                    <strong>Резултати по опити</strong>
                     <?php if ($bestPercent !== null): ?>
-                        <span class="badge bg-success-subtle border border-success text-success-emphasis">ÐÐ°Ð¹-Ð´Ð¾Ð±ÑŠÑ€: <?= $bestPercent ?>%</span>
+                        <span class="badge bg-success-subtle border border-success text-success-emphasis">Най-добър: <?= $bestPercent ?>%</span>
                     <?php endif; ?>
                 </div>
                 <div class="card-body">
                     <?php if ($attemptsCount === 0): ?>
-                        <div class="text-muted">Ð’ÑÐµ Ð¾Ñ‰Ðµ Ð½ÑÐ¼Ð° Ð¾Ð¿Ð¸Ñ‚Ð¸ Ð·Ð° Ð¿Ð¾ÐºÐ°Ð·Ð²Ð°Ð½Ðµ.</div>
+                        <div class="text-muted">Все още няма опити за показване.</div>
                     <?php else: ?>
-                        <canvas id="attemptScoresChart" height="200" aria-label="Ð“Ñ€Ð°Ñ„Ð¸ÐºÐ° Ñ Ñ€ÐµÐ·ÑƒÐ»Ñ‚Ð°Ñ‚Ð¸" role="img"></canvas>
+                        <canvas id="attemptScoresChart" height="200" aria-label="Графика с резултати" role="img"></canvas>
                     <?php endif; ?>
                 </div>
             </div>
         <div class="col-lg-5">
             <div class="card shadow-sm h-100">
-                <div class="card-header bg-white"><strong>Ð Ð°Ð·Ð¿Ñ€ÐµÐ´ÐµÐ»ÐµÐ½Ð¸Ðµ Ð½Ð° Ð¾Ñ†ÐµÐ½ÐºÐ¸Ñ‚Ðµ</strong></div>
+                <div class="card-header bg-white"><strong>Разпределение на оценките</strong></div>
                 <div class="card-body">
                     <?php if (array_sum($gradeDistribution) === 0): ?>
-                        <div class="text-muted">Ð’ÑÐµ Ð¾Ñ‰Ðµ Ð½ÑÐ¼Ð° Ð¸Ð·Ñ‡Ð¸ÑÐ»ÐµÐ½Ð¸ Ð¾Ñ†ÐµÐ½ÐºÐ¸.</div>
+                        <div class="text-muted">Все още няма изчислени оценки.</div>
                     <?php else: ?>
                         <ul class="list-group list-group-flush">
                             <?php foreach ([6,5,4,3,2] as $grade): ?>
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>ÐžÑ†ÐµÐ½ÐºÐ° <?= $grade ?></span>
+                                    <span>Оценка <?= $grade ?></span>
                                     <span class="badge bg-primary rounded-pill"><?= (int)($gradeDistribution[$grade] ?? 0) ?></span>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
-                        <small class="text-muted d-block mt-2">ÐžÑ†ÐµÐ½ÐºÐ¸Ñ‚Ðµ ÑÐ° Ð¸Ð·Ñ‡Ð¸ÑÐ»ÐµÐ½Ð¸ Ð°Ð²Ñ‚Ð¾Ð¼Ð°Ñ‚Ð¸Ñ‡Ð½Ð¾ ÑÐ¿Ð¾Ñ€ÐµÐ´ Ð¿Ñ€Ð¾Ñ†ÐµÐ½Ñ‚Ð°.</small>
+                        <small class="text-muted d-block mt-2">Оценките са изчислени автоматично според процента.</small>
                     <?php endif; ?>
                 </div>
             </div>
@@ -297,34 +297,34 @@ $pageTitle = 'Ð—Ð°Ð´Ð°Ð½Ð¸Ðµ: ' . $assignment['title'];
 
     <div class="card shadow-sm">
         <div class="card-header bg-white d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-2">
-            <strong>Ð¡Ð¿Ð¸ÑÑŠÐº Ñ Ð¾Ð¿Ð¸Ñ‚Ð¸</strong>
+            <strong>Списък с опити</strong>
             <div class="text-muted small">
                 <?php if ($assignment['open_at']): ?>
-                    ÐžÑ‚Ð²Ð¾Ñ€ÐµÐ½Ð¾: <?= htmlspecialchars($assignment['open_at']) ?>
+                    Отворено: <?= htmlspecialchars($assignment['open_at']) ?>
                 <?php endif; ?>
                 <?php if ($assignment['due_at']): ?>
-                    <span class="ms-2">ÐšÑ€Ð°ÐµÐ½ ÑÑ€Ð¾Ðº: <?= htmlspecialchars($assignment['due_at']) ?></span>
+                    <span class="ms-2">Краен срок: <?= htmlspecialchars($assignment['due_at']) ?></span>
                 <?php endif; ?>
                 <?php if ($assignment['close_at']): ?>
-                    <span class="ms-2">Ð—Ð°Ñ‚Ð²Ð°Ñ€ÑÐ½Ðµ: <?= htmlspecialchars($assignment['close_at']) ?></span>
+                    <span class="ms-2">Затваряне: <?= htmlspecialchars($assignment['close_at']) ?></span>
                 <?php endif; ?>
             </div>
         <div class="card-body p-0">
             <?php if ($attemptsCount === 0): ?>
-                <div class="p-4 text-center text-muted">ÐÑÐ¼Ð° Ð¾Ð¿Ð¸Ñ‚Ð¸ Ð·Ð° Ñ‚Ð¾Ð²Ð° Ð·Ð°Ð´Ð°Ð½Ð¸Ðµ.</div>
+                <div class="p-4 text-center text-muted">Няма опити за това задание.</div>
             <?php else: ?>
                 <div class="table-responsive">
                     <table class="table table-striped table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th scope="col">Ð£Ñ‡ÐµÐ½Ð¸Ðº</th>
-                                <th scope="col">ÐÐ°Ñ‡Ð°Ð»Ð¾</th>
-                                <th scope="col">ÐŸÑ€ÐµÐ´Ð°Ð´ÐµÐ½Ð¾</th>
-                                <th scope="col">Ð ÐµÐ·ÑƒÐ»Ñ‚Ð°Ñ‚</th>
-                                <th scope="col">ÐÐ²Ñ‚. Ð¾Ñ†ÐµÐ½ÐºÐ°</th>
-                                <th scope="col">Ð£Ñ‡Ð¸Ñ‚ÐµÐ»ÑÐºÐ° Ð¾Ñ†ÐµÐ½ÐºÐ°</th>
-                                <th scope="col">Ð¡Ñ‚Ð°Ñ‚ÑƒÑ</th>
-                                <th scope="col" class="text-end">Ð”ÐµÐ¹ÑÑ‚Ð²Ð¸Ñ</th>
+                                <th scope="col">Ученик</th>
+                                <th scope="col">Начало</th>
+                                <th scope="col">Предадено</th>
+                                <th scope="col">Резултат</th>
+                                <th scope="col">Авт. оценка</th>
+                                <th scope="col">Учителска оценка</th>
+                                <th scope="col">Статус</th>
+                                <th scope="col" class="text-end">Действия</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -337,9 +337,9 @@ $pageTitle = 'Ð—Ð°Ð´Ð°Ð½Ð¸Ðµ: ' . $assignment['title'];
                                 $strictViolation = !empty($attempt['strict_violation']);
                                 $rowClass = $strictViolation ? 'table-danger' : '';
                                 $statusLabel = match ($attempt['status']) {
-                                    'in_progress' => 'Ð—Ð°Ð¿Ð¾Ñ‡Ð½Ð°Ñ‚',
-                                    'submitted' => 'ÐŸÑ€ÐµÐ´Ð°Ð´ÐµÐ½',
-                                    'graded' => 'ÐžÑ†ÐµÐ½ÐµÐ½',
+                                    'in_progress' => 'Започнат',
+                                    'submitted' => 'Предаден',
+                                    'graded' => 'Оценен',
                                     default => ucfirst($attempt['status']),
                                 };
                                 ?>
@@ -389,7 +389,7 @@ $pageTitle = 'Ð—Ð°Ð´Ð°Ð½Ð¸Ðµ: ' . $assignment['title'];
         data: {
             labels: labels,
             datasets: [{
-                label: 'Ð ÐµÐ·ÑƒÐ»Ñ‚Ð°Ñ‚ (%)',
+                label: 'Резултат (%)',
                 data: dataValues,
                 backgroundColor: 'rgba(13, 110, 253, 0.6)',
                 borderColor: 'rgba(13, 110, 253, 1)',

@@ -353,7 +353,7 @@ if ($pdo) {
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Ð¢Ð°Ð±Ð»Ð¾ â€“ TestGramatikov</title>
+    <title>Табло – TestGramatikov</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
@@ -367,42 +367,42 @@ if ($pdo) {
 <main class="container my-4 my-md-5">
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
-            <h1 class="h3 m-0">Ð—Ð´Ñ€Ð°Ð²ÐµÐ¹, <?= htmlspecialchars($user['first_name'] . ' ' . $user['last_name']) ?></h1>
-            <div class="text-muted">Ð¢Ð²Ð¾ÐµÑ‚Ð¾ Ñ‚Ð°Ð±Ð»Ð¾ (Ñ€Ð¾Ð»Ð°: <?= htmlspecialchars($user['role']) ?>)</div>
+            <h1 class="h3 m-0">Здравей, <?= htmlspecialchars($user['first_name'] . ' ' . $user['last_name']) ?></h1>
+            <div class="text-muted">Твоето табло (рола: <?= htmlspecialchars($user['role']) ?>)</div>
         </div>
         <?php if ($user['role'] === 'teacher'): ?>
             <div class="d-flex gap-2">
-                <a class="btn btn-primary" href="createTest.php"><i class="bi bi-magic me-1"></i>ÐÐ¾Ð² Ñ‚ÐµÑÑ‚</a>
-                <a class="btn btn-outline-primary" href="classes_create.php"><i class="bi bi-people me-1"></i>ÐÐ¾Ð² ÐºÐ»Ð°Ñ</a>
-                <a class="btn btn-outline-secondary" href="assignments_create.php"><i class="bi bi-megaphone me-1"></i>ÐÐ¾Ð²Ð¾ Ð·Ð°Ð´Ð°Ð½Ð¸Ðµ</a>
-                <a class="btn btn-outline-primary" href="subjects_create.php"><i class="bi bi-journal-text me-1"></i>ÐŸÑ€ÐµÐ´Ð¼ÐµÑ‚Ð¸</a>
+                <a class="btn btn-primary" href="createTest.php"><i class="bi bi-magic me-1"></i>Нов тест</a>
+                <a class="btn btn-outline-primary" href="classes_create.php"><i class="bi bi-people me-1"></i>Нов клас</a>
+                <a class="btn btn-outline-secondary" href="assignments_create.php"><i class="bi bi-megaphone me-1"></i>Ново задание</a>
+                <a class="btn btn-outline-primary" href="subjects_create.php"><i class="bi bi-journal-text me-1"></i>Предмети</a>
             </div>
         <?php endif; ?>
     </div>
 
     <?php if ($user['role'] === 'teacher'): ?>
     <div class="card shadow-sm mb-3">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center"><strong>Ð¤Ð¸Ð»Ñ‚Ñ€Ð¸ Ð¸ ÑÐ¾Ñ€Ñ‚Ð¸Ñ€Ð°Ð½Ðµ</strong><a href="dashboard.php?reset=1" class="btn btn-sm btn-outline-danger">Reset</a></div>
+        <div class="card-header bg-white d-flex justify-content-between align-items-center"><strong>Филтри и сортиране</strong><a href="dashboard.php?reset=1" class="btn btn-sm btn-outline-danger">Reset</a></div>
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-lg-4">
                     <form method="get" class="border rounded p-2 h-100">
-                        <div class="fw-semibold mb-2">ÐšÐ»Ð°ÑÐ¾Ð²Ðµ</div>
-                        <input type="text" name="c_q" value="<?= htmlspecialchars($_GET['c_q'] ?? '') ?>" class="form-control form-control-sm mb-2" placeholder="Ð¢ÑŠÑ€ÑÐµÐ½Ðµ..." />
+                        <div class="fw-semibold mb-2">Класове</div>
+                        <input type="text" name="c_q" value="<?= htmlspecialchars($_GET['c_q'] ?? '') ?>" class="form-control form-control-sm mb-2" placeholder="Търсене..." />
                         <select name="c_sort" class="form-select form-select-sm mb-2">
-                            <option value="">Ð¡Ð¾Ñ€Ñ‚Ð¸Ñ€Ð°Ð½Ðµ</option>
-                            <option value="year_desc" <?= (($_GET['c_sort'] ?? '')==='year_desc')?'selected':'' ?>>ÐŸÐ¾ Ð³Ð¾Ð´Ð¸Ð½Ð°</option>
-                            <option value="grade_asc" <?= (($_GET['c_sort'] ?? '')==='grade_asc')?'selected':'' ?>>ÐŸÐ¾ ÐºÐ»Ð°Ñ</option>
-                            <option value="name_asc" <?= (($_GET['c_sort'] ?? '')==='name_asc')?'selected':'' ?>>Ð˜Ð¼Ðµ Aâ†’Ð¯</option>
-                            <option value="name_desc" <?= (($_GET['c_sort'] ?? '')==='name_desc')?'selected':'' ?>>Ð˜Ð¼Ðµ Ð¯â†’A</option>
+                            <option value="">Сортиране</option>
+                            <option value="year_desc" <?= (($_GET['c_sort'] ?? '')==='year_desc')?'selected':'' ?>>По година</option>
+                            <option value="grade_asc" <?= (($_GET['c_sort'] ?? '')==='grade_asc')?'selected':'' ?>>По клас</option>
+                            <option value="name_asc" <?= (($_GET['c_sort'] ?? '')==='name_asc')?'selected':'' ?>>Име A→Я</option>
+                            <option value="name_desc" <?= (($_GET['c_sort'] ?? '')==='name_desc')?'selected':'' ?>>Име Я→A</option>
                         </select>
-                        <button class="btn btn-sm btn-outline-secondary w-100" type="submit">ÐŸÑ€Ð¸Ð»Ð¾Ð¶Ð¸</button>
+                        <button class="btn btn-sm btn-outline-secondary w-100" type="submit">Приложи</button>
                     </form>
                 </div>
                 <div class="col-lg-4">
                     <form method="get" class="border rounded p-2 h-100">
-                        <div class="fw-semibold mb-2">Ð¢ÐµÑÑ‚Ð¾Ð²Ðµ</div>
-                        <input type="text" name="t_q" value="<?= htmlspecialchars($_GET['t_q'] ?? '') ?>" class="form-control form-control-sm mb-2" placeholder="Ð¢ÑŠÑ€ÑÐµÐ½Ðµ..." />
+                        <div class="fw-semibold mb-2">Тестове</div>
+                        <input type="text" name="t_q" value="<?= htmlspecialchars($_GET['t_q'] ?? '') ?>" class="form-control form-control-sm mb-2" placeholder="Търсене..." />
                         <?php
                         // Load teacher subjects for dropdown
                         $filter_subjects = [];
@@ -413,48 +413,48 @@ if ($pdo) {
                         } catch (Throwable $e) { $filter_subjects = []; }
                         ?>
                         <select name="t_subject" class="form-select form-select-sm mb-2">
-                            <option value="">ÐŸÑ€ÐµÐ´Ð¼ÐµÑ‚</option>
+                            <option value="">Предмет</option>
                             <?php foreach ($filter_subjects as $s): ?>
                                 <option value="<?= (int)$s['id'] ?>" <?= (($_GET['t_subject'] ?? '')!=='') && ((int)$_GET['t_subject']===(int)$s['id']) ? 'selected' : '' ?>><?= htmlspecialchars($s['name']) ?></option>
                             <?php endforeach; ?>
                         </select>
                         <div class="d-flex gap-2 mb-2">
                             <select name="t_visibility" class="form-select form-select-sm">
-                                <option value="">Ð’Ð¸Ð´Ð¸Ð¼Ð¾ÑÑ‚</option>
-                                <option value="private" <?= (($_GET['t_visibility'] ?? '')==='private')?'selected':'' ?>>Ð§Ð°ÑÑ‚ÐµÐ½</option>
-                                <option value="shared" <?= (($_GET['t_visibility'] ?? '')==='shared')?'selected':'' ?>>Ð¡Ð¿Ð¾Ð´ÐµÐ»ÐµÐ½</option>
+                                <option value="">Видимост</option>
+                                <option value="private" <?= (($_GET['t_visibility'] ?? '')==='private')?'selected':'' ?>>Частен</option>
+                                <option value="shared" <?= (($_GET['t_visibility'] ?? '')==='shared')?'selected':'' ?>>Споделен</option>
                             </select>
                             <select name="t_status" class="form-select form-select-sm">
-                                <option value="">Ð¡Ñ‚Ð°Ñ‚ÑƒÑ</option>
-                                <option value="draft" <?= (($_GET['t_status'] ?? '')==='draft')?'selected':'' ?>>Ð§ÐµÑ€Ð½Ð¾Ð²Ð°</option>
-                                <option value="published" <?= (($_GET['t_status'] ?? '')==='published')?'selected':'' ?>>ÐŸÑƒÐ±Ð»Ð¸ÐºÑƒÐ²Ð°Ð½</option>
-                                <option value="archived" <?= (($_GET['t_status'] ?? '')==='archived')?'selected':'' ?>>ÐÑ€Ñ…Ð¸Ð²Ð¸Ñ€Ð°Ð½</option>
+                                <option value="">Статус</option>
+                                <option value="draft" <?= (($_GET['t_status'] ?? '')==='draft')?'selected':'' ?>>Чернова</option>
+                                <option value="published" <?= (($_GET['t_status'] ?? '')==='published')?'selected':'' ?>>Публикуван</option>
+                                <option value="archived" <?= (($_GET['t_status'] ?? '')==='archived')?'selected':'' ?>>Архивиран</option>
                             </select>
                         </div>
                         <select name="t_sort" class="form-select form-select-sm mb-2">
-                            <option value="">Ð¡Ð¾Ñ€Ñ‚Ð¸Ñ€Ð°Ð½Ðµ</option>
-                            <option value="updated_desc" <?= (($_GET['t_sort'] ?? '')==='updated_desc')?'selected':'' ?>>ÐžÐ±Ð½Ð¾Ð²ÐµÐ½Ð¸ â†“</option>
-                            <option value="updated_asc" <?= (($_GET['t_sort'] ?? '')==='updated_asc')?'selected':'' ?>>ÐžÐ±Ð½Ð¾Ð²ÐµÐ½Ð¸ â†‘</option>
-                            <option value="title_asc" <?= (($_GET['t_sort'] ?? '')==='title_asc')?'selected':'' ?>>Ð—Ð°Ð³Ð»Ð°Ð²Ð¸Ðµ Aâ†’Ð¯</option>
-                            <option value="title_desc" <?= (($_GET['t_sort'] ?? '')==='title_desc')?'selected':'' ?>>Ð—Ð°Ð³Ð»Ð°Ð²Ð¸Ðµ Ð¯â†’A</option>
+                            <option value="">Сортиране</option>
+                            <option value="updated_desc" <?= (($_GET['t_sort'] ?? '')==='updated_desc')?'selected':'' ?>>Обновени ↓</option>
+                            <option value="updated_asc" <?= (($_GET['t_sort'] ?? '')==='updated_asc')?'selected':'' ?>>Обновени ↑</option>
+                            <option value="title_asc" <?= (($_GET['t_sort'] ?? '')==='title_asc')?'selected':'' ?>>Заглавие A→Я</option>
+                            <option value="title_desc" <?= (($_GET['t_sort'] ?? '')==='title_desc')?'selected':'' ?>>Заглавие Я→A</option>
                         </select>
-                        <button class="btn btn-sm btn-outline-secondary w-100" type="submit">ÐŸÑ€Ð¸Ð»Ð¾Ð¶Ð¸</button>
+                        <button class="btn btn-sm btn-outline-secondary w-100" type="submit">Приложи</button>
                     </form>
                 </div>
                 <div class="col-lg-4">
                     <form method="get" class="border rounded p-2 h-100">
-                        <div class="fw-semibold mb-2">ÐžÐ¿Ð¸Ñ‚Ð¸</div>
-                        <input type="text" name="a_q" value="<?= htmlspecialchars($_GET['a_q'] ?? '') ?>" class="form-control form-control-sm mb-2" placeholder="Ð¢ÑŠÑ€ÑÐµÐ½Ðµ (Ð·Ð°Ð´./Ð¸Ð¼Ðµ)..." />
+                        <div class="fw-semibold mb-2">Опити</div>
+                        <input type="text" name="a_q" value="<?= htmlspecialchars($_GET['a_q'] ?? '') ?>" class="form-control form-control-sm mb-2" placeholder="Търсене (зад./име)..." />
                         <div class="d-flex gap-2 mb-2">
                             <input type="datetime-local" name="a_from" value="<?= htmlspecialchars($_GET['a_from'] ?? '') ?>" class="form-control form-control-sm" />
                             <input type="datetime-local" name="a_to" value="<?= htmlspecialchars($_GET['a_to'] ?? '') ?>" class="form-control form-control-sm" />
                         </div>
                         <select name="a_sort" class="form-select form-select-sm mb-2">
-                            <option value="">Ð¡Ð¾Ñ€Ñ‚Ð¸Ñ€Ð°Ð½Ðµ</option>
-                            <option value="date_desc" <?= (($_GET['a_sort'] ?? '')==='date_desc')?'selected':'' ?>>Ð”Ð°Ñ‚Ð° â†“</option>
-                            <option value="date_asc" <?= (($_GET['a_sort'] ?? '')==='date_asc')?'selected':'' ?>>Ð”Ð°Ñ‚Ð° â†‘</option>
+                            <option value="">Сортиране</option>
+                            <option value="date_desc" <?= (($_GET['a_sort'] ?? '')==='date_desc')?'selected':'' ?>>Дата ↓</option>
+                            <option value="date_asc" <?= (($_GET['a_sort'] ?? '')==='date_asc')?'selected':'' ?>>Дата ↑</option>
                         </select>
-                        <button class="btn btn-sm btn-outline-secondary w-100" type="submit">ÐŸÑ€Ð¸Ð»Ð¾Ð¶Ð¸</button>
+                        <button class="btn btn-sm btn-outline-secondary w-100" type="submit">Приложи</button>
                     </form>
                 </div>
             </div>
@@ -462,7 +462,7 @@ if ($pdo) {
     <?php endif; ?>
 
     <?php if (!$pdo): ?>
-        <div class="alert alert-warning">Ð›Ð¸Ð¿ÑÐ²Ð° Ð²Ñ€ÑŠÐ·ÐºÐ° ÐºÑŠÐ¼ Ð±Ð°Ð·Ð°Ñ‚Ð°. ÐŸÑ€Ð¾Ð²ÐµÑ€ÐµÑ‚Ðµ config.php Ð¸ Ð¸Ð¼Ð¿Ð¾Ñ€Ñ‚Ð½ÐµÑ‚Ðµ db/schema.sql.</div>
+        <div class="alert alert-warning">Липсва връзка към базата. Проверете config.php и импортнете db/schema.sql.</div>
     <?php endif; ?>
 
     <?php if ($user['role'] === 'teacher'): ?>
@@ -470,10 +470,10 @@ if ($pdo) {
         <div class="row g-3 g-md-4">
             <div class="col-lg-6">
                 <div class="card shadow-sm h-100">
-                    <div class="card-header bg-white"><strong>Ð¢Ð²Ð¾Ð¸Ñ‚Ðµ ÐºÐ»Ð°ÑÐ¾Ð²Ðµ</strong></div>
+                    <div class="card-header bg-white"><strong>Твоите класове</strong></div>
                     <div class="card-body">
                         <?php if (empty($teacher['classes'])): ?>
-                            <div class="text-muted">ÐÑÐ¼Ð°Ñ‚Ðµ ÑÑŠÐ·Ð´Ð°Ð´ÐµÐ½Ð¸ ÐºÐ»Ð°ÑÐ¾Ð²Ðµ.</div>
+                            <div class="text-muted">Нямате създадени класове.</div>
                         <?php else: ?>
                             <div class="list-group">
                                 <?php foreach ($teacher['classes'] as $c): ?>
@@ -485,7 +485,7 @@ if ($pdo) {
                                             </a>
                                         </div>
                                         <div class="d-flex gap-2">
-                                            <a class="btn btn-sm btn-outline-primary" href="classes_create.php?id=<?= (int)$c['id'] ?>&created_at=<?= urlencode($c['created_at']) ?>#students"><i class="bi bi-person-plus"></i> Ð”Ð¾Ð±Ð°Ð²Ð¸ ÑƒÑ‡ÐµÐ½Ð¸Ñ†Ð¸</a>
+                                            <a class="btn btn-sm btn-outline-primary" href="classes_create.php?id=<?= (int)$c['id'] ?>&created_at=<?= urlencode($c['created_at']) ?>#students"><i class="bi bi-person-plus"></i> Добави ученици</a>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
@@ -496,10 +496,10 @@ if ($pdo) {
             </div>
             <div class="col-lg-6">
                 <div class="card shadow-sm h-100">
-                    <div class="card-header bg-white"><strong>Ð¢ÐµÑÑ‚Ð¾Ð²Ðµ</strong></div>
+                    <div class="card-header bg-white"><strong>Тестове</strong></div>
                     <div class="card-body">
                         <?php if (empty($teacher['tests'])): ?>
-                            <div class="text-muted">Ð’ÑÐµ Ð¾Ñ‰Ðµ Ð½ÑÐ¼Ð°Ñ‚Ðµ Ñ‚ÐµÑÑ‚Ð¾Ð²Ðµ.</div>
+                            <div class="text-muted">Все още нямате тестове.</div>
                         <?php else: ?>
                             <div class="list-group">
                                 <?php foreach ($teacher['tests'] as $t): ?>
@@ -522,10 +522,10 @@ if ($pdo) {
         <div class="row g-3 g-md-4 mt-1 mt-md-2">
             <div class="col-lg-6">
                 <div class="card shadow-sm h-100">
-                    <div class="card-header bg-white"><strong>ÐŸÐ¾ÑÐ»ÐµÐ´Ð½Ð¸ Ð¾Ð¿Ð¸Ñ‚Ð¸</strong></div>
+                    <div class="card-header bg-white"><strong>Последни опити</strong></div>
                     <div class="card-body">
                         <?php if (empty($teacher['recent_attempts'])): ?>
-                            <div class="text-muted">ÐžÑ‰Ðµ Ð½ÑÐ¼Ð° Ð¿Ñ€ÐµÐ´Ð°Ð´ÐµÐ½Ð¸ Ð¾Ð¿Ð¸Ñ‚Ð¸.</div>
+                            <div class="text-muted">Още няма предадени опити.</div>
                         <?php else: ?>
                             <div class="list-group">
                                 <?php foreach ($teacher['recent_attempts'] as $ra): $p = percent($ra['score_obtained'], $ra['max_score']); $autoGrade = grade_from_percent($p); $displayGrade = $ra['teacher_grade'] !== null ? (int)$ra['teacher_grade'] : $autoGrade; ?>
@@ -540,7 +540,7 @@ if ($pdo) {
                                         </div>
                                         <div class="d-flex align-items-center gap-2">
                                             <span class="badge <?= ($p !== null && $p >= 50) ? 'bg-success' : 'bg-danger' ?>"><?= $p !== null ? $p . '%' : 'â€”' ?></span>
-                                            <span class="badge bg-primary">ÐÐ²Ñ‚Ð¾: <?= $autoGrade !== null ? $autoGrade : 'â€”' ?></span>
+                                            <span class="badge bg-primary">Авто: <?= $autoGrade !== null ? $autoGrade : '—' ?></span>
                                             <form method="post" class="d-flex align-items-center gap-1">
                                                 <input type="hidden" name="__action" value="set_grade" />
                                                 <input type="hidden" name="attempt_id" value="<?= (int)$ra['id'] ?>" />
@@ -552,7 +552,7 @@ if ($pdo) {
                                                 </select>
                                                 <button class="btn btn-sm btn-outline-primary" type="submit"><i class="bi bi-save"></i></button>
                                             </form>
-                                            <a class="btn btn-sm btn-outline-secondary" href="attempt_review.php?id=<?= (int)$ra['id'] ?>"><i class="bi bi-eye"></i> ÐŸÑ€ÐµÐ³Ð»ÐµÐ´</a>
+                                            <a class="btn btn-sm btn-outline-secondary" href="attempt_review.php?id=<?= (int)$ra['id'] ?>"><i class="bi bi-eye"></i> Преглед</a>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
@@ -586,18 +586,18 @@ if ($pdo) {
                             ?>
                             <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center mt-3 gap-2">
                                 <?php if ($attemptTotal > 0): ?>
-                                    <small class="text-muted">ÐŸÐ¾ÐºÐ°Ð·Ð°Ð½Ð¸ <?= $attemptFrom ?>-<?= $attemptTo ?> Ð¾Ñ‚ <?= $attemptTotal ?></small>
+                                    <small class="text-muted">Показани <?= $attemptFrom ?>-<?= $attemptTo ?> от <?= $attemptTotal ?></small>
                                 <?php else: ?>
                                     <span></span>
                                 <?php endif; ?>
                                 <?php if ($attemptPages > 1): ?>
-                                    <nav aria-label="ÐŸÐ°Ð³Ð¸Ð½Ð°Ñ†Ð¸Ñ Ð¿Ð¾ÑÐ»ÐµÐ´Ð½Ð¸ Ð¾Ð¿Ð¸Ñ‚Ð¸">
+                                    <nav aria-label="Пагинация последни опити">
                                         <ul class="pagination pagination-sm mb-0">
                                             <li class="page-item <?= $attemptPage <= 1 ? 'disabled' : '' ?>">
                                                 <?php if ($attemptPage <= 1): ?>
-                                                    <span class="page-link">ÐŸÑ€ÐµÐ´</span>
+                                                    <span class="page-link">Пред</span>
                                                 <?php else: ?>
-                                                    <a class="page-link" href="<?= htmlspecialchars($buildAttemptPageUrl($attemptPage - 1)) ?>">ÐŸÑ€ÐµÐ´</a>
+                                                    <a class="page-link" href="<?= htmlspecialchars($buildAttemptPageUrl($attemptPage - 1)) ?>">Пред</a>
                                                 <?php endif; ?>
                                             </li>
                                             <?php for ($p = $startPage; $p <= $endPage; $p++): ?>
@@ -611,9 +611,9 @@ if ($pdo) {
                                             <?php endfor; ?>
                                             <li class="page-item <?= $attemptPage >= $attemptPages ? 'disabled' : '' ?>">
                                                 <?php if ($attemptPage >= $attemptPages): ?>
-                                                    <span class="page-link">Ð¡Ð»ÐµÐ´</span>
+                                                    <span class="page-link">След</span>
                                                 <?php else: ?>
-                                                    <a class="page-link" href="<?= htmlspecialchars($buildAttemptPageUrl($attemptPage + 1)) ?>">Ð¡Ð»ÐµÐ´</a>
+                                                    <a class="page-link" href="<?= htmlspecialchars($buildAttemptPageUrl($attemptPage + 1)) ?>">След</a>
                                                 <?php endif; ?>
                                             </li>
                                         </ul>
@@ -626,17 +626,17 @@ if ($pdo) {
             </div>
             <div class="col-lg-6">
                 <div class="card shadow-sm h-100">
-                    <div class="card-header bg-white"><strong>ÐÐ½Ð°Ð»Ð¸Ñ‚Ð¸ÐºÐ° Ð¿Ð¾ ÐºÐ»Ð°Ñ</strong></div>
+                    <div class="card-header bg-white"><strong>Аналитика по клас</strong></div>
                     <div class="card-body">
                         <?php if (empty($teacher['class_stats'])): ?>
-                            <div class="text-muted">ÐÑÐ¼Ð° Ð½Ð°Ð»Ð¸Ñ‡Ð½Ð¸ Ð´Ð°Ð½Ð½Ð¸ Ð·Ð° ÑÑ‚Ð°Ñ‚Ð¸ÑÑ‚Ð¸ÐºÐ°.</div>
+                            <div class="text-muted">Няма налични данни за статистика.</div>
                         <?php else: ?>
                             <div class="list-group">
                                 <?php foreach ($teacher['class_stats'] as $cs): ?>
                                     <div class="list-group-item d-flex justify-content-between align-items-center">
                                         <div>
-                                            <div class="fw-semibold">ÐšÐ»Ð°Ñ <?= htmlspecialchars($cs['grade'] . $cs['section']) ?> â€¢ <?= htmlspecialchars($cs['school_year']) ?></div>
-                                            <div class="text-muted small">Ð—Ð°Ð´Ð°Ð½Ð¸Ðµ #<?= (int)$cs['assignment_id'] ?></div>
+                                            <div class="fw-semibold">Клас <?= htmlspecialchars($cs['grade'] . $cs['section']) ?> • <?= htmlspecialchars($cs['school_year']) ?></div>
+                                            <div class="text-muted small">Задание #<?= (int)$cs['assignment_id'] ?></div>
                                         </div>
                                         <span class="badge bg-primary"><?= (float)$cs['avg_percent'] ?>%</span>
                                     </div>
@@ -651,10 +651,10 @@ if ($pdo) {
         <div class="row g-3 g-md-4 mt-1 mt-md-2">
             <div class="col-lg-6">
                 <div class="card shadow-sm h-100">
-                    <div class="card-header bg-white"><strong>Ð¢ÐµÐºÑƒÑ‰Ð¸ Ð·Ð°Ð´Ð°Ð½Ð¸Ñ</strong></div>
+                    <div class="card-header bg-white"><strong>Текущи задания</strong></div>
                     <div class="card-body">
                         <?php if (empty($teacher['assignments_current'])): ?>
-                            <div class="text-muted">ÐÑÐ¼Ð° Ñ‚ÐµÐºÑƒÑ‰Ð¸ Ð¸Ð»Ð¸ Ð¿Ñ€ÐµÐ´ÑÑ‚Ð¾ÑÑ‰Ð¸ Ð·Ð°Ð´Ð°Ð½Ð¸Ñ.</div>
+                            <div class="text-muted">Няма текущи или предстоящи задания.</div>
                         <?php else: ?>
                             <div class="list-group">
                                 <?php foreach ($teacher['assignments_current'] as $assignment): ?>
@@ -713,10 +713,10 @@ if ($pdo) {
             </div>
             <div class="col-lg-6">
                 <div class="card shadow-sm h-100">
-                    <div class="card-header bg-white"><strong>ÐœÐ¸Ð½Ð°Ð»Ð¸ Ð·Ð°Ð´Ð°Ð½Ð¸Ñ</strong></div>
+                    <div class="card-header bg-white"><strong>Минали задания</strong></div>
                     <div class="card-body">
                         <?php if (empty($teacher['assignments_past'])): ?>
-                            <div class="text-muted">ÐÑÐ¼Ð° Ð¿Ñ€Ð¸ÐºÐ»ÑŽÑ‡Ð¸Ð»Ð¸ Ð·Ð°Ð´Ð°Ð½Ð¸Ñ.</div>
+                            <div class="text-muted">Няма приключили задания.</div>
                         <?php else: ?>
                             <div class="list-group">
                                 <?php foreach ($teacher['assignments_past'] as $assignment): ?>
@@ -740,23 +740,23 @@ if ($pdo) {
                                             </div>
                                             <div class="text-muted small">
                                                 <?php if (!empty($assignment['due_at'])): ?>
-                                                    Ð”Ð¾: <?= htmlspecialchars($assignment['due_at']) ?>
+                                                    До: <?= htmlspecialchars($assignment['due_at']) ?>
                                                 <?php elseif (!empty($assignment['close_at'])): ?>
-                                                    Ð—Ð°Ñ‚Ð²Ð¾Ñ€ÐµÐ½Ð¾: <?= htmlspecialchars($assignment['close_at']) ?>
+                                                    Затворено: <?= htmlspecialchars($assignment['close_at']) ?>
                                                 <?php else: ?>
-                                                    Ð‘ÐµÐ· Ð¿Ð¾ÑÐ¾Ñ‡ÐµÐ½ ÐºÑ€Ð°ÐµÐ½ ÑÑ€Ð¾Ðº
+                                                    Без посочен краен срок
                                                 <?php endif; ?>
                                             </div>
                                             <div class="text-muted small">
-                                                ÐŸÐ¾Ð´Ð°Ð´ÐµÐ½Ð¸: <?= $submittedCount ?> / ÐžÑ†ÐµÐ½ÐµÐ½Ð¸: <?= $gradedCount ?>
+                                                Подадени: <?= $submittedCount ?> / Оценени: <?= $gradedCount ?>
                                             </div>
                                             <?php if ($needsGrade > 0): ?>
-                                                <span class="badge bg-warning text-dark mt-2">Ð—Ð° Ð¾Ñ†ÐµÐ½ÑÐ²Ð°Ð½Ðµ: <?= $needsGrade ?></span>
+                                                <span class="badge bg-warning text-dark mt-2">За оценяване: <?= $needsGrade ?></span>
                                             <?php endif; ?>
                                         </div>
                                         <div class="d-flex flex-column align-items-end gap-2">
-                                            <span class="badge bg-secondary">ÐœÐ¸Ð½Ð°Ð»Ð¾</span>
-                                            <a class="btn btn-sm btn-outline-secondary" href="assignments_create.php?id=<?= (int)$assignment['id'] ?>"><i class="bi bi-clipboard-check"></i> ÐžÑ†ÐµÐ½Ð¸</a>
+                                            <span class="badge bg-secondary">Минало</span>
+                                            <a class="btn btn-sm btn-outline-secondary" href="assignments_create.php?id=<?= (int)$assignment['id'] ?>"><i class="bi bi-clipboard-check"></i> Оцени</a>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
@@ -772,10 +772,10 @@ if ($pdo) {
         <div class="row g-3 g-md-4">
             <div class="col-lg-6">
                 <div class="card shadow-sm h-100">
-                    <div class="card-header bg-white"><strong>ÐœÐ¾Ð¸Ñ‚Ðµ ÐºÐ»Ð°ÑÐ¾Ð²Ðµ</strong></div>
+                    <div class="card-header bg-white"><strong>Моите класове</strong></div>
                     <div class="card-body">
                         <?php if (empty($student['classes'])): ?>
-                            <div class="text-muted">ÐÐµ ÑÑ‚Ðµ Ð´Ð¾Ð±Ð°Ð²ÐµÐ½Ð¸ Ð² ÐºÐ»Ð°Ñ.</div>
+                            <div class="text-muted">Не сте добавени в клас.</div>
                         <?php else: ?>
                             <div class="list-group">
                                 <?php foreach ($student['classes'] as $c): ?>
@@ -791,26 +791,26 @@ if ($pdo) {
             </div>
             <div class="col-lg-6">
                 <div class="card shadow-sm h-100">
-                    <div class="card-header bg-white"><strong>ÐžÑ‚Ð²Ð¾Ñ€ÐµÐ½Ð¸ Ð·Ð°Ð´Ð°Ð½Ð¸Ñ</strong></div>
+                    <div class="card-header bg-white"><strong>Отворени задания</strong></div>
                     <div class="card-body">
                         <?php if (empty($student['open_assignments'])): ?>
-                            <div class="text-muted">ÐÑÐ¼Ð°Ñ‚Ðµ Ð°ÐºÑ‚Ð¸Ð²Ð½Ð¸ Ð·Ð°Ð´Ð°Ð½Ð¸Ñ Ð² Ð¼Ð¾Ð¼ÐµÐ½Ñ‚Ð°.</div>
+                            <div class="text-muted">Нямате активни задания в момента.</div>
                         <?php else: ?>
                             <div class="list-group">
                                 <?php foreach ($student['open_assignments'] as $a): $lastAttemptId = $student['open_attempts_map'][(int)$a['id']] ?? null; ?>
                                     <div class="list-group-item d-flex justify-content-between align-items-center">
                                         <div class="me-2">
                                             <div class="fw-semibold"><a class="text-decoration-none" href="assignment.php?id=<?= (int)$a['id'] ?>"><?= htmlspecialchars($a['title']) ?></a></div>
-                                            <div class="text-muted small">Ð¢ÐµÑÑ‚: <?= htmlspecialchars($a['test_title']) ?></div>
+                                            <div class="text-muted small">Тест: <?= htmlspecialchars($a['test_title']) ?></div>
                                         </div>
                                         <div class="d-flex align-items-center gap-2">
                                             <small class="text-muted">
-                                                <?php if (!empty($a['due_at'])): ?>Ð”Ð¾ <?= htmlspecialchars($a['due_at']) ?><?php else: ?>Ð‘ÐµÐ· ÑÑ€Ð¾Ðº<?php endif; ?>
+                                                <?php if (!empty($a['due_at'])): ?>До <?= htmlspecialchars($a['due_at']) ?><?php else: ?>Без срок<?php endif; ?>
                                             </small>
                                             <?php if ($lastAttemptId): ?>
-                                                <a class="btn btn-sm btn-outline-secondary" href="student_attempt.php?id=<?= (int)$lastAttemptId ?>"><i class="bi bi-eye"></i> ÐŸÑ€ÐµÐ³Ð»ÐµÐ´</a>
+                                                <a class="btn btn-sm btn-outline-secondary" href="student_attempt.php?id=<?= (int)$lastAttemptId ?>"><i class="bi bi-eye"></i> Преглед</a>
                                             <?php endif; ?>
-                                            <a class="btn btn-sm btn-primary" href="assignment.php?id=<?= (int)$a['id'] ?>"><i class="bi bi-play-fill"></i> Ð ÐµÑˆÐ¸</a>
+                                            <a class="btn btn-sm btn-primary" href="assignment.php?id=<?= (int)$a['id'] ?>"><i class="bi bi-play-fill"></i> Реши</a>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
@@ -824,10 +824,10 @@ if ($pdo) {
         <div class="row g-3 g-md-4 mt-1 mt-md-2">
             <div class="col-lg-6">
                 <div class="card shadow-sm h-100">
-                    <div class="card-header bg-white"><strong>ÐŸÐ¾ÑÐ»ÐµÐ´Ð½Ð¸ Ð¾Ð¿Ð¸Ñ‚Ð¸</strong></div>
+                    <div class="card-header bg-white"><strong>Последни опити</strong></div>
                     <div class="card-body">
                         <?php if (empty($student['recent_attempts'])): ?>
-                            <div class="text-muted">Ð’ÑÐµ Ð¾Ñ‰Ðµ Ð½ÑÐ¼Ð°Ñ‚Ðµ Ð¿Ñ€ÐµÐ´Ð°Ð´ÐµÐ½Ð¸ Ð¾Ð¿Ð¸Ñ‚Ð¸.</div>
+                            <div class="text-muted">Все още нямате предадени опити.</div>
                         <?php else: ?>
                             <div class="list-group">
                                 <?php foreach ($student['recent_attempts'] as $ra): $p = percent($ra['score_obtained'], $ra['max_score']); $autoGrade = grade_from_percent($p); $displayGrade = $ra['teacher_grade'] !== null ? (int)$ra['teacher_grade'] : $autoGrade; ?>
@@ -839,7 +839,7 @@ if ($pdo) {
                                         <div class="d-flex align-items-center gap-2">
                                             <span class="badge <?= ($p !== null && $p >= 50) ? 'bg-success' : 'bg-danger' ?>"><?= $p !== null ? $p . '%' : 'â€”' ?></span>
                                             <span class="badge bg-primary"><?= $displayGrade !== null ? $displayGrade : 'â€”' ?></span>
-                                            <a class="btn btn-sm btn-outline-secondary" href="student_attempt.php?id=<?= (int)$ra['id'] ?>"><i class="bi bi-eye"></i> ÐŸÑ€ÐµÐ³Ð»ÐµÐ´</a>
+                                            <a class="btn btn-sm btn-outline-secondary" href="student_attempt.php?id=<?= (int)$ra['id'] ?>"><i class="bi bi-eye"></i> Преглед</a>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
@@ -850,23 +850,23 @@ if ($pdo) {
             </div>
             <div class="col-lg-6">
                 <div class="card shadow-sm h-100">
-                    <div class="card-header bg-white"><strong>ÐžÐ±Ñ‰ Ð½Ð°Ð¿Ñ€ÐµÐ´ÑŠÐº</strong></div>
+                    <div class="card-header bg-white"><strong>Общ напредък</strong></div>
                     <div class="card-body">
                         <?php if (!$student['overview']): ?>
-                            <div class="text-muted">ÐÑÐ¼Ð° Ð´Ð¾ÑÑ‚Ð°Ñ‚ÑŠÑ‡Ð½Ð¾ Ð´Ð°Ð½Ð½Ð¸.</div>
+                            <div class="text-muted">Няма достатъчно данни.</div>
                         <?php else: ?>
                             <div class="row text-center">
                                 <div class="col-4">
                                     <div class="h4 m-0"><?= (int)$student['overview']['assignments_taken'] ?></div>
-                                    <div class="text-muted small">Ð—Ð°Ð´Ð°Ð½Ð¸Ñ</div>
+                                    <div class="text-muted small">Задания</div>
                                 </div>
                                 <div class="col-4">
                                     <div class="h4 m-0"><?= (float)$student['overview']['avg_percent'] ?>%</div>
-                                    <div class="text-muted small">Ð¡Ñ€ÐµÐ´ÐµÐ½ %</div>
+                                    <div class="text-muted small">Среден %</div>
                                 </div>
                                 <div class="col-4">
                                     <div class="h6 m-0"><?= htmlspecialchars($student['overview']['last_activity']) ?></div>
-                                    <div class="text-muted small">ÐÐºÑ‚Ð¸Ð²Ð½Ð¾ÑÑ‚</div>
+                                    <div class="text-muted small">Активност</div>
                                 </div>
                             </div>
                         <?php endif; ?>
@@ -879,11 +879,11 @@ if ($pdo) {
 
 <footer class="border-top py-4">
     <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-        <div class="text-muted">Â© <?= date('Y'); ?> TestGramatikov</div>
+        <div class="text-muted">© <?= date('Y'); ?> TestGramatikov</div>
         <div class="d-flex gap-3 small">
-            <a class="text-decoration-none" href="terms.php">Ð£ÑÐ»Ð¾Ð²Ð¸Ñ</a>
-            <a class="text-decoration-none" href="privacy.php">ÐŸÐ¾Ð²ÐµÑ€Ð¸Ñ‚ÐµÐ»Ð½Ð¾ÑÑ‚</a>
-            <a class="text-decoration-none" href="contact.php">ÐšÐ¾Ð½Ñ‚Ð°ÐºÑ‚</a>
+            <a class="text-decoration-none" href="terms.php">Условия</a>
+            <a class="text-decoration-none" href="privacy.php">Поверителност</a>
+            <a class="text-decoration-none" href="contact.php">Контакт</a>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

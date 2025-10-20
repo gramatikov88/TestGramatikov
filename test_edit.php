@@ -58,8 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $questions = $_POST['questions'] ?? [];
 
-    if ($title === '') { $errors[] = 'ÐœÐ¾Ð»Ñ, Ð²ÑŠÐ²ÐµÐ´ÐµÑ‚Ðµ Ð·Ð°Ð³Ð»Ð°Ð²Ð¸Ðµ Ð½Ð° Ñ‚ÐµÑÑ‚Ð°.'; }
-    if (empty($questions)) { $errors[] = 'Ð”Ð¾Ð±Ð°Ð²ÐµÑ‚Ðµ Ð¿Ð¾Ð½Ðµ ÐµÐ´Ð¸Ð½ Ð²ÑŠÐ¿Ñ€Ð¾Ñ.'; }
+    if ($title === '') { $errors[] = 'Моля, въведете заглавие на теста.'; }
+    if (empty($questions)) { $errors[] = 'Добавете поне един въпрос.'; }
 
     if (!$errors) {
         try {
@@ -97,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $difficulty = ($q['difficulty'] ?? '') !== '' ? max(1, min(5, (int)$q['difficulty'])) : null;
                 $points = ($q['points'] ?? '') !== '' ? (float)$q['points'] : 1.0;
 
-                if ($body === '') { throw new RuntimeException('Ð›Ð¸Ð¿ÑÐ²Ð° ÑÑŠÐ´ÑŠÑ€Ð¶Ð°Ð½Ð¸Ðµ Ð½Ð° Ð²ÑŠÐ¿Ñ€Ð¾Ñ.'); }
+                if ($body === '') { throw new RuntimeException('Липсва съдържание на въпрос.'); }
 
                 $question_id = 0;
                 if ($existing_qid > 0) {
@@ -172,7 +172,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $stmt->execute([':qid'=>$question_id, ':content'=>$content, ':is_correct'=>$is_correct, ':ord'=>$order]);
                     }
                     if (!$hasCorrect) {
-                        throw new RuntimeException('ÐÑÐ¼Ð° Ð¼Ð°Ñ€ÐºÐ¸Ñ€Ð°Ð½ Ð²ÐµÑ€ÐµÐ½ Ð¾Ñ‚Ð³Ð¾Ð²Ð¾Ñ€ Ð¿Ñ€Ð¸ Ð·Ð°Ñ‚Ð²Ð¾Ñ€ÐµÐ½ Ð²ÑŠÐ¿Ñ€Ð¾Ñ.');
+                        throw new RuntimeException('Няма маркиран верен отговор при затворен въпрос.');
                     }
                 } elseif ($qtype === 'short_answer') {
                     $answers_line = trim((string)($q['short_answers'] ?? ''));
@@ -203,7 +203,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) { $pdo->rollBack(); }
-            $errors[] = 'Ð“Ñ€ÐµÑˆÐºÐ° Ð¿Ñ€Ð¸ Ð·Ð°Ð¿Ð¸Ñ: ' . $e->getMessage();
+            $errors[] = 'Грешка при запис: ' . $e->getMessage();
         }
     }
 }
@@ -262,7 +262,7 @@ foreach ($qrows as $q) {
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Ð ÐµÐ´Ð°ÐºÑ†Ð¸Ñ Ð½Ð° Ñ‚ÐµÑÑ‚ â€“ TestGramatikov</title>
+    <title>Редакция на тест – TestGramatikov</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
@@ -276,15 +276,15 @@ foreach ($qrows as $q) {
 
 <main class="container my-4 my-md-5">
     <div class="d-flex align-items-center justify-content-between mb-3">
-        <h1 class="h4 m-0"><i class="bi bi-pencil-square me-2"></i>Ð ÐµÐ´Ð°ÐºÑ†Ð¸Ñ Ð½Ð° Ñ‚ÐµÑÑ‚</h1>
+        <h1 class="h4 m-0"><i class="bi bi-pencil-square me-2"></i>Редакция на тест</h1>
         <div class="d-flex gap-2">
-            <a href="dashboard.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> ÐÐ°Ð·Ð°Ð´</a>
-            <a href="createTest.php" class="btn btn-outline-primary"><i class="bi bi-plus-lg"></i> ÐÐ¾Ð² Ñ‚ÐµÑÑ‚</a>
+            <a href="dashboard.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Назад</a>
+            <a href="createTest.php" class="btn btn-outline-primary"><i class="bi bi-plus-lg"></i> Нов тест</a>
         </div>
     </div>
 
     <?php if ($saved): ?>
-        <div class="alert alert-success">ÐŸÑ€Ð¾Ð¼ÐµÐ½Ð¸Ñ‚Ðµ ÑÐ° Ð·Ð°Ð¿Ð°Ð·ÐµÐ½Ð¸.</div>
+        <div class="alert alert-success">Промените са запазени.</div>
     <?php endif; ?>
     <?php if ($errors): ?>
         <div class="alert alert-danger"><ul class="m-0 ps-3"><?php foreach ($errors as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?></ul></div>
@@ -292,14 +292,14 @@ foreach ($qrows as $q) {
 
     <form method="post" id="testForm" enctype="multipart/form-data">
         <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white"><strong>Ð”Ð°Ð½Ð½Ð¸ Ð·Ð° Ñ‚ÐµÑÑ‚Ð°</strong></div>
+            <div class="card-header bg-white"><strong>Данни за теста</strong></div>
             <div class="card-body row g-3">
                 <div class="col-md-6">
-                    <label class="form-label">Ð—Ð°Ð³Ð»Ð°Ð²Ð¸Ðµ</label>
+                    <label class="form-label">Заглавие</label>
                     <input type="text" name="title" class="form-control" required value="<?= htmlspecialchars($test['title']) ?>" />
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">ÐŸÑ€ÐµÐ´Ð¼ÐµÑ‚</label>
+                    <label class="form-label">Предмет</label>
                     <select name="subject_id" class="form-select">
                         <option value="">â€”</option>
                         <?php foreach ($subjects as $s): $sel = ($test['subject_id'] == $s['id']) ? 'selected' : ''; ?>
@@ -308,35 +308,35 @@ foreach ($qrows as $q) {
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Ð’Ð¸Ð´Ð¸Ð¼Ð¾ÑÑ‚</label>
+                    <label class="form-label">Видимост</label>
                     <select name="visibility" class="form-select">
-                        <option value="private" <?= $test['visibility']==='private'?'selected':'' ?>>Ð¡Ð°Ð¼Ð¾ Ð°Ð·</option>
-                        <option value="shared" <?= $test['visibility']==='shared'?'selected':'' ?>>Ð¡Ð¿Ð¾Ð´ÐµÐ»ÐµÐ½</option>
+                        <option value="private" <?= $test['visibility']==='private'?'selected':'' ?>>Само аз</option>
+                        <option value="shared" <?= $test['visibility']==='shared'?'selected':'' ?>>Споделен</option>
                     </select>
                 </div>
                 <div class="col-12">
-                    <label class="form-label">ÐžÐ¿Ð¸ÑÐ°Ð½Ð¸Ðµ</label>
+                    <label class="form-label">Описание</label>
                     <textarea name="description" class="form-control" rows="2"><?= htmlspecialchars($test['description']) ?></textarea>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Ð¦Ð²ÐµÑ‚Ð¾Ð²Ð° ÑÑ…ÐµÐ¼Ð°</label>
+                    <label class="form-label">Цветова схема</label>
                     <select name="theme" class="form-select">
-                        <?php $themes = ['default'=>'ÐŸÐ¾ Ð¿Ð¾Ð´Ñ€Ð°Ð·Ð±Ð¸Ñ€Ð°Ð½Ðµ','soft'=>'ÐœÐµÐºÐ° (Ð±ÐµÐ¶Ð¾Ð²Ð°)','dark'=>'Ð¢ÑŠÐ¼Ð½Ð°','ocean'=>'ÐžÐºÐµÐ°Ð½','forest'=>'Ð“Ð¾Ñ€Ð°','berry'=>'Ð“Ð¾Ñ€ÑÐºÐ¸ Ð¿Ð»Ð¾Ð´']; foreach ($themes as $k=>$v): ?>
+                        <?php $themes = ['default'=>'По подразбиране','soft'=>'Мека (бежова)','dark'=>'Тъмна','ocean'=>'Океан','forest'=>'Гора','berry'=>'Горски плод']; foreach ($themes as $k=>$v): ?>
                             <option value="<?= $k ?>" <?= ($test['theme']??'default')===$k?'selected':'' ?>><?= $v ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Ð¡Ñ‚Ð°Ñ‚ÑƒÑ</label>
+                    <label class="form-label">Статус</label>
                     <select name="status" class="form-select">
-                        <option value="draft" <?= $test['status']==='draft'?'selected':'' ?>>Ð§ÐµÑ€Ð½Ð¾Ð²Ð°</option>
-                        <option value="published" <?= $test['status']==='published'?'selected':'' ?>>ÐŸÑƒÐ±Ð»Ð¸ÐºÑƒÐ²Ð°Ð½</option>
-                        <option value="archived" <?= $test['status']==='archived'?'selected':'' ?>>ÐÑ€Ñ…Ð¸Ð²Ð¸Ñ€Ð°Ð½</option>
+                        <option value="draft" <?= $test['status']==='draft'?'selected':'' ?>>Чернова</option>
+                        <option value="published" <?= $test['status']==='published'?'selected':'' ?>>Публикуван</option>
+                        <option value="archived" <?= $test['status']==='archived'?'selected':'' ?>>Архивиран</option>
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Ð›Ð¸Ð¼Ð¸Ñ‚ (ÑÐµÐºÑƒÐ½Ð´Ð¸)</label>
-                    <input type="number" name="time_limit_sec" class="form-control" min="0" value="<?= htmlspecialchars($test['time_limit_sec']) ?>" placeholder="Ð±ÐµÐ· Ð»Ð¸Ð¼Ð¸Ñ‚" />
+                    <label class="form-label">Лимит (секунди)</label>
+                    <input type="number" name="time_limit_sec" class="form-control" min="0" value="<?= htmlspecialchars($test['time_limit_sec']) ?>" placeholder="без лимит" />
                 </div>
                 <div class="col-md-3 d-flex align-items-end">
                     <div class="form-check">
@@ -355,8 +355,8 @@ foreach ($qrows as $q) {
         <div id="questionsContainer"></div>
 
         <div class="d-flex gap-2">
-            <button type="button" class="btn btn-outline-primary" id="addQuestionBtn"><i class="bi bi-plus-lg me-1"></i>Ð”Ð¾Ð±Ð°Ð²Ð¸ Ð²ÑŠÐ¿Ñ€Ð¾Ñ</button>
-            <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Ð—Ð°Ð¿Ð°Ð·Ð¸ Ð¿Ñ€Ð¾Ð¼ÐµÐ½Ð¸Ñ‚Ðµ</button>
+            <button type="button" class="btn btn-outline-primary" id="addQuestionBtn"><i class="bi bi-plus-lg me-1"></i>Добави въпрос</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Запази промените</button>
         </div>
     </form>
 </main>
@@ -367,15 +367,15 @@ foreach ($qrows as $q) {
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <div class="d-flex gap-2 align-items-center">
                     <select class="form-select form-select-sm qtype" style="width:auto">
-                        <option value="single_choice">Ð•Ð´Ð¸Ð½ Ð²ÐµÑ€ÐµÐ½</option>
-                        <option value="multiple_choice">ÐŸÐ¾Ð²ÐµÑ‡Ðµ Ð¾Ñ‚ ÐµÐ´Ð¸Ð½ Ð²ÐµÑ€ÐµÐ½</option>
-                        <option value="true_false">Ð’ÑÑ€Ð½Ð¾/Ð“Ñ€ÐµÑˆÐ½Ð¾</option>
-                        <option value="short_answer">ÐžÑ‚Ð²Ð¾Ñ€ÐµÐ½ Ð¾Ñ‚Ð³Ð¾Ð²Ð¾Ñ€</option>
-                        <option value="numeric">Ð§Ð¸ÑÐ»ÐµÐ½ Ð¾Ñ‚Ð³Ð¾Ð²Ð¾Ñ€</option>
+                        <option value="single_choice">Един верен</option>
+                        <option value="multiple_choice">Повече от един верен</option>
+                        <option value="true_false">Вярно/Грешно</option>
+                        <option value="short_answer">Отворен отговор</option>
+                        <option value="numeric">Числен отговор</option>
                     </select>
-                    <input type="number" class="form-control form-control-sm points" min="0" step="0.5" value="1" style="width:120px" title="Ð¢Ð¾Ñ‡ÐºÐ¸" />
+                    <input type="number" class="form-control form-control-sm points" min="0" step="0.5" value="1" style="width:120px" title="Точки" />
                     <select class="form-select form-select-sm difficulty" style="width:auto">
-                        <option value="">Ð¢Ñ€ÑƒÐ´Ð½Ð¾ÑÑ‚</option>
+                        <option value="">Трудност</option>
                         <option value="1">1</option>
                         <option value="2">2</option>
                         <option value="3">3</option>
@@ -386,19 +386,19 @@ foreach ($qrows as $q) {
                 <button type="button" class="btn btn-sm btn-outline-danger remove-question"><i class="bi bi-trash"></i></button>
             </div>
             <div class="mb-2">
-                <textarea class="form-control body" rows="2" placeholder="Ð¢ÐµÐºÑÑ‚ Ð½Ð° Ð²ÑŠÐ¿Ñ€Ð¾ÑÐ°..."></textarea>
+                <textarea class="form-control body" rows="2" placeholder="Текст на въпроса..."></textarea>
             </div>
             <div class="mb-2">
-                <label class="form-label small">ÐœÐµÐ´Ð¸Ñ (Ð¸Ð·Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð¸Ðµ/PDF, Ð¿Ð¾ Ð¶ÐµÐ»Ð°Ð½Ð¸Ðµ)</label>
+                <label class="form-label small">Медия (изображение/PDF, по желание)</label>
                 <input type="file" class="form-control form-control-sm qfile" name="qfile[]" accept="image/*,application/pdf" />
                 <div class="form-check mt-1">
                     <input class="form-check-input remove-media" type="checkbox" />
-                    <label class="form-check-label small">ÐŸÑ€ÐµÐ¼Ð°Ñ…Ð½Ð¸ Ð½Ð°Ð»Ð¸Ñ‡Ð½Ð°Ñ‚Ð° Ð¼ÐµÐ´Ð¸Ñ</label>
+                    <label class="form-check-label small">Премахни наличната медия</label>
                 </div>
             </div>
             <div class="options-wrap"></div>
             <div class="mt-2">
-                <input type="text" class="form-control form-control-sm explanation" placeholder="ÐžÐ±ÑÑÐ½ÐµÐ½Ð¸Ðµ (Ð¿Ð¾ Ð¶ÐµÐ»Ð°Ð½Ð¸Ðµ)" />
+                <input type="text" class="form-control form-control-sm explanation" placeholder="Обяснение (по желание)" />
             </div>
         </div>
     </div>
@@ -406,10 +406,10 @@ foreach ($qrows as $q) {
 
 <template id="optionRowTemplate">
     <div class="d-flex option-row align-items-center mb-2">
-        <input type="text" class="form-control option-content" placeholder="Ð’ÑŠÐ·Ð¼Ð¾Ð¶ÐµÐ½ Ð¾Ñ‚Ð³Ð¾Ð²Ð¾Ñ€" />
+        <input type="text" class="form-control option-content" placeholder="Възможен отговор" />
         <div class="form-check ms-1 me-1">
             <input class="form-check-input option-correct" type="checkbox" />
-            <label class="form-check-label">Ð²ÐµÑ€ÐµÐ½</label>
+            <label class="form-check-label">верен</label>
         </div>
         <button type="button" class="btn btn-sm btn-outline-secondary remove-option"><i class="bi bi-x"></i></button>
     </div>
@@ -429,7 +429,7 @@ function renderOptions(block, type){
     const addOpt = document.createElement('button');
     addOpt.type = 'button';
     addOpt.className = 'btn btn-sm btn-outline-primary mb-2';
-    addOpt.innerHTML = '<i class="bi bi-plus-lg me-1"></i>Ð”Ð¾Ð±Ð°Ð²Ð¸ Ð¾Ñ‚Ð³Ð¾Ð²Ð¾Ñ€';
+    addOpt.innerHTML = '<i class="bi bi-plus-lg me-1"></i>Добави отговор';
     addOpt.addEventListener('click', ()=>{
       const row = optTpl.content.cloneNode(true);
       row.querySelector('.remove-option').addEventListener('click', (e)=>{
@@ -442,16 +442,16 @@ function renderOptions(block, type){
     wrap.innerHTML = `
       <div class="d-flex gap-2">
         <div class="form-check">
-          <input class="form-check-input tf-correct" type="radio" name="tf-${Date.now()}" value="true"> <label class="form-check-label">Ð’ÑÑ€Ð½Ð¾</label>
+          <input class="form-check-input tf-correct" type="radio" name="tf-${Date.now()}" value="true"> <label class="form-check-label">Вярно</label>
         </div>
         <div class="form-check">
-          <input class="form-check-input tf-correct" type="radio" name="tf-${Date.now()}" value="false"> <label class="form-check-label">Ð“Ñ€ÐµÑˆÐ½Ð¾</label>
+          <input class="form-check-input tf-correct" type="radio" name="tf-${Date.now()}" value="false"> <label class="form-check-label">Грешно</label>
         </div>
       </div>`;
   } else if (type === 'short_answer') {
-    wrap.innerHTML = '<textarea class="form-control short-answers" rows="2" placeholder="Ð”Ð¾Ð¿ÑƒÑÑ‚Ð¸Ð¼Ð¸ Ð¾Ñ‚Ð³Ð¾Ð²Ð¾Ñ€Ð¸ (Ð²ÑÐµÐºÐ¸ Ð½Ð° Ð½Ð¾Ð² Ñ€ÐµÐ´ Ð¸Ð»Ð¸ Ñ€Ð°Ð·Ð´ÐµÐ»ÐµÐ½Ð¸ Ñ |)"></textarea>';
+    wrap.innerHTML = '<textarea class="form-control short-answers" rows="2" placeholder="Допустими отговори (всеки на нов ред или разделени с |)"></textarea>';
   } else if (type === 'numeric') {
-    wrap.innerHTML = '<input type="number" step="any" class="form-control numeric-answer" placeholder="Ð’ÐµÑ€Ð½Ð¸ÑÑ‚ Ñ‡Ð¸ÑÐ»ÐµÐ½ Ð¾Ñ‚Ð³Ð¾Ð²Ð¾Ñ€" />';
+    wrap.innerHTML = '<input type="number" step="any" class="form-control numeric-answer" placeholder="Верният числен отговор" />';
   }
 }
 
@@ -476,7 +476,7 @@ function addQuestion(prefill){
     if (prefill.media_url){
       const hint = document.createElement('div');
       hint.className = 'small text-muted';
-      hint.innerHTML = 'ÐÐ°Ð»Ð¸Ñ‡Ð½Ð° Ð¼ÐµÐ´Ð¸Ñ: <a href="'+prefill.media_url+'" target="_blank">Ð¿Ñ€ÐµÐ³Ð»ÐµÐ´</a>';
+      hint.innerHTML = 'Налична медия: <a href="'+prefill.media_url+'" target="_blank">преглед</a>';
       block.querySelector('.q-card .card-body').insertBefore(hint, block.querySelector('.options-wrap'));
     }
   }
@@ -497,7 +497,7 @@ function addQuestion(prefill){
     } else if (select.value === 'true_false') {
       const correct = (prefill.options || []).find(op => op.is_correct);
       if (correct){
-        const val = correct.content === 'Ð’ÑÑ€Ð½Ð¾' ? 'true' : 'false';
+        const val = correct.content === 'Вярно' ? 'true' : 'false';
         const radio = block.querySelector(`.tf-correct[value="${val}"]`);
         if (radio) radio.checked = true;
       }
@@ -516,7 +516,7 @@ function addQuestion(prefill){
 document.getElementById('testForm').addEventListener('submit', function(e){
   const qBlocks = container.querySelectorAll('.question-block');
   if (!qBlocks.length){
-    alert('Ð”Ð¾Ð±Ð°Ð²ÐµÑ‚Ðµ Ð¿Ð¾Ð½Ðµ ÐµÐ´Ð¸Ð½ Ð²ÑŠÐ¿Ñ€Ð¾Ñ.');
+    alert('Добавете поне един въпрос.');
     e.preventDefault();
     return;
   }
@@ -558,11 +558,11 @@ document.getElementById('testForm').addEventListener('submit', function(e){
     } else if (qtype === 'true_false') {
       const selected = block.querySelector('.tf-correct:checked');
       if (selected){
-        const val = selected.value === 'true' ? 'Ð’ÑÑ€Ð½Ð¾' : 'Ð“Ñ€ÐµÑˆÐ½Ð¾';
-        const c = document.createElement('input'); c.type='hidden'; c.name=`questions[${i}][options][0][content]`; c.value='Ð’ÑÑ€Ð½Ð¾'; e.target.appendChild(c);
-        const k = document.createElement('input'); k.type='hidden'; k.name=`questions[${i}][options][0][is_correct]`; k.value=(val==='Ð’ÑÑ€Ð½Ð¾')?'1':''; e.target.appendChild(k);
-        const c2 = document.createElement('input'); c2.type='hidden'; c2.name=`questions[${i}][options][1][content]`; c2.value='Ð“Ñ€ÐµÑˆÐ½Ð¾'; e.target.appendChild(c2);
-        const k2 = document.createElement('input'); k2.type='hidden'; k2.name=`questions[${i}][options][1][is_correct]`; k2.value=(val==='Ð“Ñ€ÐµÑˆÐ½Ð¾')?'1':''; e.target.appendChild(k2);
+        const val = selected.value === 'true' ? 'Вярно' : 'Грешно';
+        const c = document.createElement('input'); c.type='hidden'; c.name=`questions[${i}][options][0][content]`; c.value='Вярно'; e.target.appendChild(c);
+        const k = document.createElement('input'); k.type='hidden'; k.name=`questions[${i}][options][0][is_correct]`; k.value=(val==='Вярно')?'1':''; e.target.appendChild(k);
+        const c2 = document.createElement('input'); c2.type='hidden'; c2.name=`questions[${i}][options][1][content]`; c2.value='Грешно'; e.target.appendChild(c2);
+        const k2 = document.createElement('input'); k2.type='hidden'; k2.name=`questions[${i}][options][1][is_correct]`; k2.value=(val==='Грешно')?'1':''; e.target.appendChild(k2);
       }
     } else if (qtype === 'short_answer') {
       const text = block.querySelector('.short-answers').value;
@@ -585,11 +585,11 @@ document.getElementById('addQuestionBtn').addEventListener('click', ()=> addQues
 
 <footer class="border-top py-4">
     <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-        <div class="text-muted">Â© <?= date('Y'); ?> TestGramatikov</div>
+        <div class="text-muted">© <?= date('Y'); ?> TestGramatikov</div>
         <div class="d-flex gap-3 small">
-            <a class="text-decoration-none" href="terms.php">Ð£ÑÐ»Ð¾Ð²Ð¸Ñ</a>
-            <a class="text-decoration-none" href="privacy.php">ÐŸÐ¾Ð²ÐµÑ€Ð¸Ñ‚ÐµÐ»Ð½Ð¾ÑÑ‚</a>
-            <a class="text-decoration-none" href="contact.php">ÐšÐ¾Ð½Ñ‚Ð°ÐºÑ‚</a>
+            <a class="text-decoration-none" href="terms.php">Условия</a>
+            <a class="text-decoration-none" href="privacy.php">Поверителност</a>
+            <a class="text-decoration-none" href="contact.php">Контакт</a>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

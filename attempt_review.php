@@ -179,4 +179,3 @@ while ($row = $aaStmt->fetch()) { $aa[(int)$row['question_id']] = $row; }
 </footer>
 </body>
 </html>
-

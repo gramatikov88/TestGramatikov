@@ -14,7 +14,7 @@ ensure_test_theme_and_q_media($pdo);
 $student = $_SESSION['user'];
 
 $assignment_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-if ($assignment_id <= 0) { http_response_code(400); die('Ð›Ð¸Ð¿ÑÐ²Ð° Ð·Ð°Ð´Ð°Ð½Ð¸Ðµ.'); }
+if ($assignment_id <= 0) { http_response_code(400); die('Липсва задание.'); }
 
 // Load assignment + test
 $stmt = $pdo->prepare('SELECT a.*, t.id AS test_id, t.title AS test_title, t.time_limit_sec, t.is_randomized, t.is_strict_mode, t.theme, t.theme_config
@@ -22,7 +22,7 @@ $stmt = $pdo->prepare('SELECT a.*, t.id AS test_id, t.title AS test_title, t.tim
                        WHERE a.id = :id');
 $stmt->execute([':id' => $assignment_id]);
 $assignment = $stmt->fetch();
-if (!$assignment) { http_response_code(404); die('Ð—Ð°Ð´Ð°Ð½Ð¸ÐµÑ‚Ð¾ Ð½Ðµ Ðµ Ð½Ð°Ð¼ÐµÑ€ÐµÐ½Ð¾.'); }
+if (!$assignment) { http_response_code(404); die('Заданието не е намерено.'); }
 $strict_mode_active = !empty($assignment['is_strict_mode']);
 
 // Access checks: published and within window
@@ -30,7 +30,7 @@ $now = time();
 $window_ok = true;
 if (!empty($assignment['open_at']) && strtotime($assignment['open_at']) > $now) $window_ok = false;
 if (!empty($assignment['close_at']) && strtotime($assignment['close_at']) < $now) $window_ok = false;
-if (!$assignment['is_published'] || !$window_ok) { http_response_code(403); die('Ð—Ð°Ð´Ð°Ð½Ð¸ÐµÑ‚Ð¾ Ð½Ðµ Ðµ Ð°ÐºÑ‚Ð¸Ð²Ð½Ð¾.'); }
+if (!$assignment['is_published'] || !$window_ok) { http_response_code(403); die('Заданието не е активно.'); }
 
 // Targeting: direct student or via class membership
 $ok = false;
@@ -43,7 +43,7 @@ if (!$ok) {
     $stmt->execute([':aid'=>$assignment_id, ':sid'=>$student['id']]);
     $ok = (bool)$stmt->fetchColumn();
 }
-if (!$ok) { http_response_code(403); die('ÐÑÐ¼Ð°Ñ‚Ðµ Ð´Ð¾ÑÑ‚ÑŠÐ¿ Ð´Ð¾ Ñ‚Ð¾Ð²Ð° Ð·Ð°Ð´Ð°Ð½Ð¸Ðµ.'); }
+if (!$ok) { http_response_code(403); die('Нямате достъп до това задание.'); }
 
 // Attempts info
 $stmt = $pdo->prepare('SELECT COALESCE(MAX(attempt_no),0) FROM attempts WHERE assignment_id = :aid AND student_id = :sid');
@@ -82,7 +82,7 @@ $result = null; $error_msg = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$can_attempt) {
-        $error_msg = 'Ð”Ð¾ÑÑ‚Ð¸Ð³Ð½Ð°Ñ‚ Ðµ Ð»Ð¸Ð¼Ð¸Ñ‚ÑŠÑ‚ Ð½Ð° Ð¾Ð¿Ð¸Ñ‚Ð¸Ñ‚Ðµ.';
+        $error_msg = 'Достигнат е лимитът на опитите.';
     } else {
         $strict_violation = $strict_mode_active && (($_POST['strict_flag'] ?? '') === '1');
         try {
@@ -175,7 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
-            $error_msg = 'Ð“Ñ€ÐµÑˆÐºÐ° Ð¿Ñ€Ð¸ Ð¿Ñ€ÐµÐ´Ð°Ð²Ð°Ð½Ðµ: ' . $e->getMessage();
+            $error_msg = 'Грешка при предаване: ' . $e->getMessage();
         }
     }
 }
@@ -185,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Ð—Ð°Ð´Ð°Ð½Ð¸Ðµ â€“ <?= htmlspecialchars($assignment['title']) ?> â€“ TestGramatikov</title>
+    <title>Задание – <?= htmlspecialchars($assignment['title']) ?> – TestGramatikov</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
@@ -200,30 +200,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <main class="container my-4 my-md-5">
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
-            <h1 class="h5 m-0">Ð—Ð°Ð´Ð°Ð½Ð¸Ðµ: <?= htmlspecialchars($assignment['title']) ?></h1>
-            <div class="text-muted">Ð¢ÐµÑÑ‚: <?= htmlspecialchars($assignment['test_title']) ?></div>
+            <h1 class="h5 m-0">Задание: <?= htmlspecialchars($assignment['title']) ?></h1>
+            <div class="text-muted">Тест: <?= htmlspecialchars($assignment['test_title']) ?></div>
         </div>
-        <a href="dashboard.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Ð¢Ð°Ð±Ð»Ð¾</a>
+        <a href="dashboard.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Табло</a>
     </div>
 
     <div class="row g-3 mb-3">
         <div class="col-md-8">
             <div class="alert alert-info py-2 mb-0">
                 <?php if (!empty($assignment['due_at'])): ?>
-                    Ð¡Ñ€Ð¾Ðº: <strong><?= htmlspecialchars($assignment['due_at']) ?></strong>
+                    Срок: <strong><?= htmlspecialchars($assignment['due_at']) ?></strong>
                 <?php else: ?>
-                    Ð‘ÐµÐ· ÐºÑ€Ð°Ð¹Ð½Ð° Ð´Ð°Ñ‚Ð°
+                    Без крайна дата
                 <?php endif; ?>
                 <?php if ((int)$assignment['attempt_limit'] > 0): ?>
-                    <span class="ms-3">ÐžÐ¿Ð¸Ñ‚: <strong><?= $prev_attempts ?></strong> Ð¾Ñ‚ <strong><?= (int)$assignment['attempt_limit'] ?></strong></span>
+                    <span class="ms-3">Опит: <strong><?= $prev_attempts ?></strong> от <strong><?= (int)$assignment['attempt_limit'] ?></strong></span>
                 <?php else: ?>
-                    <span class="ms-3">ÐžÐ¿Ð¸Ñ‚Ð¸: <strong>Ð½ÐµÐ¾Ð³Ñ€Ð°Ð½Ð¸Ñ‡ÐµÐ½Ð¸</strong></span>
+                    <span class="ms-3">Опити: <strong>неограничени</strong></span>
                 <?php endif; ?>
                 <?php if (!empty($assignment['shuffle_questions'])): ?>
-                    <span class="ms-3">Ð’ÑŠÐ¿Ñ€Ð¾ÑÐ¸: Ñ€Ð°Ð·Ð±ÑŠÑ€ÐºÐ°Ð½Ð¸</span>
+                    <span class="ms-3">Въпроси: разбъркани</span>
                 <?php endif; ?>
                 <?php if (!empty($assignment['time_limit_sec'])): ?>
-                    <span class="ms-3">Ð›Ð¸Ð¼Ð¸Ñ‚: <?= (int)$assignment['time_limit_sec'] ?> ÑÐµÐº.</span>
+                    <span class="ms-3">Лимит: <?= (int)$assignment['time_limit_sec'] ?> сек.</span>
                 <?php endif; ?>
                 <?php if ($strict_mode_active): ?>
                     <span class="ms-3 text-danger fw-semibold">Стриктен режим: напускане на страницата анулира опита</span>
@@ -232,13 +232,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <div class="col-md-4 text-md-end">
             <?php if (!$can_attempt): ?>
-                <div class="alert alert-warning py-2 mb-0">ÐÑÐ¼Ð°Ñ‚Ðµ Ð¿Ð¾Ð²ÐµÑ‡Ðµ Ð¾Ð¿Ð¸Ñ‚Ð¸.</div>
+                <div class="alert alert-warning py-2 mb-0">Нямате повече опити.</div>
             <?php endif; ?>
         </div>
     </div>
 
     <?php if ($result): ?>
-        <div class="alert alert-success">Ð ÐµÐ·ÑƒÐ»Ñ‚Ð°Ñ‚: <strong><?= (float)$result['score'] ?>/<?= (float)$result['max'] ?></strong> (<?= (float)$result['percent'] ?>%)</div>
+        <div class="alert alert-success">Резултат: <strong><?= (float)$result['score'] ?>/<?= (float)$result['max'] ?></strong> (<?= (float)$result['percent'] ?>%)</div>
     <?php elseif ($error_msg): ?>
         <div class="alert alert-danger"><?= htmlspecialchars($error_msg) ?></div>
     <?php endif; ?>
@@ -252,8 +252,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="card shadow-sm mb-3 q-card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
-                        <div><strong>Ð’ÑŠÐ¿Ñ€Ð¾Ñ <?= $idx+1 ?>.</strong> <?= nl2br(htmlspecialchars($q['body'])) ?></div>
-                        <span class="badge bg-light text-dark"><?= (float)$q['points'] ?> Ñ‚.</span>
+                        <div><strong>Въпрос <?= $idx+1 ?>.</strong> <?= nl2br(htmlspecialchars($q['body'])) ?></div>
+                        <span class="badge bg-light text-dark"><?= (float)$q['points'] ?> т.</span>
                     </div>
                     <div class="mt-2">
                         <?php if (in_array($q['qtype'], ['single_choice','true_false'], true)): ?>
@@ -271,9 +271,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                             <?php endforeach; ?>
                         <?php elseif ($q['qtype'] === 'short_answer'): ?>
-                            <input type="text" name="q_<?= (int)$q['id'] ?>" class="form-control" placeholder="Ð’Ð°ÑˆÐ¸ÑÑ‚ Ð¾Ñ‚Ð³Ð¾Ð²Ð¾Ñ€" />
+                            <input type="text" name="q_<?= (int)$q['id'] ?>" class="form-control" placeholder="Вашият отговор" />
                         <?php elseif ($q['qtype'] === 'numeric'): ?>
-                            <input type="number" step="any" name="q_<?= (int)$q['id'] ?>" class="form-control" placeholder="Ð§Ð¸ÑÐ»Ð¾" />
+                            <input type="number" step="any" name="q_<?= (int)$q['id'] ?>" class="form-control" placeholder="Число" />
                         <?php endif; ?>
                     </div>
                 </div>
@@ -281,18 +281,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endforeach; ?>
 
         <div class="d-flex justify-content-end">
-            <button type="submit" class="btn btn-primary" <?= $can_attempt ? '' : 'disabled' ?>><i class="bi bi-check2-circle me-1"></i>ÐŸÑ€ÐµÐ´Ð°Ð¹</button>
+            <button type="submit" class="btn btn-primary" <?= $can_attempt ? '' : 'disabled' ?>><i class="bi bi-check2-circle me-1"></i>Предай</button>
         </div>
     </form>
 </main>
 
 <footer class="border-top py-4">
     <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-        <div class="text-muted">Â© <?= date('Y'); ?> TestGramatikov</div>
+        <div class="text-muted">© <?= date('Y'); ?> TestGramatikov</div>
         <div class="d-flex gap-3 small">
-            <a class="text-decoration-none" href="terms.php">Ð£ÑÐ»Ð¾Ð²Ð¸Ñ</a>
-            <a class="text-decoration-none" href="privacy.php">ÐŸÐ¾Ð²ÐµÑ€Ð¸Ñ‚ÐµÐ»Ð½Ð¾ÑÑ‚</a>
-            <a class="text-decoration-none" href="contact.php">ÐšÐ¾Ð½Ñ‚Ð°ÐºÑ‚</a>
+            <a class="text-decoration-none" href="terms.php">Условия</a>
+            <a class="text-decoration-none" href="privacy.php">Поверителност</a>
+            <a class="text-decoration-none" href="contact.php">Контакт</a>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
