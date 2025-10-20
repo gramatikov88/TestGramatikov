@@ -86,6 +86,8 @@ if ($pdo) {
             if ($attempt_id > 0 && ($grade === null || ($grade >= 2 && $grade <= 6))) {
                 $upd = $pdo->prepare('UPDATE attempts atp JOIN assignments a ON a.id = atp.assignment_id SET atp.teacher_grade = :g WHERE atp.id = :id AND a.assigned_by_teacher_id = :tid');
                 $upd->execute([':g' => $grade, ':id' => $attempt_id, ':tid' => (int)$user['id']]);
+            }
+        }
         // Teacher: classes (initial load; refined below by filters)
         $stmt = $pdo->prepare('SELECT id, grade, section, school_year, name, created_at FROM classes WHERE teacher_id = :tid ORDER BY school_year DESC, grade, section');
         $stmt->execute([':tid' => (int)$user['id']]);
@@ -120,6 +122,7 @@ if ($pdo) {
             $teacher['class_stats'] = $stmt->fetchAll();
         } catch (Throwable $e) {
             $teacher['class_stats'] = [];
+        }
         
         // ---------- Apply optional filters and sorting (override defaults) ----------
         $t_q = isset($_GET['t_q']) ? trim((string)$_GET['t_q']) : '';
@@ -186,19 +189,23 @@ if ($pdo) {
         $countStmt = $pdo->prepare('SELECT COUNT(*)' . $aFrom);
         foreach ($aParams as $param => $value) {
             $countStmt->bindValue($param, $value);
+        }
         $countStmt->execute();
         $totalAttempts = (int)$countStmt->fetchColumn();
         $totalPages = $totalAttempts > 0 ? (int)ceil($totalAttempts / $attemptsPerPage) : 1;
         if ($totalPages < 1) {
             $totalPages = 1;
+        }
         if ($totalAttempts === 0) {
             $a_page = 1;
         } elseif ($a_page > $totalPages) {
             $a_page = $totalPages;
+        }
         $offset = ($a_page - 1) * $attemptsPerPage;
         $stmt = $pdo->prepare($aSelect . $aFrom . $aOrder . ' LIMIT :limit OFFSET :offset');
         foreach ($aParams as $param => $value) {
             $stmt->bindValue($param, $value);
+        }
         $stmt->bindValue(':limit', $attemptsPerPage, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
@@ -258,6 +265,7 @@ if ($pdo) {
                     $row['status'] = 'current';
                 } else {
                     $row['status'] = 'upcoming';
+                }
                 $currentAssignments[] = $row;
         $teacher['assignments_current'] = array_slice($currentAssignments, 0, 8);
         $teacher['assignments_past'] = array_slice($pastAssignments, 0, 8);
