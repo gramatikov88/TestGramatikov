@@ -157,7 +157,7 @@ $selectedClassLabel = null;
 if ($selectedClassId) {
     foreach ($classes as $classRow) {
         if ((int)$classRow['id'] === $selectedClassId) {
-            $selectedClassLabel = sprintf('%s%s â€¢ %s', $classRow['grade'], $classRow['section'], $classRow['school_year']);
+            $selectedClassLabel = sprintf('%s%s • %s', $classRow['grade'], $classRow['section'], $classRow['school_year']);
             break;
         }
     }
@@ -198,7 +198,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                 <select name="class_id" id="class_id" class="form-select" onchange="this.form.submit()">
                     <?php foreach ($classes as $option): ?>
                         <option value="<?= (int)$option['id'] ?>" <?= (int)$option['id'] === $selectedClassId ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($option['grade'] . $option['section']) ?> â€¢ <?= htmlspecialchars($option['school_year']) ?> â€“ <?= htmlspecialchars($option['name']) ?>
+                            <?= htmlspecialchars($option['grade'] . $option['section']) ?> • <?= htmlspecialchars($option['school_year']) ?> – <?= htmlspecialchars($option['name']) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>

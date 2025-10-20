@@ -480,7 +480,7 @@ if ($pdo) {
                                     <div class="list-group-item d-flex justify-content-between align-items-center">
                                         <div>
                                             <a class="text-decoration-none" href="classes_create.php?id=<?= (int)$c['id'] ?>&created_at=<?= urlencode($c['created_at']) ?>">
-                                                <?= htmlspecialchars($c['grade'] . $c['section']) ?> â€¢ <?= htmlspecialchars($c['school_year']) ?>
+                                                <?= htmlspecialchars($c['grade'] . $c['section']) ?> • <?= htmlspecialchars($c['school_year']) ?>
                                                 <span class="text-muted small ms-2"><?= htmlspecialchars($c['name']) ?></span>
                                             </a>
                                         </div>
@@ -533,7 +533,7 @@ if ($pdo) {
                                         <div class="me-3">
                                             <div class="fw-semibold">
                                                 <?= htmlspecialchars($ra['first_name'] . ' ' . $ra['last_name']) ?>
-                                                <span class="text-muted">â€¢</span>
+                                                <span class="text-muted">•</span>
                                                 <span class="text-muted"><?= htmlspecialchars($ra['assignment_title']) ?></span>
                                             </div>
                                             <div class="text-muted small"><?= htmlspecialchars($ra['submitted_at'] ?: $ra['started_at']) ?></div>
@@ -780,7 +780,7 @@ if ($pdo) {
                             <div class="list-group">
                                 <?php foreach ($student['classes'] as $c): ?>
                                     <div class="list-group-item">
-                                        <?= htmlspecialchars($c['grade'] . $c['section']) ?> â€¢ <?= htmlspecialchars($c['school_year']) ?>
+                                        <?= htmlspecialchars($c['grade'] . $c['section']) ?> • <?= htmlspecialchars($c['school_year']) ?>
                                         <span class="text-muted small ms-2"><?= htmlspecialchars($c['name']) ?></span>
                                     </div>
                                 <?php endforeach; ?>
