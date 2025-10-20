@@ -267,6 +267,8 @@ if ($pdo) {
                     $row['status'] = 'upcoming';
                 }
                 $currentAssignments[] = $row;
+            }
+        }
         $teacher['assignments_current'] = array_slice($currentAssignments, 0, 8);
         $teacher['assignments_past'] = array_slice($pastAssignments, 0, 8);
 
@@ -286,7 +288,8 @@ if ($pdo) {
         } catch (Throwable $e) {
             // ignore
         }
-    }  {    
+    }
+    } elseif ($user['role'] === 'student') {
         $stmt = $pdo->prepare('SELECT c.*
                                FROM classes c
                                JOIN class_students cs ON cs.class_id = c.id
@@ -321,6 +324,8 @@ if ($pdo) {
             $q->execute($params);
             while ($row = $q->fetch()) {
                 $student['open_attempts_map'][(int)$row['assignment_id']] = (int)$row['last_attempt_id'];
+            }
+        }
 
         // Student: recent attempts
         $stmt = $pdo->prepare('SELECT atp.*, a.title AS assignment_title
@@ -339,6 +344,9 @@ if ($pdo) {
             $student['overview'] = $stmt->fetch();
         } catch (Throwable $e) {
             $student['overview'] = null;
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="bg">
@@ -571,6 +579,7 @@ if ($pdo) {
                                     $params['a_page'] = $page;
                                 } else {
                                     unset($params['a_page']);
+                                }
                                 $qs = http_build_query($params);
                                 return 'dashboard.php' . ($qs ? '?' . $qs : '');
                             };
@@ -660,10 +669,10 @@ if ($pdo) {
                                     }
                                     $status = $assignment['status'] ?? 'current';
                                     $badgeClass = 'bg-success';
-                                    $badgeLabel = 'D�D�D����%D_';
+                                    $badgeLabel = "D�D�D����%D_";
                                     if ($status === 'upcoming') {
-                                        $badgeClass = 'bg-warning text-dark';
-                                        $badgeLabel = 'DY�?D�D'�?�,D_�?�%D_';
+                                        $badgeClass = "bg-warning text-dark";
+                                        $badgeLabel = "DY�?D�D'�?�,D_�?�%D_";
                                     }
                                     ?>
                                     <div class="list-group-item d-flex justify-content-between align-items-start">
@@ -719,6 +728,7 @@ if ($pdo) {
                                     $overviewLink = 'assignment_overview.php?id=' . (int)$assignment['id'];
                                     if ($primaryClassId > 0) {
                                         $overviewLink .= '&class_id=' . $primaryClassId;
+                                    }
                                     ?>
                                     <div class="list-group-item d-flex justify-content-between align-items-start">
                                         <div class="me-3">
