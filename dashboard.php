@@ -15,6 +15,7 @@ try { $pdo = db(); ensure_attempts_grade($pdo); ensure_subjects_scope($pdo); } c
 function percent($score, $max) {
     if ($score === null || $max === null || $max <= 0) return null;
     return round(($score / $max) * 100, 2);
+}
 
 function grade_from_percent(?float $percent): ?int {
     if ($percent === null) return null;
@@ -23,15 +24,19 @@ function grade_from_percent(?float $percent): ?int {
     if ($percent >= 65) return 4;
     if ($percent >= 50) return 3;
     return 2;
+}
 
 function normalize_filter_datetime(string $value): string {
     $value = trim($value);
     if ($value === '') {
         return '';
+    }
     $value = str_replace('T', ' ', $value);
     if (strlen($value) === 16) {
         $value .= ':00';
+    }
     return $value;
+}
 
 // Initialize containers
 $teacher = [
@@ -62,12 +67,15 @@ if ($user['role'] === 'teacher') {
         unset($_SESSION['dash_filters']);
         header('Location: dashboard.php');
         exit;
+    }
     if (!empty($_GET)) {
         $save = [];
         foreach ($filter_keys as $k) { if (array_key_exists($k, $_GET)) { $save[$k] = $_GET[$k]; } }
         if ($save) { $_SESSION['dash_filters'] = $save; }
     } elseif (!empty($_SESSION['dash_filters'])) {
         foreach ($_SESSION['dash_filters'] as $k => $v) { $_GET[$k] = $v; }
+    }
+}
 
 if ($pdo) {
     if ($user['role'] === 'teacher') {
@@ -270,7 +278,7 @@ if ($pdo) {
         } catch (Throwable $e) {
             // ignore
         }
-    } else {    
+    }  {    
         $stmt = $pdo->prepare('SELECT c.*
                                FROM classes c
                                JOIN class_students cs ON cs.class_id = c.id
