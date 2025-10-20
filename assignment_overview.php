@@ -1,22 +1,5 @@
 ﻿<?php
-</html>
-</body>
-                                    <td>
-                                        <?= htmlspecialchars($statusLabel) ?>
-                                        <?php if ($strictViolation): ?>
-                                            <span class="badge bg-danger ms-2">Строг режим</span>
-                                        <?php endif; ?>
-                                    </td>
-<?php
 session_start();
-        <div class="col-sm-6 col-lg-3">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-muted small text-uppercase mb-1">Строги нарушения</div>
-                    <div class="h4 mb-0 text-danger"><?= $strictViolations ?></div>
-                </div>
-            </div>
-        </div>
 require_once __DIR__ . '/config.php';
 header('Content-Type: text/html; charset=utf-8');
 
