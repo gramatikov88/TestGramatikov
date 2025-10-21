@@ -274,6 +274,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                     <?php endif; ?>
                 </div>
             </div>
+        </div>
         <div class="col-lg-5 d-flex">
             <div class="card shadow-sm flex-fill">
                 <div class="card-header bg-white"><strong>Разпределение на оценките</strong></div>
@@ -293,6 +294,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                     <?php endif; ?>
                 </div>
             </div>
+        </div>
     </div>
 
     <div class="card shadow-sm">
@@ -309,12 +311,12 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                     <span class="ms-2">Затваряне: <?= htmlspecialchars($assignment['close_at']) ?></span>
                 <?php endif; ?>
             </div>
-        <div class="card-body">
+        <div class="card-body p-0">
             <?php if ($attemptsCount === 0): ?>
-                <div class="text-center text-muted py-4">Няма опити за това задание.</div>
+                <div class="p-4 text-center text-muted">Няма опити за това задание.</div>
             <?php else: ?>
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover align-middle">
+                    <table class="table table-striped table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
                                 <th scope="col">Ученик</th>
