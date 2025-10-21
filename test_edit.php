@@ -341,7 +341,7 @@ foreach ($qrows as $q) {
                 <div class="col-md-3 d-flex align-items-end">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="is_randomized" name="is_randomized" <?= ((int)$test['is_randomized']===1)?'checked':'' ?> />
-                        <label class="form-check-label" for="is_randomized">D�D�D�D�S�?D�D�D�D�D� D�D� D��SD��?D_�?D,�,D�</label>
+                        <label class="form-check-label" for="is_randomized">Разбъркване на въпросите</label>
                     </div>
                 </div>
                 <div class="col-md-3 d-flex align-items-end">
