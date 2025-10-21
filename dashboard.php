@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 session_start();
 require_once __DIR__ . '/config.php';
 header('Content-Type: text/html; charset=utf-8');
@@ -218,12 +218,13 @@ if ($pdo) {
         ];
 
         // Assignments overview (current and past)
-        $assignSql = 'SELECT a.id, a.title, a.open_at, a.due_at, a.close_at,
+        $assignSql = 'SELECT a.id, a.title, a.open_at, a.due_at, a.close_at, a.created_at,
                              SUM(CASE WHEN atp.status IN ("submitted","graded") THEN 1 ELSE 0 END) AS submitted_count,
                              SUM(CASE WHEN atp.status = "graded" OR atp.teacher_grade IS NOT NULL THEN 1 ELSE 0 END) AS graded_count,
                              SUM(CASE WHEN atp.status = "submitted" AND atp.teacher_grade IS NULL THEN 1 ELSE 0 END) AS needs_grade,
                              MIN(ac.class_id) AS primary_class_id,
-                             MAX(t.is_strict_mode) AS is_strict_mode
+                             MAX(t.is_strict_mode) AS is_strict_mode,
+                             MAX(COALESCE(atp.submitted_at, atp.started_at)) AS last_activity_at
                       FROM assignments a
                       LEFT JOIN attempts atp ON atp.assignment_id = a.id
                       LEFT JOIN tests t ON t.id = a.test_id
@@ -240,6 +241,8 @@ if ($pdo) {
         $stmt->execute($assignParams);
         $assignmentRows = $stmt->fetchAll();
         $now = date('Y-m-d H:i:s');
+        $nowTs = strtotime($now);
+        $staleThreshold = strtotime('-12 hours', $nowTs);
         $currentAssignments = [];
         $pastAssignments = [];
         foreach ($assignmentRows as $row) {
@@ -249,12 +252,20 @@ if ($pdo) {
             $openAt = $row['open_at'] ?? null;
             $dueAt = $row['due_at'] ?? null;
             $closeAt = $row['close_at'] ?? null;
+            $lastActivity = $row['last_activity_at'] ?? null;
+            $createdAt = $row['created_at'] ?? null;
 
             $isPast = false;
             if ($closeAt && $closeAt < $now) {
                 $isPast = true;
             } elseif (!$closeAt && $dueAt && $dueAt < $now) {
                 $isPast = true;
+            } elseif (!$closeAt && !$dueAt) {
+                $reference = $lastActivity ?: $createdAt;
+                if ($reference && strtotime($reference) <= $staleThreshold) {
+                    $isPast = true;
+                }
+            }
 
             if ($isPast) {
                 $row['status'] = 'past';
@@ -288,7 +299,6 @@ if ($pdo) {
         } catch (Throwable $e) {
             // ignore
         }
-    }
     } elseif ($user['role'] === 'student') {
         $stmt = $pdo->prepare('SELECT c.*
                                FROM classes c
@@ -879,7 +889,7 @@ if ($pdo) {
 
 <footer class="border-top py-4">
     <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-        <div class="text-muted">© <?= date('Y'); ?> TestGramatikov</div>
+        <div class="text-muted">&copy; <?= date('Y'); ?> TestGramatikov</div>
         <div class="d-flex gap-3 small">
             <a class="text-decoration-none" href="terms.php">Условия</a>
             <a class="text-decoration-none" href="privacy.php">Поверителност</a>

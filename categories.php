@@ -94,7 +94,7 @@ try {
 
 <footer class="border-top py-4">
     <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-        <div class="text-muted">© <?= date('Y'); ?> TestGramatikov</div>
+        <div class="text-muted">&copy; <?= date('Y'); ?> TestGramatikov</div>
         <div class="d-flex gap-3 small">
             <a class="text-decoration-none" href="terms.php">Условия</a>
             <a class="text-decoration-none" href="privacy.php">Поверителност</a>
