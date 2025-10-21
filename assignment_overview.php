@@ -259,7 +259,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
     </div>
     <div class="row g-3 g-md-4 mb-4">
         <div class="col-lg-7">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100" style="max-height: 360px;">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <strong>Резултати по опити</strong>
                     <?php if ($bestPercent !== null): ?>
