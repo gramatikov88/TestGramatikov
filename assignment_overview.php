@@ -348,17 +348,17 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                         <div class="fw-semibold"><?= htmlspecialchars($fullName) ?></div>
                                         <div class="text-muted small"><?= htmlspecialchars($attempt['email']) ?></div>
                                     </td>
-                                    <td><?= htmlspecialchars($attempt['started_at'] ?: 'â€”') ?></td>
-                                    <td><?= htmlspecialchars($attempt['submitted_at'] ?: 'â€”') ?></td>
+                                    <td><?= htmlspecialchars($attempt['started_at'] ?: '—') ?></td>
+                                    <td><?= htmlspecialchars($attempt['submitted_at'] ?: '—') ?></td>
                                     <td>
                                         <?php if ($percentValue !== null): ?>
                                             <span class="badge <?= $percentValue >= 50 ? 'bg-success' : 'bg-danger' ?>"><?= $percentValue ?>%</span>
                                         <?php else: ?>
-                                            â€”
+                                            —
                                         <?php endif; ?>
                                     </td>
-                                    <td><?= $autoGrade !== null ? $autoGrade : 'â€”' ?></td>
-                                    <td><?= $teacherGrade !== null ? (int)$teacherGrade : 'â€”' ?></td>
+                                    <td><?= $autoGrade !== null ? $autoGrade : '—' ?></td>
+                                    <td><?= $teacherGrade !== null ? (int)$teacherGrade : '—' ?></td>
                                     <td><?= htmlspecialchars($statusLabel) ?></td>
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm" role="group">
@@ -412,7 +412,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: ctx => ctx.parsed.y !== null ? ctx.parsed.y + '%' : 'â€”'
+                        label: ctx => ctx.parsed.y !== null ? ctx.parsed.y + '%' : '—'
                     }
                 }
             }

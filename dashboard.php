@@ -539,13 +539,13 @@ if ($pdo) {
                                             <div class="text-muted small"><?= htmlspecialchars($ra['submitted_at'] ?: $ra['started_at']) ?></div>
                                         </div>
                                         <div class="d-flex align-items-center gap-2">
-                                            <span class="badge <?= ($p !== null && $p >= 50) ? 'bg-success' : 'bg-danger' ?>"><?= $p !== null ? $p . '%' : 'â€”' ?></span>
+                                            <span class="badge <?= ($p !== null && $p >= 50) ? 'bg-success' : 'bg-danger' ?>"><?= $p !== null ? $p . '%' : '—' ?></span>
                                             <span class="badge bg-primary">Авто: <?= $autoGrade !== null ? $autoGrade : '—' ?></span>
                                             <form method="post" class="d-flex align-items-center gap-1">
                                                 <input type="hidden" name="__action" value="set_grade" />
                                                 <input type="hidden" name="attempt_id" value="<?= (int)$ra['id'] ?>" />
                                                 <select name="teacher_grade" class="form-select form-select-sm" style="width:auto">
-                                                    <option value="">â€”</option>
+                                                    <option value="">—</option>
                                                     <?php for ($g=2; $g<=6; $g++): ?>
                                                         <option value="<?= $g ?>" <?= ($displayGrade === $g && $ra['teacher_grade'] !== null)?'selected':'' ?>><?= $g ?></option>
                                                     <?php endfor; ?>
@@ -837,8 +837,8 @@ if ($pdo) {
                                             <div class="text-muted small"><?= htmlspecialchars($ra['submitted_at'] ?: $ra['started_at']) ?></div>
                                         </div>
                                         <div class="d-flex align-items-center gap-2">
-                                            <span class="badge <?= ($p !== null && $p >= 50) ? 'bg-success' : 'bg-danger' ?>"><?= $p !== null ? $p . '%' : 'â€”' ?></span>
-                                            <span class="badge bg-primary"><?= $displayGrade !== null ? $displayGrade : 'â€”' ?></span>
+                                            <span class="badge <?= ($p !== null && $p >= 50) ? 'bg-success' : 'bg-danger' ?>"><?= $p !== null ? $p . '%' : '—' ?></span>
+                                            <span class="badge bg-primary"><?= $displayGrade !== null ? $displayGrade : '—' ?></span>
                                             <a class="btn btn-sm btn-outline-secondary" href="student_attempt.php?id=<?= (int)$ra['id'] ?>"><i class="bi bi-eye"></i> Преглед</a>
                                         </div>
                                     </div>

@@ -301,7 +301,7 @@ foreach ($qrows as $q) {
                 <div class="col-md-3">
                     <label class="form-label">Предмет</label>
                     <select name="subject_id" class="form-select">
-                        <option value="">â€”</option>
+                        <option value="">—</option>
                         <?php foreach ($subjects as $s): $sel = ($test['subject_id'] == $s['id']) ? 'selected' : ''; ?>
                             <option value="<?= (int)$s['id'] ?>" <?= $sel ?>><?= htmlspecialchars($s['name']) ?></option>
                         <?php endforeach; ?>
