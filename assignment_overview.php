@@ -157,7 +157,7 @@ $selectedClassLabel = null;
 if ($selectedClassId) {
     foreach ($classes as $classRow) {
         if ((int)$classRow['id'] === $selectedClassId) {
-            $selectedClassLabel = sprintf('%s%s • %s', $classRow['grade'], $classRow['section'], $classRow['school_year']);
+$selectedClassLabel = sprintf('%s%s - %s', $classRow['grade'], $classRow['section'], $classRow['school_year']);
             break;
         }
     }
@@ -198,7 +198,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                 <select name="class_id" id="class_id" class="form-select" onchange="this.form.submit()">
                     <?php foreach ($classes as $option): ?>
                         <option value="<?= (int)$option['id'] ?>" <?= (int)$option['id'] === $selectedClassId ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($option['grade'] . $option['section']) ?> • <?= htmlspecialchars($option['school_year']) ?> – <?= htmlspecialchars($option['name']) ?>
+                            <?= htmlspecialchars($option['grade'] . $option['section']) ?> - <?= htmlspecialchars($option['school_year']) ?> - <?= htmlspecialchars($option['name']) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -348,17 +348,17 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                         <div class="fw-semibold"><?= htmlspecialchars($fullName) ?></div>
                                         <div class="text-muted small"><?= htmlspecialchars($attempt['email']) ?></div>
                                     </td>
-                                    <td><?= htmlspecialchars($attempt['started_at'] ?: '—') ?></td>
-                                    <td><?= htmlspecialchars($attempt['submitted_at'] ?: '—') ?></td>
+                                    <td><?= htmlspecialchars($attempt['started_at'] ?: '-') ?></td>
+                                    <td><?= htmlspecialchars($attempt['submitted_at'] ?: '-') ?></td>
                                     <td>
                                         <?php if ($percentValue !== null): ?>
                                             <span class="badge <?= $percentValue >= 50 ? 'bg-success' : 'bg-danger' ?>"><?= $percentValue ?>%</span>
                                         <?php else: ?>
-                                            —
+                                            -
                                         <?php endif; ?>
                                     </td>
-                                    <td><?= $autoGrade !== null ? $autoGrade : '—' ?></td>
-                                    <td><?= $teacherGrade !== null ? (int)$teacherGrade : '—' ?></td>
+                                    <td><?= $autoGrade !== null ? $autoGrade : '-' ?></td>
+                                    <td><?= $teacherGrade !== null ? (int)$teacherGrade : '-' ?></td>
                                     <td><?= htmlspecialchars($statusLabel) ?></td>
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm" role="group">
@@ -412,7 +412,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: ctx => ctx.parsed.y !== null ? ctx.parsed.y + '%' : '—'
+                        label: ctx => ctx.parsed.y !== null ? ctx.parsed.y + '%' : '-'
                     }
                 }
             }
