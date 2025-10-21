@@ -257,9 +257,9 @@ $pageTitle = 'Задание: ' . $assignment['title'];
             </div>
         </div>
     </div>
-    <div class="row g-3 g-md-4 mb-4">
-        <div class="col-lg-7">
-            <div class="card shadow-sm h-100" style="max-height: 360px;">
+    <div class="row g-3 g-md-4 mb-4 flex-lg-nowrap">
+        <div class="col-lg-7 d-flex">
+            <div class="card shadow-sm flex-fill">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <strong>Резултати по опити</strong>
                     <?php if ($bestPercent !== null): ?>
@@ -274,8 +274,8 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                     <?php endif; ?>
                 </div>
             </div>
-        <div class="col-lg-5">
-            <div class="card shadow-sm h-100">
+        <div class="col-lg-5 d-flex">
+            <div class="card shadow-sm flex-fill">
                 <div class="card-header bg-white"><strong>Разпределение на оценките</strong></div>
                 <div class="card-body">
                     <?php if (array_sum($gradeDistribution) === 0): ?>
@@ -309,12 +309,12 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                     <span class="ms-2">Затваряне: <?= htmlspecialchars($assignment['close_at']) ?></span>
                 <?php endif; ?>
             </div>
-        <div class="card-body p-0">
+        <div class="card-body">
             <?php if ($attemptsCount === 0): ?>
-                <div class="p-4 text-center text-muted">Няма опити за това задание.</div>
+                <div class="text-center text-muted py-4">Няма опити за това задание.</div>
             <?php else: ?>
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover align-middle mb-0">
+                    <table class="table table-striped table-hover align-middle">
                         <thead class="table-light">
                             <tr>
                                 <th scope="col">Ученик</th>
