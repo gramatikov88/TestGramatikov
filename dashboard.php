@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 require_once __DIR__ . '/config.php';
 header('Content-Type: text/html; charset=utf-8');
@@ -378,7 +378,7 @@ if ($pdo) {
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
             <h1 class="h3 m-0">Здравей, <?= htmlspecialchars($user['first_name'] . ' ' . $user['last_name']) ?></h1>
-            <div class="text-muted">Твоето табло (рола: <?= htmlspecialchars($user['role']) ?>)</div>
+            <div class="text-muted">Твоето табло (роля: <?= htmlspecialchars($user['role']) ?>)</div>
         </div>
         <?php if ($user['role'] === 'teacher'): ?>
             <div class="d-flex gap-2">
@@ -679,10 +679,10 @@ if ($pdo) {
                                     }
                                     $status = $assignment['status'] ?? 'current';
                                     $badgeClass = 'bg-success';
-                                    $badgeLabel = "D�D�D����%D_";
+                                    $badgeLabel = 'Активно';
                                     if ($status === 'upcoming') {
                                         $badgeClass = "bg-warning text-dark";
-                                        $badgeLabel = "DY�?D�D'�?�,D_�?�%D_";
+                                        $badgeLabel = 'Предстоящо';
                                     }
                                     ?>
                                     <div class="list-group-item d-flex justify-content-between align-items-start">
@@ -695,24 +695,24 @@ if ($pdo) {
                                             </div>
                                             <div class="text-muted small">
                                                 <?php if (!empty($assignment['open_at'])): ?>
-                                                    Dz�,: <?= htmlspecialchars($assignment['open_at']) ?>
+                                                    От: <?= htmlspecialchars($assignment['open_at']) ?>
                                                 <?php endif; ?>
                                                 <?php if (!empty($assignment['due_at'])): ?>
-                                                    <span class="ms-2">D"D_: <?= htmlspecialchars($assignment['due_at']) ?></span>
+                                                    <span class="ms-2">До: <?= htmlspecialchars($assignment['due_at']) ?></span>
                                                 <?php elseif (!empty($assignment['close_at'])): ?>
-                                                    <span class="ms-2">D-D��,D�D��?�?D�D�: <?= htmlspecialchars($assignment['close_at']) ?></span>
+                                                    <span class="ms-2">Затваря се: <?= htmlspecialchars($assignment['close_at']) ?></span>
                                                 <?php endif; ?>
                                             </div>
                                             <div class="text-muted small">
-                                                DYD_D'D�D'D�D�D,: <?= $submittedCount ?> / Dz�+D�D�D�D�D,: <?= $gradedCount ?>
+                                                Подадени: <?= $submittedCount ?> / Оценени: <?= $gradedCount ?>
                                             </div>
                                             <?php if ($needsGrade > 0): ?>
-                                                <span class="badge bg-warning text-dark mt-2">D-D� D_�+D�D��?D�D�D�D�: <?= $needsGrade ?></span>
+                                                <span class="badge bg-warning text-dark mt-2">За оценяване: <?= $needsGrade ?></span>
                                             <?php endif; ?>
                                         </div>
                                         <div class="d-flex flex-column align-items-end gap-2">
                                             <span class="badge <?= $badgeClass ?>"><?= $badgeLabel ?></span>
-                                            <a class="btn btn-sm btn-outline-primary" href="assignments_create.php?id=<?= (int)$assignment['id'] ?>"><i class="bi bi-pencil"></i> Dz�,D�D_�?D,</a>
+                                            <a class="btn btn-sm btn-outline-primary" href="assignments_create.php?id=<?= (int)$assignment['id'] ?>"><i class="bi bi-pencil"></i> Редактирай</a>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
