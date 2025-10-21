@@ -21,9 +21,9 @@ function random_password($length = 10): string {
 }
 
 $class_id = null;
-if (isset($_GET['id'])) {
+if (isset($_GET['id']) && $_GET['id'] !== '') {
     $class_id = (int)$_GET['id'];
-} elseif (isset($_POST['id'])) { // fallback, ако сървърът е изрязал query string при POST
+} elseif (isset($_POST['id']) && $_POST['id'] !== '') { // fallback, ако сървърът е изрязал query string при POST
     $class_id = (int)$_POST['id'];
 }
 // В тази база id може да бъде 0 (валиден запис). Режим "редакция" е активен, когато има подаден параметър id.
@@ -236,8 +236,8 @@ if ($editing) {
             </div>
         </div>
         <div class="card-footer bg-white d-flex justify-content-end">
-            <input type="hidden" name="id" value="<?= (int)$class_id ?>" />
-            <input type="hidden" name="orig_id" value="<?= (int)$class_id ?>" />
+            <input type="hidden" name="id" value="<?= $class_id === null ? '' : (int)$class_id ?>" />
+            <input type="hidden" name="orig_id" value="<?= $class_id === null ? '' : (int)$class_id ?>" />
             <input type="hidden" name="orig_created_at" value="<?= htmlspecialchars($class['created_at'] ?? ($_GET['created_at'] ?? '')) ?>" />
             <input type="hidden" name="draft_students" id="draft_students" value="<?= htmlspecialchars($_POST['draft_students'] ?? '[]') ?>" />
             <input type="hidden" name="__action" value="save_class" />
