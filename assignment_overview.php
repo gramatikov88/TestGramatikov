@@ -219,7 +219,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
         <div class="col-sm-6 col-lg-3">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
-                    <div class="text-muted small text-uppercase mb-1">DzD�%D_ D_D�D,�,D,</div>
+                    <div class="text-muted small text-uppercase mb-1">Общо опити</div>
                     <div class="h4 mb-0"><?= $attemptsCount ?></div>
                 </div>
             </div>
@@ -227,7 +227,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
         <div class="col-sm-6 col-lg-3">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
-                    <div class="text-muted small text-uppercase mb-1">DYD_D'D�D'D�D�D,</div>
+                    <div class="text-muted small text-uppercase mb-1">Предадени</div>
                     <div class="h4 mb-0"><?= $submittedCount ?></div>
                 </div>
             </div>
@@ -235,15 +235,15 @@ $pageTitle = 'Задание: ' . $assignment['title'];
         <div class="col-sm-6 col-lg-3">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
-                    <div class="text-muted small text-uppercase mb-1">D��?D�D'D�D� �?D�D���D��,D��,</div>
-                    <div class="h4 mb-0"><?= $averagePercent !== null ? $averagePercent . '%' : '�?' ?></div>
+                    <div class="text-muted small text-uppercase mb-1">Среден резултат</div>
+                    <div class="h4 mb-0"><?= $averagePercent !== null ? $averagePercent . '%' : '-' ?></div>
                 </div>
             </div>
         </div>
         <div class="col-sm-6 col-lg-3">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
-                    <div class="text-muted small text-uppercase mb-1">D-D� D_�+D�D��?D�D�D�D�</div>
+                    <div class="text-muted small text-uppercase mb-1">Чакат оценка</div>
                     <div class="h4 mb-0"><?= $needsGrade ?></div>
                 </div>
             </div>
@@ -270,7 +270,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                     <?php if ($attemptsCount === 0): ?>
                         <div class="text-muted">Все още няма опити за показване.</div>
                     <?php else: ?>
-                        <canvas id="attemptScoresChart" height="200" aria-label="Графика с резултати" role="img"></canvas>
+                        <canvas id="attemptScoresChart" height="160" aria-label="Графика с резултати" role="img"></canvas>
                     <?php endif; ?>
                 </div>
             </div>
