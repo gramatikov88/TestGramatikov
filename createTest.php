@@ -81,6 +81,32 @@ if ($editing) {
     }
 }
 
+$subject_id = $editing && isset($test['subject_id']) ? (int) $test['subject_id'] : null;
+$subjectChoices = [];
+try {
+    $stmt = $pdo->prepare('SELECT id, name FROM subjects WHERE owner_teacher_id IS NULL OR owner_teacher_id = 0 OR owner_teacher_id = :tid ORDER BY name');
+    $stmt->execute([':tid' => (int) $user['id']]);
+    foreach ($stmt->fetchAll() as $row) {
+        $subjectChoices[(int) $row['id']] = $row['name'];
+    }
+} catch (Throwable $e) {
+    $subjectChoices = [];
+}
+if ($subject_id !== null && !isset($subjectChoices[$subject_id])) {
+    try {
+        $stmt = $pdo->prepare('SELECT id, name FROM subjects WHERE id = :id');
+        $stmt->execute([':id' => $subject_id]);
+        if ($row = $stmt->fetch()) {
+            $subjectChoices[(int) $row['id']] = $row['name'];
+        }
+    } catch (Throwable $e) {
+        // ignore
+    }
+}
+if ($subjectChoices) {
+    asort($subjectChoices, SORT_STRING | SORT_FLAG_CASE);
+}
+
 /* ---------------- Handle POST ---------------- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Основни полета
@@ -93,6 +119,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $is_randomized = !empty($_POST['is_randomized']) ? 1 : 0;
     $is_strict_mode = !empty($_POST['is_strict_mode']) ? 1 : 0;
     $theme = trim((string) ($_POST['theme'] ?? 'default'));
+    $subject_id = isset($_POST['subject_id']) && $_POST['subject_id'] !== '' ? (int) $_POST['subject_id'] : null;
+    if ($subject_id !== null && !isset($subjectChoices[$subject_id])) {
+        $errors[] = 'Избраният предмет не е валиден.';
+        $subject_id = null;
+    }
 
     // Въпроси (масив)
     $questions = $_POST['questions'] ?? [];
@@ -138,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Обнови теста
                 $stmt = $pdo->prepare('
                     UPDATE tests
-                    SET title=:title, description=:descr, visibility=:vis, status=:st,
+                    SET title=:title, description=:descr, visibility=:vis, status=:st, subject_id=:sub,
                         time_limit_sec=:tls, max_attempts=:maxa, is_randomized=:rand, is_strict_mode=:strict, theme=:theme
                     WHERE id=:id AND owner_teacher_id=:tid
                 ');
@@ -147,6 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ':descr' => $description !== '' ? $description : null,
                     ':vis' => $visibility,
                     ':st' => $status,
+                    ':sub' => $subject_id !== null ? $subject_id : null,
                     ':tls' => ($time_limit !== null ? $time_limit : null),
                     ':maxa' => $max_attempts,
                     ':rand' => $is_randomized,
@@ -161,11 +193,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 // Създай тест (AUTO_INCREMENT)
                 $stmt = $pdo->prepare('
-                    INSERT INTO tests (owner_teacher_id, title, description, visibility, status, time_limit_sec, max_attempts, is_randomized, is_strict_mode, theme)
-                    VALUES (:tid, :title, :descr, :vis, :st, :tls, :maxa, :rand, :strict, :theme)
+                    INSERT INTO tests (owner_teacher_id, subject_id, title, description, visibility, status, time_limit_sec, max_attempts, is_randomized, is_strict_mode, theme)
+                    VALUES (:tid, :sub, :title, :descr, :vis, :st, :tls, :maxa, :rand, :strict, :theme)
                 ');
                 $stmt->execute([
                     ':tid' => $user['id'],
+                    ':sub' => $subject_id !== null ? $subject_id : null,
                     ':title' => $title,
                     ':descr' => $description !== '' ? $description : null,
                     ':vis' => $visibility,
@@ -244,6 +277,7 @@ $view = [
     'description' => $test['description'] ?? '',
     'visibility' => $test['visibility'] ?? 'private',
     'status' => $test['status'] ?? 'draft',
+    'subject_id' => $subject_id ?? '',
     'time_limit' => isset($test['time_limit_sec']) ? (int) $test['time_limit_sec'] : '',
     'max_attempts' => isset($test['max_attempts']) ? (int) $test['max_attempts'] : 0,
     'is_randomized' => !empty($test['is_randomized']) ? 1 : 0,
@@ -256,6 +290,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $view['description'] = htmlspecialchars($description ?? $view['description']);
     $view['visibility'] = htmlspecialchars($visibility ?? $view['visibility']);
     $view['status'] = htmlspecialchars($status ?? $view['status']);
+    $view['subject_id'] = $subject_id !== null ? (int) $subject_id : '';
     $view['time_limit'] = htmlspecialchars((string) ($time_limit ?? $view['time_limit']));
     $view['max_attempts'] = htmlspecialchars((string) ($max_attempts ?? $view['max_attempts']));
     $view['is_randomized'] = !empty($is_randomized) ? 1 : 0;
@@ -330,6 +365,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="col-12">
                     <label class="form-label">Описание</label>
                     <textarea name="description" rows="2" class="form-control"><?= $view['description'] ?></textarea>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Предмет</label>
+                    <select name="subject_id" class="form-select">
+                        <option value="">Без предмет</option>
+                        <?php foreach ($subjectChoices as $sid => $sname): ?>
+                            <option value="<?= (int) $sid ?>" <?= ((string) $view['subject_id'] === (string) $sid) ? 'selected' : '' ?>><?= htmlspecialchars($sname) ?></option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Статус</label>
