@@ -216,6 +216,11 @@ if ($mode === 'take' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div><strong>Въпрос <?= $idx+1 ?>.</strong> <?= nl2br(htmlspecialchars($q['body'])) ?></div>
                         <span class="badge bg-light text-dark"><?= (float)$q['points'] ?> т.</span>
                     </div>
+                    <?php if (!empty($q['media_url'])): ?>
+                        <div class="question-media mb-3">
+                            <img src="<?= htmlspecialchars($q['media_url']) ?>" alt="Media" class="img-fluid rounded border">
+                        </div>
+                    <?php endif; ?>
                     <div class="mt-2">
                         <?php if (in_array($q['qtype'], ['single_choice','true_false'], true)): ?>
                             <?php foreach ($q['answers'] as $a): ?>

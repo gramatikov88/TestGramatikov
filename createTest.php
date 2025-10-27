@@ -36,6 +36,29 @@ function map_qtype_to_ui(?string $qt): string
     return $qt === 'multiple_choice' ? 'multiple' : 'single';
 }
 
+function extract_question_media(array $files, int $index): ?array
+{
+    if (empty($files) || !isset($files['error'][$index]) || $files['error'][$index] !== UPLOAD_ERR_OK) {
+        return null;
+    }
+    return [
+        'tmp_name' => $files['tmp_name'][$index],
+        'name' => $files['name'][$index],
+        'type' => $files['type'][$index] ?? '',
+        'size' => $files['size'][$index] ?? 0,
+    ];
+}
+
+function detect_upload_mime(string $tmp): ?string
+{
+    $mime = @mime_content_type($tmp);
+    if (!$mime) {
+        return null;
+    }
+    return $mime;
+}
+
+
 /* ---------------- Page state ---------------- */
 $errors = [];
 $saved = false;
@@ -56,6 +79,7 @@ if ($editing) {
     // Лоуд на въпросите
     $q = $pdo->prepare('
         SELECT qb.id AS question_id, qb.body AS q_body, qb.qtype AS qtype,
+               qb.media_url, qb.media_mime,
                tq.points, tq.order_index
         FROM test_questions tq
         JOIN question_bank qb ON qb.id = tq.question_id
@@ -74,6 +98,8 @@ if ($editing) {
             'content' => $r['q_body'],
             'type' => map_qtype_to_ui($r['qtype']),
             'points' => (float) $r['points'],
+            'media_url' => $r['media_url'],
+            'media_mime' => $r['media_mime'],
             'answers' => array_map(function ($a) {
                 return ['content' => $a['content'], 'is_correct' => (int) $a['is_correct']];
             }, $answers),
@@ -127,41 +153,88 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Въпроси (масив)
     $questions = $_POST['questions'] ?? [];
+    $questionMediaFiles = $_FILES['question_media'] ?? null;
+    $processedQuestions = [];
 
     if ($title === '')
-        $errors[] = 'Моля, въведете заглавие на теста.';
+        $errors[] = 'Molya, vavedete zaglavie na testa.';
     if (!is_array($questions) || count($questions) === 0)
-        $errors[] = 'Добавете поне един въпрос.';
+        $errors[] = 'Dobavete pone edin vapros.';
 
-    // Валидация на всеки въпрос/отговори
     foreach ($questions as $idx => $q) {
         $q_content = trim((string) ($q['content'] ?? ''));
-        $q_type_ui = in_array(($q['type'] ?? 'single'), ['single', 'multiple'], true) ? $q['type'] : 'single';
+        $rawType = (string) ($q['type'] ?? 'single');
+        $q_type_ui = in_array($rawType, ['single', 'multiple'], true) ? $rawType : 'single';
         $q_points = (float) ($q['points'] ?? 1);
         $ans = $q['answers'] ?? [];
 
         if ($q_content === '')
-            $errors[] = "Въпрос #" . ($idx + 1) . ": липсва съдържание.";
-        if (!is_array($ans) || count($ans) < 2)
-            $errors[] = "Въпрос #" . ($idx + 1) . ": въведете поне 2 отговора.";
+            $errors[] = 'Vupros #' . ($idx + 1) . ': dobavete tekst na vaprosa.';
+        if ($q_points < 0) {
+            $errors[] = 'Vupros #' . ($idx + 1) . ': tochkite ne mogat da badat otricatelni.';
+            $q_points = 0;
+        }
+        if (!is_array($ans) || count($ans) < 2) {
+            $errors[] = 'Vupros #' . ($idx + 1) . ': dobavete pone dva otgovora.';
+            $ans = is_array($ans) ? $ans : [];
+        }
 
         $correctCount = 0;
+        $preparedAnswers = [];
         foreach ($ans as $aIdx => $a) {
             $a_content = trim((string) ($a['content'] ?? ''));
             $a_correct = !empty($a['is_correct']) ? 1 : 0;
             if ($a_content === '')
-                $errors[] = "Въпрос #" . ($idx + 1) . ", Отговор #" . ($aIdx + 1) . ": съдържанието е празно.";
+                $errors[] = 'Vupros #' . ($idx + 1) . ', otgovor #' . ($aIdx + 1) . ': dobavete tekst.';
             if ($a_correct)
                 $correctCount++;
+            $preparedAnswers[] = ['content' => $a_content, 'is_correct' => $a_correct];
         }
-        if ($q_type_ui === 'single' && $correctCount !== 1) {
-            $errors[] = "Въпрос #" . ($idx + 1) . ": за 'единичен избор' трябва да има точно 1 верен отговор.";
-        } elseif ($q_type_ui === 'multiple' && $correctCount === 0) {
-            $errors[] = "Въпрос #" . ($idx + 1) . ": за 'множествен избор' трябва да има поне 1 верен отговор.";
+        if ($q_type_ui === 'single' && $correctCount !== 1)
+            $errors[] = 'Vupros #' . ($idx + 1) . ': izberete tochno edin veren otgovor.';
+        elseif ($q_type_ui === 'multiple' && $correctCount === 0)
+            $errors[] = 'Vupros #' . ($idx + 1) . ': markirajte pone edin veren otgovor.';
+
+        $existingMediaUrl = trim((string) ($q['existing_media_url'] ?? ''));
+        $existingMediaMime = trim((string) ($q['existing_media_mime'] ?? ''));
+        $removeMedia = !empty($q['remove_media']);
+
+        $mediaUpload = null;
+        $mediaUploadMime = null;
+        if (is_array($questionMediaFiles)) {
+            $candidate = extract_question_media($questionMediaFiles, $idx);
+            if ($candidate) {
+                $mediaUploadMime = detect_upload_mime($candidate['tmp_name']) ?: ($candidate['type'] ?? '');
+                $allowedMimes = ['image/jpeg','image/png','image/gif','image/webp'];
+                if ($mediaUploadMime && in_array($mediaUploadMime, $allowedMimes, true)) {
+                    $candidate['mime'] = $mediaUploadMime;
+                    $mediaUpload = $candidate;
+                } else {
+                    $errors[] = 'Vupros #' . ($idx + 1) . ': izobrazhenieto tryabva da e JPG, PNG, GIF ili WEBP.';
+                }
+            }
         }
+
+        $processedQuestions[] = [
+            'content' => $q_content,
+            'type' => $q_type_ui,
+            'points' => $q_points,
+            'answers' => $preparedAnswers,
+            'media_url' => $removeMedia ? '' : $existingMediaUrl,
+            'media_mime' => $removeMedia ? '' : $existingMediaMime,
+            'existing_media_url' => $existingMediaUrl,
+            'existing_media_mime' => $existingMediaMime,
+            'remove_media' => $removeMedia ? 1 : 0,
+            'media_upload' => $mediaUpload,
+            'media_upload_mime' => $mediaUploadMime,
+        ];
     }
 
-    if (!$errors) {
+    $questions = $processedQuestions;
+
+
+
+if (!$errors) {
         try {
             $pdo->beginTransaction();
 
@@ -229,19 +302,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $q_points = (float) ($q['points'] ?? 1);
                 $answers = $q['answers'];
 
-                // нов въпрос (съобразено със schema: qtype, body)
                 $insQ->execute([
                     ':tid' => $user['id'],
-                    ':vis' => $visibility,                         // ползваме видимостта на теста
-                    ':qtype' => map_ui_to_qtype($q_type_ui),         // single_choice / multiple_choice
-                    ':body' => $q_content,                          // текст на въпроса
+                    ':vis' => $visibility,
+                    ':qtype' => map_ui_to_qtype($q_type_ui),
+                    ':body' => $q_content,
                 ]);
                 $qid = (int) $pdo->lastInsertId();
                 if ($qid <= 0) {
-                    throw new RuntimeException('question_bank няма AUTO_INCREMENT за id.');
+                    throw new RuntimeException('question_bank AUTO_INCREMENT id missing.');
                 }
 
-                // отговори
+                $mediaUrl = null;
+                $mediaMime = null;
+                if (!empty($q['remove_media'])) {
+                    // nothing
+                } elseif (!empty($q['media_upload'])) {
+                    $upload = $q['media_upload'];
+                    $uploadMime = $q['media_upload_mime'] ?? detect_upload_mime($upload['tmp_name']) ?: ($upload['type'] ?? '');
+                    $allowedMimes = ['image/jpeg','image/png','image/gif','image/webp'];
+                    if ($uploadMime && in_array($uploadMime, $allowedMimes, true)) {
+                        $extension = strtolower(pathinfo($upload['name'] ?? '', PATHINFO_EXTENSION));
+                        if ($extension === '') {
+                            if ($uploadMime === 'image/jpeg') {
+                                $extension = 'jpg';
+                            } elseif ($uploadMime === 'image/png') {
+                                $extension = 'png';
+                            } elseif ($uploadMime === 'image/gif') {
+                                $extension = 'gif';
+                            } elseif ($uploadMime === 'image/webp') {
+                                $extension = 'webp';
+                            }
+                        }
+                        $extension = preg_replace('/[^a-z0-9]/i', '', $extension);
+                        if ($extension === '' || $extension === null) {
+                            $extension = 'jpg';
+                        }
+                        $dir = __DIR__ . '/uploads';
+                        if (!is_dir($dir)) {
+                            @mkdir($dir, 0777, true);
+                        }
+                        $filename = 'question_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
+                        if (!move_uploaded_file($upload['tmp_name'], $dir . '/' . $filename)) {
+                            throw new RuntimeException('Neuspeshno kachvane na izobrazhenie.');
+                        }
+                        $mediaUrl = 'uploads/' . $filename;
+                        $mediaMime = $uploadMime;
+                    }
+                } elseif (!empty($q['media_url'])) {
+                    $mediaUrl = $q['media_url'];
+                    $mediaMime = $q['media_mime'] ?? null;
+                }
+
+                if ($mediaUrl) {
+                    $pdo->prepare('UPDATE question_bank SET media_url = :url, media_mime = :mime WHERE id = :id')
+                        ->execute([
+                            ':url' => $mediaUrl,
+                            ':mime' => $mediaMime,
+                            ':id' => $qid,
+                        ]);
+                }
+
                 $aOrder = 1;
                 foreach ($answers as $a) {
                     $insA->execute([
@@ -252,7 +373,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ]);
                 }
 
-                // връзка тест-въпрос
                 $insLink->execute([
                     ':tid' => $test_id,
                     ':qid' => $qid,
@@ -260,7 +380,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ':ord' => $order++,
                 ]);
             }
-
             $pdo->commit();
             $saved = true;
         } catch (Throwable $e) {
@@ -348,7 +467,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         <?php endif; ?>
 
-        <form method="post" class="card shadow-sm mb-4" id="testForm">
+        <form method="post" enctype="multipart/form-data" class="card shadow-sm mb-4" id="testForm">
             <div class="card-header bg-white"><strong>Основни данни</strong></div>
             <div class="card-body row g-3">
                 <div class="col-md-6">
@@ -435,11 +554,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         </select>
                                     </div>
                                     <div class="col-md-2">
-                                        <label class="form-label">Точки</label>
-                                        <input type="number" step="0.01" name="questions[<?= $qi ?>][points]"
-                                            class="form-control" min="0" value="<?= (float) $q['points'] ?>" />
-                                    </div>
+                                    <label class="form-label">Точки</label>
+                                    <input type="number" step="0.01" name="questions[<?= $qi ?>][points]"
+                                        class="form-control" min="0" value="<?= (float) $q['points'] ?>" />
                                 </div>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Изображение (по желание)</label>
+                                <?php if (!empty($q['media_url'])): ?>
+                                    <div class="question-media-preview mb-2" data-media-preview>
+                                        <img src="<?= htmlspecialchars($q['media_url']) ?>" alt="Media preview" class="img-fluid rounded border">
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <label class="form-check-label">
+                                            <input class="form-check-input me-1" type="checkbox" name="questions[<?= $qi ?>][remove_media]" value="1" data-remove-media>
+                                            Премахни текущото изображение
+                                        </label>
+                                    </div>
+                                <?php endif; ?>
+                                <input type="file" class="form-control" name="question_media[<?= $qi ?>]" accept="image/*" data-media-input />
+                                <input type="hidden" name="questions[<?= $qi ?>][existing_media_url]" value="<?= htmlspecialchars($q['media_url'] ?? '') ?>" data-existing-url>
+                                <input type="hidden" name="questions[<?= $qi ?>][existing_media_mime]" value="<?= htmlspecialchars($q['media_mime'] ?? '') ?>" data-existing-mime>
+                            </div>
 
                                 <div class="mt-2" data-answers>
                                     <?php foreach ($q['answers'] as $ai => $a): ?>
@@ -486,6 +622,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <input type="number" step="0.01" name="questions[0][points]" class="form-control"
                                         min="0" value="1" />
                                 </div>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Изображение (по желание)</label>
+                                <input type="file" class="form-control" name="question_media[0]" accept="image/*" data-media-input />
+                                <input type="hidden" name="questions[0][existing_media_url]" value="" data-existing-url>
+                                <input type="hidden" name="questions[0][existing_media_mime]" value="" data-existing-mime>
                             </div>
                             <div class="mt-2" data-answers>
                                 <div class="answer-row" data-answer>
@@ -555,6 +697,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             inp.name = inp.name.replace(/questions\[\d+\]\[answers\]\[\d+\]/, 'questions[' + qi + '][answers][' + ai + ']');
                         });
                     });
+                    const mediaInput = qEl.querySelector('[data-media-input]');
+                    if (mediaInput) {
+                        mediaInput.name = 'question_media[' + qi + ']';
+                    }
                 });
             }
             function addQuestion() {
@@ -564,6 +710,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 tmpl.querySelectorAll('textarea').forEach(i => i.value = '');
                 tmpl.querySelectorAll('input[type="number"]').forEach(i => i.value = '1');
                 tmpl.querySelectorAll('input[type="checkbox"]').forEach(i => i.checked = false);
+                tmpl.querySelectorAll('[data-existing-url]').forEach(i => i.value = '');
+                tmpl.querySelectorAll('[data-existing-mime]').forEach(i => i.value = '');
+                tmpl.querySelectorAll('[data-remove-media]').forEach(i => i.checked = false);
+                tmpl.querySelectorAll('[data-media-input]').forEach(i => i.value = '');
+                tmpl.querySelectorAll('[data-media-preview]').forEach(el => el.remove());
                 const answersWrap = tmpl.querySelector('[data-answers]');
                 answersWrap.innerHTML = '';
                 for (let k = 0; k < 2; k++) {

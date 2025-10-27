@@ -128,6 +128,11 @@ while ($row = $aaStmt->fetch()) { $aa[(int)$row['question_id']] = $row; }
                         <?php endif; ?>
                     </div>
                 </div>
+                <?php if (!empty($q['media_url'])): ?>
+                    <div class="question-media mb-3">
+                        <img src="<?= htmlspecialchars($q['media_url']) ?>" alt="Media" class="img-fluid rounded border">
+                    </div>
+                <?php endif; ?>
                 <div class="mt-2">
                     <?php if (in_array($q['qtype'], ['single_choice','true_false'], true)): ?>
                         <?php foreach ($answers as $a): $sel = $studentAns && (string)$studentAns['selected_option_ids'] === (string)$a['id']; ?>
