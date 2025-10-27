@@ -4,9 +4,7 @@
 SET NAMES utf8mb4;
 SET time_zone = '+00:00';
 
--- Create database
-CREATE DATABASE IF NOT EXISTS `testgramatikov` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `testgramatikov`;
+
 
 -- Safety for re-runs
 SET FOREIGN_KEY_CHECKS = 0;
