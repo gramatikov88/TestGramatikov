@@ -251,11 +251,11 @@ if ($editing) {
                         <div class="small text-muted mt-2">Scan or tap to join the class.</div>
                     </div>
                     <div class="flex-grow-1 w-100">
-                        <h2 class="h5 mb-2">Class QR Invitation</h2>
-                        <p class="text-muted small mb-3">Share this QR code or link with students so they can enrol instantly.</p>
+                        <h2 class="h5 mb-2">Покана с QR</h2>
+                        <p class="text-muted small mb-3">Споделете този QR код или линк с учениците, за да се запишат незабавно.</p>
                         <div class="input-group mb-3">
                             <input type="text" class="form-control" id="classJoinLinkInput" value="<?= htmlspecialchars($classJoinLink) ?>" readonly />
-                            <button type="button" class="btn btn-outline-secondary" data-copy-target="#classJoinLinkInput"><i class="bi bi-clipboard"></i> Copy</button>
+                            <button type="button" class="btn btn-outline-secondary" data-copy-target="#classJoinLinkInput"><i class="bi bi-clipboard"></i> Копирай</button>
                         </div>
                         <div class="d-flex flex-wrap gap-2">
                             <a class="btn btn-outline-primary" href="<?= htmlspecialchars($classJoinLink) ?>" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Open Link</a>
@@ -265,7 +265,7 @@ if ($editing) {
                                     <input type="hidden" name="orig_created_at" value="<?= htmlspecialchars($class['created_at']) ?>" />
                                 <?php endif; ?>
                                 <input type="hidden" name="__action" value="regen_join_token" />
-                                <button type="submit" class="btn btn-outline-danger"><i class="bi bi-arrow-clockwise"></i> Refresh QR</button>
+                                <button type="submit" class="btn btn-outline-danger"><i class="bi bi-arrow-clockwise"></i> Презареди QR</button>
                             </form>
                         </div>
                     </div>

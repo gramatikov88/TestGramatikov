@@ -154,32 +154,32 @@ if ($class) {
                             <?php if ($alreadyMember): ?>
                                 <div class="alert alert-info d-flex align-items-center gap-2">
                                     <i class="bi bi-people-fill"></i>
-                                    <span>You are already part of this class.</span>
+                                    <span>Вие вече сте добавени в този клас</span>
                                 </div>
                             <?php else: ?>
-                                <p class="mb-3">Click the button below to join the class with your account.</p>
+                                <p class="mb-3">Кликнете на бутона, за да бъдете добавени в клас</p>
                                 <form method="post" class="mb-3">
                                     <input type="hidden" name="__action" value="join_class" />
-                                    <button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Join class</button>
+                                    <button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Присъедини се към класа</button>
                                 </form>
                             <?php endif; ?>
                         <?php else: ?>
                             <div class="alert alert-warning d-flex align-items-center gap-2">
                                 <i class="bi bi-person-fill-exclamation"></i>
-                                <span>Only student accounts can join a class through this link.</span>
+                                <span>Само ученически акаунти могат да се присъединят към клас чрез този линк.</span>
                             </div>
                         <?php endif; ?>
 
-                        <a href="dashboard.php" class="btn btn-outline-secondary"><i class="bi bi-speedometer2 me-1"></i>Go to dashboard</a>
+                        <a href="dashboard.php" class="btn btn-outline-secondary"><i class="bi bi-speedometer2 me-1"></i>Отидете на таблото</a>
                     </div>
                 </div>
             <?php else: ?>
                 <div class="card shadow-sm">
                     <div class="card-body text-center">
                         <i class="bi bi-link-45deg display-5 text-muted"></i>
-                        <h2 class="h5 mt-3">Invitation not available</h2>
-                        <p class="text-muted">Please ask your teacher for a new QR code or class link.</p>
-                        <a href="index.php" class="btn btn-primary"><i class="bi bi-house me-1"></i>Back to home</a>
+                        <h2 class="h5 mt-3">Поканата не е налична</h2>
+                        <p class="text-muted">Моля, попитайте учителя си за нов QR код или линк за клас.</p>
+                        <a href="index.php" class="btn btn-primary"><i class="bi bi-house me-1"></i>Назад към началото</a>
                     </div>
                 </div>
             <?php endif; ?>
@@ -191,9 +191,9 @@ if ($class) {
     <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
         <div class="text-muted">&copy; <?= date('Y'); ?> TestGramatikov</div>
         <div class="d-flex gap-3 small">
-            <a class="text-decoration-none" href="terms.php">???????</a>
-            <a class="text-decoration-none" href="privacy.php">?????????????</a>
-            <a class="text-decoration-none" href="contact.php">???????</a>
+            <a class="text-decoration-none" href="terms.php">Условия за ползване</a>
+            <a class="text-decoration-none" href="privacy.php">Декларация за поверителност</a>
+            <a class="text-decoration-none" href="contact.php">Контакт</a>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
