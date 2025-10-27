@@ -1,7 +1,7 @@
 ﻿<?php
 session_start();
 require_once __DIR__ . '/config.php';
-header('Content-Type: text/html; charset=utf-8');
+// header('Content-Type: text/html; charset=utf-8');
 
 if (empty($_SESSION['user'])) {
     header('Location: login.php');
