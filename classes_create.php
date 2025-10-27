@@ -10,6 +10,8 @@ if (empty($_SESSION['user']) || ($_SESSION['user']['role'] ?? null) !== 'teacher
 
 $user = $_SESSION['user'];
 $pdo = db();
+ensure_class_invite_token($pdo);
+
 
 function random_password($length = 10): string {
     $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
@@ -32,13 +34,16 @@ $editing = ($class_id !== null);
 $errors = [];
 $saved = false;
 $created_accounts = [];
-
+$flashSuccess = $_SESSION['flash_success'] ?? null;
+$flashError = $_SESSION['flash_error'] ?? null;
+unset($_SESSION['flash_success'], $_SESSION['flash_error']);
 // Зареждане на класа при редакция
 $class = null;
 if ($editing) {
     $stmt = $pdo->prepare('SELECT * FROM classes WHERE id = :id AND teacher_id = :tid');
     $stmt->execute([':id' => $class_id, ':tid' => (int)$user['id']]);
     $class = $stmt->fetch();
+
     // Ако са възможни дублирани id, опитай да уточниш по created_at
     if ($class && isset($_GET['created_at'])) {
         $ca = (string)$_GET['created_at'];
@@ -50,9 +55,31 @@ if ($editing) {
         }
     }
     if (!$class) { header('Location: dashboard.php'); exit; }
+    if ($class) { $class['join_token'] = class_ensure_join_token($pdo, (int)$class['id']); }
+
 }
 
 // Запис на клас (и едновременно добавяне на ученици)
+if ($editing && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['__action'] ?? '') === 'regen_join_token') {
+    try {
+        $pdo->beginTransaction();
+        $newToken = class_generate_join_token($pdo, $class_id);
+        $stmt = $pdo->prepare('UPDATE classes SET join_token = :token WHERE id = :id AND teacher_id = :tid');
+        $stmt->execute([
+            ':token' => $newToken,
+            ':id' => $class_id,
+            ':tid' => (int)$user['id'],
+        ]);
+        $pdo->commit();
+        $_SESSION['flash_success'] = 'QR code refreshed. Share the new link with students.';
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) { try { $pdo->rollBack(); } catch (Throwable $__){ } }
+        $_SESSION['flash_error'] = 'Could not refresh the QR code. Please try again.';
+    }
+    header('Location: classes_create.php?id=' . $class_id . '#share');
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['__action'] ?? '') === 'save_class') {
     $name = trim((string)($_POST['name'] ?? ''));
     $grade = max(1, (int)($_POST['grade'] ?? 1));
@@ -79,16 +106,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['__action'] ?? '') === 'sav
                     ':name'=>$name, ':grade'=>$grade, ':section'=>$section, ':sy'=>$school_year, ':desc'=>$description,
                     ':id'=>$class_id, ':tid'=>(int)$user['id']
                 ];
-                if (isset($_POST['orig_created_at']) && $_POST['orig_created_at'] !== '') { $paramsUpd[':orig_ca'] = (string)$_POST['orig_created_at']; }
                 $stmt->execute($paramsUpd);
             } else {
                 // Базата няма AUTO_INCREMENT. Изчисляваме следващото id ръчно.
                 $nextId = (int)$pdo->query('SELECT IFNULL(MAX(id), -1) + 1 FROM classes')->fetchColumn();
-                $stmt = $pdo->prepare('INSERT INTO classes (id, teacher_id, name, grade, section, school_year, description) VALUES (:id,:tid,:name,:grade,:section,:sy,:desc)');
+                $newToken = class_generate_join_token($pdo);
+
+                $stmt = $pdo->prepare('INSERT INTO classes (id, teacher_id, name, grade, section, school_year, description, join_token) VALUES (:id,:tid,:name,:grade,:section,:sy,:desc,:token)');
+
                 $stmt->execute([
-                    ':id'=>$nextId, ':tid'=>(int)$user['id'], ':name'=>$name, ':grade'=>$grade, ':section'=>$section, ':sy'=>$school_year, ':desc'=>$description
+                    ':id'=>$nextId, ':tid'=>(int)$user['id'], ':name'=>$name, ':grade'=>$grade, ':section'=>$section, ':sy'=>$school_year, ':desc'=>$description, ':token'=>$newToken
                 ]);
-                $class_id = $nextId;
                 $editing = true;
                 $stmt = $pdo->prepare('SELECT * FROM classes WHERE id = :id AND teacher_id = :tid');
                 $stmt->execute([':id' => $class_id, ':tid' => (int)$user['id']]);
@@ -198,6 +226,8 @@ if ($editing) {
         <a href="dashboard.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Табло</a>
     </div>
 
+    <?php if ($flashSuccess): ?><div class="alert alert-success"><?= htmlspecialchars($flashSuccess) ?></div><?php endif; ?>
+    <?php if ($flashError): ?><div class="alert alert-danger"><?= htmlspecialchars($flashError) ?></div><?php endif; ?>
     <?php if ($saved): ?><div class="alert alert-success">Промените са записани успешно.</div><?php endif; ?>
     <?php if ($created_accounts): ?>
         <div class="alert alert-info">
@@ -210,6 +240,39 @@ if ($editing) {
         </div>
     <?php endif; ?>
     <?php if ($errors): ?><div class="alert alert-danger"><ul class="m-0 ps-3"><?php foreach ($errors as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?></ul></div><?php endif; ?>
+
+    <?php $classJoinLink = ($class && !empty($class['join_token'])) ? app_url('join_class.php?code=' . urlencode($class['join_token'])) : null; ?>
+    <?php if ($classJoinLink): ?>
+        <div class="card shadow-sm mb-4" id="share">
+            <div class="card-body">
+                <div class="d-flex flex-column flex-lg-row gap-4 align-items-start">
+                    <div>
+                        <div id="classJoinQr" data-url="<?= htmlspecialchars($classJoinLink) ?>" class="p-2 border rounded bg-white"></div>
+                        <div class="small text-muted mt-2">Scan or tap to join the class.</div>
+                    </div>
+                    <div class="flex-grow-1 w-100">
+                        <h2 class="h5 mb-2">Class QR Invitation</h2>
+                        <p class="text-muted small mb-3">Share this QR code or link with students so they can enrol instantly.</p>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="classJoinLinkInput" value="<?= htmlspecialchars($classJoinLink) ?>" readonly />
+                            <button type="button" class="btn btn-outline-secondary" data-copy-target="#classJoinLinkInput"><i class="bi bi-clipboard"></i> Copy</button>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a class="btn btn-outline-primary" href="<?= htmlspecialchars($classJoinLink) ?>" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Open Link</a>
+                            <form method="post" class="d-inline">
+                                <input type="hidden" name="id" value="<?= (int)$class['id'] ?>" />
+                                <?php if (!empty($class['created_at'])): ?>
+                                    <input type="hidden" name="orig_created_at" value="<?= htmlspecialchars($class['created_at']) ?>" />
+                                <?php endif; ?>
+                                <input type="hidden" name="__action" value="regen_join_token" />
+                                <button type="submit" class="btn btn-outline-danger"><i class="bi bi-arrow-clockwise"></i> Refresh QR</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <form method="post" class="card shadow-sm mb-4">
         <div class="card-header bg-white"><strong>Данни за класа</strong></div>
@@ -319,7 +382,49 @@ if ($editing) {
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
+    (function(){
+      var qrEl = document.getElementById('classJoinQr');
+      if (qrEl && typeof QRCode === 'function') {
+          var url = qrEl.getAttribute('data-url');
+          if (url) {
+              qrEl.innerHTML = '';
+              new QRCode(qrEl, {
+                  text: url,
+                  width: 180,
+                  height: 180,
+                  correctLevel: QRCode.CorrectLevel.M
+              });
+          }
+      }
+      document.querySelectorAll('[data-copy-target]').forEach(function(btn){
+          btn.addEventListener('click', function(){
+              var target = document.querySelector(btn.getAttribute('data-copy-target'));
+              if (!target) return;
+              var value = target.value || target.textContent || '';
+              if (!value) return;
+              var notify = function(){
+                  btn.classList.remove('btn-outline-secondary');
+                  btn.classList.add('btn-success');
+                  setTimeout(function(){
+                      btn.classList.add('btn-outline-secondary');
+                      btn.classList.remove('btn-success');
+                  }, 1500);
+              };
+              if (navigator.clipboard && window.isSecureContext) {
+                  navigator.clipboard.writeText(value).then(function(){ notify(); }).catch(function(){});
+              } else {
+                  if (target.select) {
+                      target.select();
+                      try { document.execCommand('copy'); notify(); } catch (err) {}
+                      if (window.getSelection) { window.getSelection().removeAllRanges(); }
+                      target.blur && target.blur();
+                  }
+              }
+          });
+      });
+    })();
     (function(){
       var $ = window.jQuery; if (typeof $ !== 'function') return;
       var $sel = $('#student_search');

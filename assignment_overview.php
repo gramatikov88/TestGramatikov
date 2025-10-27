@@ -215,6 +215,24 @@ $pageTitle = 'Задание: ' . $assignment['title'];
             <div>Заданието е възложено индивидуално на ученици, без конкретен клас.</div>
     <?php endif; ?>
 
+    <?php $assignmentShareLink = app_url('assignment.php?id=' . $assignmentId); ?>
+    <div class="card shadow-sm mb-4" id="assignment-share">
+        <div class="card-body d-flex flex-column flex-lg-row gap-4 align-items-start">
+            <div>
+                <div id="assignmentShareQr" data-url="<?= htmlspecialchars($assignmentShareLink) ?>" class="p-2 border rounded bg-white"></div>
+                <div class="small text-muted mt-2">Students scan the QR code to open this assignment after logging in.</div>
+            </div>
+            <div class="flex-grow-1 w-100">
+                <h2 class="h5 mb-2">Assignment QR Link</h2>
+                <p class="text-muted small mb-3">Share this link or QR code with your class. Only students assigned to the activity will be able to start it.</p>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="assignmentShareLink" value="<?= htmlspecialchars($assignmentShareLink) ?>" readonly />
+                    <button type="button" class="btn btn-outline-secondary" data-copy-target="#assignmentShareLink"><i class="bi bi-clipboard"></i> Copy</button>
+                </div>
+                <a class="btn btn-outline-primary" href="<?= htmlspecialchars($assignmentShareLink) ?>" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Open student view</a>
+            </div>
+        </div>
+    </div>
     <div class="row g-3 g-md-4 mb-4">
         <div class="col-sm-6 col-lg-3">
             <div class="card shadow-sm h-100">
@@ -378,7 +396,44 @@ $pageTitle = 'Задание: ' . $assignment['title'];
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+(function(){
+    var qrBox = document.getElementById('assignmentShareQr');
+    if (qrBox && typeof QRCode === 'function') {
+        var shareUrl = qrBox.getAttribute('data-url');
+        if (shareUrl) {
+            qrBox.innerHTML = '';
+            new QRCode(qrBox, { text: shareUrl, width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M });
+        }
+    }
+    document.querySelectorAll('[data-copy-target]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+            var target = document.querySelector(btn.getAttribute('data-copy-target'));
+            if (!target) return;
+            var value = target.value || target.textContent || '';
+            if (!value) return;
+            var highlight = function(){
+                btn.classList.remove('btn-outline-secondary');
+                btn.classList.add('btn-success');
+                setTimeout(function(){
+                    btn.classList.add('btn-outline-secondary');
+                    btn.classList.remove('btn-success');
+                }, 1500);
+            };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(value).then(function(){ highlight(); }).catch(function(){});
+            } else if (target.select) {
+                target.select();
+                try { document.execCommand('copy'); highlight(); } catch (err) {}
+                if (window.getSelection) { window.getSelection().removeAllRanges(); }
+                target.blur && target.blur();
+            }
+        });
+    });
+})();
+</script>
 <?php if ($attemptsCount > 0): ?>
 <script>
 (function() {

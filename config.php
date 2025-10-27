@@ -21,6 +21,73 @@ function db(): PDO {
     return $pdo;
 }
 
+function generate_token(int $bytes = 16): string {
+    if ($bytes < 1) {
+        $bytes = 16;
+    }
+    return rtrim(strtr(base64_encode(random_bytes($bytes)), '+/', '-_'), '=');
+}
+
+function app_url(string $path = ''): string {
+    $base = getenv('APP_BASE_URL');
+    if ($base) {
+        $base = rtrim($base, '/');
+    } else {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+        $dir = str_replace('\\', '/', dirname($scriptName));
+        if ($dir === '.' || $dir === DIRECTORY_SEPARATOR) {
+            $dir = '';
+        }
+        $base = $scheme . '://' . $host . ($dir ? rtrim($dir, '/') : '');
+    }
+    $normalizedPath = ltrim($path, '/');
+    return $base . '/' . $normalizedPath;
+}
+
+function sanitize_redirect_path(string $path): string {
+    $path = trim($path);
+    if ($path === '') {
+        return '';
+    }
+    if (preg_match('~^(?:[a-z][a-z0-9+\-.]*:)?//~i', $path)) {
+        return '';
+    }
+    $path = str_replace(["\r", "\n"], '', $path);
+    return $path === '' ? '' : $path;
+}
+
+function class_generate_join_token(PDO $pdo, ?int $excludeId = null): string {
+    for ($i = 0; $i < 10; $i++) {
+        $token = substr(generate_token(12), 0, 24);
+        $sql = 'SELECT COUNT(*) FROM classes WHERE join_token = :token';
+        $params = [':token' => $token];
+        if ($excludeId !== null) {
+            $sql .= ' AND id <> :id';
+            $params[':id'] = $excludeId;
+        }
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        if ((int)$stmt->fetchColumn() === 0) {
+            return $token;
+        }
+    }
+    throw new RuntimeException('Unable to generate unique class join token');
+}
+
+function class_ensure_join_token(PDO $pdo, int $classId): string {
+    $stmt = $pdo->prepare('SELECT join_token FROM classes WHERE id = :id');
+    $stmt->execute([':id' => $classId]);
+    $token = $stmt->fetchColumn();
+    if ($token === false || $token === null || $token === '') {
+        $token = class_generate_join_token($pdo, $classId);
+        $upd = $pdo->prepare('UPDATE classes SET join_token = :token WHERE id = :id');
+        $upd->execute([':token' => $token, ':id' => $classId]);
+    }
+    return (string)$token;
+}
+
 // Optional: lightweight schema migration helper for subjects scoping
 function ensure_subjects_scope(PDO $pdo): void {
     static $done = false;
@@ -56,6 +123,33 @@ function ensure_attempts_grade(PDO $pdo): void {
         $stmt->execute([':db' => DB_NAME]);
         if ((int)$stmt->fetchColumn() === 0) {
             try { $pdo->exec('ALTER TABLE attempts ADD COLUMN strict_violation TINYINT(1) NOT NULL DEFAULT 0 AFTER teacher_grade'); } catch (Throwable $e) {}
+        }
+    } catch (Throwable $e) {
+        // ignore
+    }
+    $done = true;
+}
+
+function ensure_class_invite_token(PDO $pdo): void {
+    static $done = false;
+    if ($done) return;
+    try {
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = :db AND TABLE_NAME = "classes" AND COLUMN_NAME = "join_token"');
+        $stmt->execute([':db' => DB_NAME]);
+        if ((int)$stmt->fetchColumn() === 0) {
+            try {
+                $pdo->exec('ALTER TABLE classes ADD COLUMN join_token VARCHAR(64) NULL AFTER description');
+            } catch (Throwable $e) {}
+        }
+        try {
+            $pdo->exec('ALTER TABLE classes ADD UNIQUE KEY uq_classes_join_token (join_token)');
+        } catch (Throwable $e) {}
+        $stmt = $pdo->query('SELECT id FROM classes WHERE join_token IS NULL OR join_token = "" LIMIT 200');
+        $ids = $stmt ? $stmt->fetchAll(PDO::FETCH_COLUMN) : [];
+        foreach ($ids as $classId) {
+            try {
+                class_ensure_join_token($pdo, (int)$classId);
+            } catch (Throwable $e) {}
         }
     } catch (Throwable $e) {
         // ignore

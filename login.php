@@ -3,6 +3,21 @@ session_start();
 require_once __DIR__ . '/config.php';
 header('Content-Type: text/html; charset=utf-8');
 
+$nextRaw = '';
+if (isset($_POST['next'])) {
+    $nextRaw = (string)$_POST['next'];
+} elseif (isset($_GET['next'])) {
+    $nextRaw = (string)$_GET['next'];
+} elseif (!empty($_SESSION['after_login_redirect'])) {
+    $nextRaw = (string)$_SESSION['after_login_redirect'];
+}
+$next = sanitize_redirect_path($nextRaw);
+if ($next !== '') {
+    $_SESSION['after_login_redirect'] = $next;
+} else {
+    unset($_SESSION['after_login_redirect']);
+}
+
 $errors = [];
 $posted = [
     'email' => '',
@@ -44,7 +59,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $upd = $pdo->prepare('UPDATE users SET last_login_at = NOW() WHERE id = :id');
                 $upd->execute([':id' => (int)$user['id']]);
 
-                header('Location: index.php');
+                $redirectTo = $next !== '' ? $next : 'index.php';
+                unset($_SESSION['after_login_redirect']);
+                header('Location: ' . $redirectTo);
                 exit;
             }
         } catch (PDOException $e) {
@@ -87,6 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form method="post" novalidate>
+                <input type="hidden" name="next" value="<?= htmlspecialchars($next) ?>" />
                 <div class="mb-3">
                     <label for="email" class="form-label">Имейл</label>
                     <input type="email" class="form-control" id="email" name="email" value="<?= htmlspecialchars($posted['email']) ?>" required />
