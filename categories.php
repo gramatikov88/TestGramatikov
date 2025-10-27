@@ -82,7 +82,7 @@ try {
                     <div class="card category-card h-100 shadow-sm">
                         <div class="card-body text-center">
                             <i class="bi bi-journal-bookmark text-primary"></i>
-                            <div class="fw-semibold mt-2 text-dark"><?= htmlspecialchars($r['name']) ?></div>
+                            <div class="fw-semibold mt-2 text-primary"><?= htmlspecialchars($r['name']) ?></div>
                             <div class="text-muted small">Тестове: <?= (int)$r['tests_count'] ?></div>
                         </div>
                     </div>
