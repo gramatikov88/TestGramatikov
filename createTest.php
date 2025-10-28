@@ -58,6 +58,46 @@ function detect_upload_mime(string $tmp): ?string
     return $mime;
 }
 
+/**
+ * Нормализация на стойности от колоната "Type" в Excel.
+ * Приема single/multiple, single_choice/multiple_choice,
+ * single-choice/multiple-choice, както и бг синоними.
+ */
+function normalize_ui_type(string $raw): string
+{
+    $t = strtolower(trim($raw));
+    // замени тирета и интервали с подчертаване за приемственост
+    $t = str_replace(['-', ' '], '_', $t);
+
+    // английски варианти
+    if (in_array($t, ['single', 'single_choice'], true))
+        return 'single';
+    if (in_array($t, ['multiple', 'multiple_choice'], true))
+        return 'multiple';
+
+    // чести правописни варианти
+    if (in_array($t, ['singlechoice'], true))
+        return 'single';
+    if (in_array($t, ['multiplechoice'], true))
+        return 'multiple';
+
+    // български синоними
+    if (in_array($t, ['единичен', 'единствен', 'единичен_избор'], true))
+        return 'single';
+    if (in_array($t, ['множествен', 'множествен_избор', 'множество'], true))
+        return 'multiple';
+
+    // последен опит: премахни всички не-буквено-цифрови и прецени пак
+    $t2 = preg_replace('/[^a-zа-я0-9_]+/u', '', $t);
+    if (in_array($t2, ['single', 'singlechoice'], true))
+        return 'single';
+    if (in_array($t2, ['multiple', 'multiplechoice'], true))
+        return 'multiple';
+
+    // по подразбиране single (и оставяме импортът да продължи)
+    return 'single';
+}
+
 function import_questions_from_excel(string $filePath, array &$errors): array
 {
     if (!class_exists('SimpleXLSX')) {
@@ -139,15 +179,15 @@ function import_questions_from_excel(string $filePath, array &$errors): array
             continue;
         }
 
+        // --- НОВО: по-гъвкава нормализация на типа ---
         $type = 'single';
         if ($typeCol !== null) {
-            $rawType = strtolower(trim((string) ($row[$typeCol] ?? 'single')));
-            if (in_array($rawType, ['single', 'single_choice'], true)) {
-                $type = 'single';
-            } elseif (in_array($rawType, ['multiple', 'multiple_choice'], true)) {
-                $type = 'multiple';
+            $rawType = trim((string) ($row[$typeCol] ?? 'single'));
+            $norm = normalize_ui_type($rawType);
+            if (in_array($norm, ['single', 'multiple'], true)) {
+                $type = $norm;
             } else {
-                $errors[] = 'Row ' . $rowNumber . ': unsupported type "' . $rawType . '".';
+                $errors[] = 'Row ' . $rowNumber . ': unsupported type "' . $rawType . '". Using "single".';
                 $type = 'single';
             }
         }
@@ -172,7 +212,7 @@ function import_questions_from_excel(string $filePath, array &$errors): array
         $correctRaw = trim((string) ($row[$correctCol] ?? ''));
         $correctSlots = [];
         if ($correctRaw !== '') {
-            $tokens = preg_split('/[;,\\s]+/', $correctRaw);
+            $tokens = preg_split('/[;,\s]+/', $correctRaw);
             foreach ($tokens as $token) {
                 $token = trim($token);
                 if ($token === '') {
@@ -359,238 +399,236 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } else {
 
-    if ($title === '')
-        $errors[] = 'Molya, vavedete zaglavie na testa.';
-    if (!is_array($questions) || count($questions) === 0)
-        $errors[] = 'Dobavete pone edin vapros.';
+        if ($title === '')
+            $errors[] = 'Molya, vavedete zaglavie na testa.';
+        if (!is_array($questions) || count($questions) === 0)
+            $errors[] = 'Dobavete pone edin vapros.';
 
-    foreach ($questions as $idx => $q) {
-        $q_content = trim((string) ($q['content'] ?? ''));
-        $rawType = (string) ($q['type'] ?? 'single');
-        $q_type_ui = in_array($rawType, ['single', 'multiple'], true) ? $rawType : 'single';
-        $q_points = (float) ($q['points'] ?? 1);
-        $ans = $q['answers'] ?? [];
+        foreach ($questions as $idx => $q) {
+            $q_content = trim((string) ($q['content'] ?? ''));
+            $rawType = (string) ($q['type'] ?? 'single');
+            $q_type_ui = in_array($rawType, ['single', 'multiple'], true) ? $rawType : 'single';
+            $q_points = (float) ($q['points'] ?? 1);
+            $ans = $q['answers'] ?? [];
 
-        if ($q_content === '')
-            $errors[] = 'Vupros #' . ($idx + 1) . ': dobavete tekst na vaprosa.';
-        if ($q_points < 0) {
-            $errors[] = 'Vupros #' . ($idx + 1) . ': tochkite ne mogat da badat otricatelni.';
-            $q_points = 0;
-        }
-        if (!is_array($ans) || count($ans) < 2) {
-            $errors[] = 'Vupros #' . ($idx + 1) . ': dobavete pone dva otgovora.';
-            $ans = is_array($ans) ? $ans : [];
-        }
-
-        $correctCount = 0;
-        $preparedAnswers = [];
-        foreach ($ans as $aIdx => $a) {
-            $a_content = trim((string) ($a['content'] ?? ''));
-            $a_correct = !empty($a['is_correct']) ? 1 : 0;
-            if ($a_content === '')
-                $errors[] = 'Vupros #' . ($idx + 1) . ', otgovor #' . ($aIdx + 1) . ': dobavete tekst.';
-            if ($a_correct)
-                $correctCount++;
-            $preparedAnswers[] = ['content' => $a_content, 'is_correct' => $a_correct];
-        }
-        if ($q_type_ui === 'single' && $correctCount !== 1)
-            $errors[] = 'Vupros #' . ($idx + 1) . ': izberete tochno edin veren otgovor.';
-        elseif ($q_type_ui === 'multiple' && $correctCount === 0)
-            $errors[] = 'Vupros #' . ($idx + 1) . ': markirajte pone edin veren otgovor.';
-
-        $existingMediaUrl = trim((string) ($q['existing_media_url'] ?? ''));
-        $existingMediaMime = trim((string) ($q['existing_media_mime'] ?? ''));
-        $removeMedia = !empty($q['remove_media']);
-
-        $mediaUpload = null;
-        $mediaUploadMime = null;
-        if (is_array($questionMediaFiles)) {
-            $candidate = extract_question_media($questionMediaFiles, $idx);
-            if ($candidate) {
-                $mediaUploadMime = detect_upload_mime($candidate['tmp_name']) ?: ($candidate['type'] ?? '');
-                $allowedMimes = ['image/jpeg','image/png','image/gif','image/webp'];
-                if ($mediaUploadMime && in_array($mediaUploadMime, $allowedMimes, true)) {
-                    $candidate['mime'] = $mediaUploadMime;
-                    $mediaUpload = $candidate;
-                } else {
-                    $errors[] = 'Vupros #' . ($idx + 1) . ': izobrazhenieto tryabva da e JPG, PNG, GIF ili WEBP.';
-                }
+            if ($q_content === '')
+                $errors[] = 'Vupros #' . ($idx + 1) . ': dobavete tekst na vaprosa.';
+            if ($q_points < 0) {
+                $errors[] = 'Vupros #' . ($idx + 1) . ': tochkite ne mogat da badat otricatelni.';
+                $q_points = 0;
             }
-        }
-
-        $processedQuestions[] = [
-            'content' => $q_content,
-            'type' => $q_type_ui,
-            'points' => $q_points,
-            'answers' => $preparedAnswers,
-            'media_url' => $removeMedia ? '' : $existingMediaUrl,
-            'media_mime' => $removeMedia ? '' : $existingMediaMime,
-            'existing_media_url' => $existingMediaUrl,
-            'existing_media_mime' => $existingMediaMime,
-            'remove_media' => $removeMedia ? 1 : 0,
-            'media_upload' => $mediaUpload,
-            'media_upload_mime' => $mediaUploadMime,
-        ];
-    }
-
-    $questions = $processedQuestions;
-
-
-
-if (!$errors) {
-        try {
-            $pdo->beginTransaction();
-
-            if ($editing) {
-                // Обнови теста
-                $stmt = $pdo->prepare('
-                    UPDATE tests
-                    SET title=:title, description=:descr, visibility=:vis, status=:st, subject_id=:sub,
-                        time_limit_sec=:tls, max_attempts=:maxa, is_randomized=:rand, is_strict_mode=:strict, theme=:theme
-                    WHERE id=:id AND owner_teacher_id=:tid
-                ');
-                $stmt->execute([
-                    ':title' => $title,
-                    ':descr' => $description !== '' ? $description : null,
-                    ':vis' => $visibility,
-                    ':st' => $status,
-                    ':sub' => $subject_id !== null ? $subject_id : null,
-                    ':tls' => ($time_limit !== null ? $time_limit : null),
-                    ':maxa' => $max_attempts,
-                    ':rand' => $is_randomized,
-                    ':strict' => $is_strict_mode,
-                    ':theme' => $theme !== '' ? $theme : 'default',
-                    ':id' => $test_id,
-                    ':tid' => $user['id'],
-                ]);
-
-                // Изчисти старите връзки тест-въпрос
-                $pdo->prepare('DELETE FROM test_questions WHERE test_id = :tid')->execute([':tid' => $test_id]);
-            } else {
-                // Създай тест (AUTO_INCREMENT)
-                $stmt = $pdo->prepare('
-                    INSERT INTO tests (owner_teacher_id, subject_id, title, description, visibility, status, time_limit_sec, max_attempts, is_randomized, is_strict_mode, theme)
-                    VALUES (:tid, :sub, :title, :descr, :vis, :st, :tls, :maxa, :rand, :strict, :theme)
-                ');
-                $stmt->execute([
-                    ':tid' => $user['id'],
-                    ':sub' => $subject_id !== null ? $subject_id : null,
-                    ':title' => $title,
-                    ':descr' => $description !== '' ? $description : null,
-                    ':vis' => $visibility,
-                    ':st' => $status,
-                    ':tls' => ($time_limit !== null ? $time_limit : null),
-                    ':maxa' => $max_attempts,
-                    ':rand' => $is_randomized,
-                    ':strict' => $is_strict_mode,
-                    ':theme' => $theme !== '' ? $theme : 'default',
-                ]);
-
-                $test_id = (int) $pdo->lastInsertId();
-                if ($test_id <= 0) {
-                    throw new RuntimeException('Таблица tests вероятно няма AUTO_INCREMENT за id.');
-                }
-                $editing = true;
+            if (!is_array($ans) || count($ans) < 2) {
+                $errors[] = 'Vupros #' . ($idx + 1) . ': dobavete pone dva otgovora.';
+                $ans = is_array($ans) ? $ans : [];
             }
 
-            // Вкарай въпросите/отговорите
-            $order = 1;
-            $insQ = $pdo->prepare('INSERT INTO question_bank (owner_teacher_id, visibility, qtype, body) VALUES (:tid, :vis, :qtype, :body)');
-            $insA = $pdo->prepare('INSERT INTO answers (question_id, content, is_correct, order_index) VALUES (:qid, :content, :is_correct, :ord)');
-            $insLink = $pdo->prepare('INSERT INTO test_questions (test_id, question_id, points, order_index) VALUES (:tid, :qid, :points, :ord)');
+            $correctCount = 0;
+            $preparedAnswers = [];
+            foreach ($ans as $aIdx => $a) {
+                $a_content = trim((string) ($a['content'] ?? ''));
+                $a_correct = !empty($a['is_correct']) ? 1 : 0;
+                if ($a_content === '')
+                    $errors[] = 'Vupros #' . ($idx + 1) . ', otgovor #' . ($aIdx + 1) . ': dobavete tekst.';
+                if ($a_correct)
+                    $correctCount++;
+                $preparedAnswers[] = ['content' => $a_content, 'is_correct' => $a_correct];
+            }
+            if ($q_type_ui === 'single' && $correctCount !== 1)
+                $errors[] = 'Vupros #' . ($idx + 1) . ': izberete tochno edin veren otgovor.';
+            elseif ($q_type_ui === 'multiple' && $correctCount === 0)
+                $errors[] = 'Vupros #' . ($idx + 1) . ': markirajte pone edin veren otgovor.';
 
-            foreach ($questions as $q) {
-                $q_content = trim((string) $q['content']);
-                $q_type_ui = in_array(($q['type'] ?? 'single'), ['single', 'multiple'], true) ? $q['type'] : 'single';
-                $q_points = (float) ($q['points'] ?? 1);
-                $answers = $q['answers'];
+            $existingMediaUrl = trim((string) ($q['existing_media_url'] ?? ''));
+            $existingMediaMime = trim((string) ($q['existing_media_mime'] ?? ''));
+            $removeMedia = !empty($q['remove_media']);
 
-                $insQ->execute([
-                    ':tid' => $user['id'],
-                    ':vis' => $visibility,
-                    ':qtype' => map_ui_to_qtype($q_type_ui),
-                    ':body' => $q_content,
-                ]);
-                $qid = (int) $pdo->lastInsertId();
-                if ($qid <= 0) {
-                    throw new RuntimeException('question_bank AUTO_INCREMENT id missing.');
-                }
-
-                $mediaUrl = null;
-                $mediaMime = null;
-                if (!empty($q['remove_media'])) {
-                    // nothing
-                } elseif (!empty($q['media_upload'])) {
-                    $upload = $q['media_upload'];
-                    $uploadMime = $q['media_upload_mime'] ?? detect_upload_mime($upload['tmp_name']) ?: ($upload['type'] ?? '');
-                    $allowedMimes = ['image/jpeg','image/png','image/gif','image/webp'];
-                    if ($uploadMime && in_array($uploadMime, $allowedMimes, true)) {
-                        $extension = strtolower(pathinfo($upload['name'] ?? '', PATHINFO_EXTENSION));
-                        if ($extension === '') {
-                            if ($uploadMime === 'image/jpeg') {
-                                $extension = 'jpg';
-                            } elseif ($uploadMime === 'image/png') {
-                                $extension = 'png';
-                            } elseif ($uploadMime === 'image/gif') {
-                                $extension = 'gif';
-                            } elseif ($uploadMime === 'image/webp') {
-                                $extension = 'webp';
-                            }
-                        }
-                        $extension = preg_replace('/[^a-z0-9]/i', '', $extension);
-                        if ($extension === '' || $extension === null) {
-                            $extension = 'jpg';
-                        }
-                        $dir = __DIR__ . '/uploads';
-                        if (!is_dir($dir)) {
-                            @mkdir($dir, 0777, true);
-                        }
-                        $filename = 'question_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
-                        if (!move_uploaded_file($upload['tmp_name'], $dir . '/' . $filename)) {
-                            throw new RuntimeException('Neuspeshno kachvane na izobrazhenie.');
-                        }
-                        $mediaUrl = 'uploads/' . $filename;
-                        $mediaMime = $uploadMime;
+            $mediaUpload = null;
+            $mediaUploadMime = null;
+            if (is_array($questionMediaFiles)) {
+                $candidate = extract_question_media($questionMediaFiles, $idx);
+                if ($candidate) {
+                    $mediaUploadMime = detect_upload_mime($candidate['tmp_name']) ?: ($candidate['type'] ?? '');
+                    $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                    if ($mediaUploadMime && in_array($mediaUploadMime, $allowedMimes, true)) {
+                        $candidate['mime'] = $mediaUploadMime;
+                        $mediaUpload = $candidate;
+                    } else {
+                        $errors[] = 'Vupros #' . ($idx + 1) . ': izobrazhenieto tryabva da e JPG, PNG, GIF ili WEBP.';
                     }
-                } elseif (!empty($q['media_url'])) {
-                    $mediaUrl = $q['media_url'];
-                    $mediaMime = $q['media_mime'] ?? null;
+                }
+            }
+
+            $processedQuestions[] = [
+                'content' => $q_content,
+                'type' => $q_type_ui,
+                'points' => $q_points,
+                'answers' => $preparedAnswers,
+                'media_url' => $removeMedia ? '' : $existingMediaUrl,
+                'media_mime' => $removeMedia ? '' : $existingMediaMime,
+                'existing_media_url' => $existingMediaUrl,
+                'existing_media_mime' => $existingMediaMime,
+                'remove_media' => $removeMedia ? 1 : 0,
+                'media_upload' => $mediaUpload,
+                'media_upload_mime' => $mediaUploadMime,
+            ];
+        }
+
+        $questions = $processedQuestions;
+
+        if (!$errors) {
+            try {
+                $pdo->beginTransaction();
+
+                if ($editing) {
+                    // Обнови теста
+                    $stmt = $pdo->prepare('
+                        UPDATE tests
+                        SET title=:title, description=:descr, visibility=:vis, status=:st, subject_id=:sub,
+                            time_limit_sec=:tls, max_attempts=:maxa, is_randomized=:rand, is_strict_mode=:strict, theme=:theme
+                        WHERE id=:id AND owner_teacher_id=:tid
+                    ');
+                    $stmt->execute([
+                        ':title' => $title,
+                        ':descr' => $description !== '' ? $description : null,
+                        ':vis' => $visibility,
+                        ':st' => $status,
+                        ':sub' => $subject_id !== null ? $subject_id : null,
+                        ':tls' => ($time_limit !== null ? $time_limit : null),
+                        ':maxa' => $max_attempts,
+                        ':rand' => $is_randomized,
+                        ':strict' => $is_strict_mode,
+                        ':theme' => $theme !== '' ? $theme : 'default',
+                        ':id' => $test_id,
+                        ':tid' => $user['id'],
+                    ]);
+
+                    // Изчисти старите връзки тест-въпрос
+                    $pdo->prepare('DELETE FROM test_questions WHERE test_id = :tid')->execute([':tid' => $test_id]);
+                } else {
+                    // Създай тест (AUTO_INCREMENT)
+                    $stmt = $pdo->prepare('
+                        INSERT INTO tests (owner_teacher_id, subject_id, title, description, visibility, status, time_limit_sec, max_attempts, is_randomized, is_strict_mode, theme)
+                        VALUES (:tid, :sub, :title, :descr, :vis, :st, :tls, :maxa, :rand, :strict, :theme)
+                    ');
+                    $stmt->execute([
+                        ':tid' => $user['id'],
+                        ':sub' => $subject_id !== null ? $subject_id : null,
+                        ':title' => $title,
+                        ':descr' => $description !== '' ? $description : null,
+                        ':vis' => $visibility,
+                        ':st' => $status,
+                        ':tls' => ($time_limit !== null ? $time_limit : null),
+                        ':maxa' => $max_attempts,
+                        ':rand' => $is_randomized,
+                        ':strict' => $is_strict_mode,
+                        ':theme' => $theme !== '' ? $theme : 'default',
+                    ]);
+
+                    $test_id = (int) $pdo->lastInsertId();
+                    if ($test_id <= 0) {
+                        throw new RuntimeException('Таблица tests вероятно няма AUTO_INCREMENT за id.');
+                    }
+                    $editing = true;
                 }
 
-                if ($mediaUrl) {
-                    $pdo->prepare('UPDATE question_bank SET media_url = :url, media_mime = :mime WHERE id = :id')
-                        ->execute([
-                            ':url' => $mediaUrl,
-                            ':mime' => $mediaMime,
-                            ':id' => $qid,
+                // Вкарай въпросите/отговорите
+                $order = 1;
+                $insQ = $pdo->prepare('INSERT INTO question_bank (owner_teacher_id, visibility, qtype, body) VALUES (:tid, :vis, :qtype, :body)');
+                $insA = $pdo->prepare('INSERT INTO answers (question_id, content, is_correct, order_index) VALUES (:qid, :content, :is_correct, :ord)');
+                $insLink = $pdo->prepare('INSERT INTO test_questions (test_id, question_id, points, order_index) VALUES (:tid, :qid, :points, :ord)');
+
+                foreach ($questions as $q) {
+                    $q_content = trim((string) $q['content']);
+                    $q_type_ui = in_array(($q['type'] ?? 'single'), ['single', 'multiple'], true) ? $q['type'] : 'single';
+                    $q_points = (float) ($q['points'] ?? 1);
+                    $answers = $q['answers'];
+
+                    $insQ->execute([
+                        ':tid' => $user['id'],
+                        ':vis' => $visibility,
+                        ':qtype' => map_ui_to_qtype($q_type_ui),
+                        ':body' => $q_content,
+                    ]);
+                    $qid = (int) $pdo->lastInsertId();
+                    if ($qid <= 0) {
+                        throw new RuntimeException('question_bank AUTO_INCREMENT id missing.');
+                    }
+
+                    $mediaUrl = null;
+                    $mediaMime = null;
+                    if (!empty($q['remove_media'])) {
+                        // nothing
+                    } elseif (!empty($q['media_upload'])) {
+                        $upload = $q['media_upload'];
+                        $uploadMime = $q['media_upload_mime'] ?? detect_upload_mime($upload['tmp_name']) ?: ($upload['type'] ?? '');
+                        $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                        if ($uploadMime && in_array($uploadMime, $allowedMimes, true)) {
+                            $extension = strtolower(pathinfo($upload['name'] ?? '', PATHINFO_EXTENSION));
+                            if ($extension === '') {
+                                if ($uploadMime === 'image/jpeg') {
+                                    $extension = 'jpg';
+                                } elseif ($uploadMime === 'image/png') {
+                                    $extension = 'png';
+                                } elseif ($uploadMime === 'image/gif') {
+                                    $extension = 'gif';
+                                } elseif ($uploadMime === 'image/webp') {
+                                    $extension = 'webp';
+                                }
+                            }
+                            $extension = preg_replace('/[^a-z0-9]/i', '', $extension);
+                            if ($extension === '' || $extension === null) {
+                                $extension = 'jpg';
+                            }
+                            $dir = __DIR__ . '/uploads';
+                            if (!is_dir($dir)) {
+                                @mkdir($dir, 0777, true);
+                            }
+                            $filename = 'question_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
+                            if (!move_uploaded_file($upload['tmp_name'], $dir . '/' . $filename)) {
+                                throw new RuntimeException('Neuspeshno kachvane на izobrazhenie.');
+                            }
+                            $mediaUrl = 'uploads/' . $filename;
+                            $mediaMime = $uploadMime;
+                        }
+                    } elseif (!empty($q['media_url'])) {
+                        $mediaUrl = $q['media_url'];
+                        $mediaMime = $q['media_mime'] ?? null;
+                    }
+
+                    if ($mediaUrl) {
+                        $pdo->prepare('UPDATE question_bank SET media_url = :url, media_mime = :mime WHERE id = :id')
+                            ->execute([
+                                ':url' => $mediaUrl,
+                                ':mime' => $mediaMime,
+                                ':id' => $qid,
+                            ]);
+                    }
+
+                    $aOrder = 1;
+                    foreach ($answers as $a) {
+                        $insA->execute([
+                            ':qid' => $qid,
+                            ':content' => trim((string) $a['content']),
+                            ':is_correct' => !empty($a['is_correct']) ? 1 : 0,
+                            ':ord' => $aOrder++,
                         ]);
-                }
+                    }
 
-                $aOrder = 1;
-                foreach ($answers as $a) {
-                    $insA->execute([
+                    $insLink->execute([
+                        ':tid' => $test_id,
                         ':qid' => $qid,
-                        ':content' => trim((string) $a['content']),
-                        ':is_correct' => !empty($a['is_correct']) ? 1 : 0,
-                        ':ord' => $aOrder++,
+                        ':points' => $q_points,
+                        ':ord' => $order++,
                     ]);
                 }
-
-                $insLink->execute([
-                    ':tid' => $test_id,
-                    ':qid' => $qid,
-                    ':points' => $q_points,
-                    ':ord' => $order++,
-                ]);
+                $pdo->commit();
+                $saved = true;
+            } catch (Throwable $e) {
+                if ($pdo->inTransaction())
+                    $pdo->rollBack();
+                $errors[] = 'Грешка при запис: ' . $e->getMessage();
             }
-            $pdo->commit();
-            $saved = true;
-        } catch (Throwable $e) {
-            if ($pdo->inTransaction())
-                $pdo->rollBack();
-            $errors[] = 'Грешка при запис: ' . $e->getMessage();
         }
-    }
     }
 }
 
@@ -684,8 +722,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="file" name="excel_file" class="form-control" accept=".xlsx" />
                     </div>
                     <div class="col-md-6 d-flex align-items-start gap-2">
-                        <button type="submit" name="import_excel" value="1" class="btn btn-outline-primary"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Load from Excel</button>
-                        <div class="small text-muted">Upload an .xlsx file with columns: Question, Type, Points, Answer 1...Answer N, Correct (use indexes such as 1 or 1,3).</div>
+                        <button type="submit" name="import_excel" value="1" class="btn btn-outline-primary"><i
+                                class="bi bi-file-earmark-spreadsheet me-1"></i>Load from Excel</button>
+                        <div class="small text-muted">Upload an .xlsx file with columns: Question, Type, Points, Answer
+                            1...Answer N, Correct (use indexes such as 1 or 1,3).</div>
                     </div>
                 </div>
             </div>
@@ -743,7 +783,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="is_strict_mode" name="is_strict_mode"
                             <?= !empty($view['is_strict_mode']) ? 'checked' : '' ?> />
-                        <label class="form-check-label" for="is_strict_mode">Стриктен режим (при напускане опитът се анулира)</label>
+                        <label class="form-check-label" for="is_strict_mode">Стриктен режим (при напускане опитът се
+                            анулира)</label>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -774,28 +815,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         </select>
                                     </div>
                                     <div class="col-md-2">
-                                    <label class="form-label">Точки</label>
-                                    <input type="number" step="0.01" name="questions[<?= $qi ?>][points]"
-                                        class="form-control" min="0" value="<?= (float) $q['points'] ?>" />
+                                        <label class="form-label">Точки</label>
+                                        <input type="number" step="0.01" name="questions[<?= $qi ?>][points]"
+                                            class="form-control" min="0" value="<?= (float) $q['points'] ?>" />
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="mb-2">
-                                <label class="form-label">Изображение (по желание)</label>
-                                <?php if (!empty($q['media_url'])): ?>
-                                    <div class="question-media-preview mb-2" data-media-preview>
-                                        <img src="<?= htmlspecialchars($q['media_url']) ?>" alt="Media preview" class="img-fluid rounded border">
-                                    </div>
-                                    <div class="form-check mb-2">
-                                        <label class="form-check-label">
-                                            <input class="form-check-input me-1" type="checkbox" name="questions[<?= $qi ?>][remove_media]" value="1" data-remove-media>
-                                            Премахни текущото изображение
-                                        </label>
-                                    </div>
-                                <?php endif; ?>
-                                <input type="file" class="form-control" name="question_media[<?= $qi ?>]" accept="image/*" data-media-input />
-                                <input type="hidden" name="questions[<?= $qi ?>][existing_media_url]" value="<?= htmlspecialchars($q['media_url'] ?? '') ?>" data-existing-url>
-                                <input type="hidden" name="questions[<?= $qi ?>][existing_media_mime]" value="<?= htmlspecialchars($q['media_mime'] ?? '') ?>" data-existing-mime>
-                            </div>
+                                <div class="mb-2">
+                                    <label class="form-label">Изображение (по желание)</label>
+                                    <?php if (!empty($q['media_url'])): ?>
+                                        <div class="question-media-preview mb-2" data-media-preview>
+                                            <img src="<?= htmlspecialchars($q['media_url']) ?>" alt="Media preview"
+                                                class="img-fluid rounded border">
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <label class="form-check-label">
+                                                <input class="form-check-input me-1" type="checkbox"
+                                                    name="questions[<?= $qi ?>][remove_media]" value="1" data-remove-media>
+                                                Премахни текущото изображение
+                                            </label>
+                                        </div>
+                                    <?php endif; ?>
+                                    <input type="file" class="form-control" name="question_media[<?= $qi ?>]" accept="image/*"
+                                        data-media-input />
+                                    <input type="hidden" name="questions[<?= $qi ?>][existing_media_url]"
+                                        value="<?= htmlspecialchars($q['media_url'] ?? '') ?>" data-existing-url>
+                                    <input type="hidden" name="questions[<?= $qi ?>][existing_media_mime]"
+                                        value="<?= htmlspecialchars($q['media_mime'] ?? '') ?>" data-existing-mime>
+                                </div>
 
                                 <div class="mt-2" data-answers>
                                     <?php foreach ($q['answers'] as $ai => $a): ?>
@@ -845,7 +891,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                             <div class="mb-2">
                                 <label class="form-label">Изображение (по желание)</label>
-                                <input type="file" class="form-control" name="question_media[0]" accept="image/*" data-media-input />
+                                <input type="file" class="form-control" name="question_media[0]" accept="image/*"
+                                    data-media-input />
                                 <input type="hidden" name="questions[0][existing_media_url]" value="" data-existing-url>
                                 <input type="hidden" name="questions[0][existing_media_mime]" value="" data-existing-mime>
                             </div>
@@ -887,7 +934,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div class="card-footer bg-white d-flex justify-content-end gap-2">
-                <button type="submit" name="save_test" value="1" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Запази
+                <button type="submit" name="save_test" value="1" class="btn btn-primary"><i
+                        class="bi bi-check2-circle me-1"></i>Запази
                     теста</button>
             </div>
         </form>
@@ -987,4 +1035,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </body>
 
 </html>
-
