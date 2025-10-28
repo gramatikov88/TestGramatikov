@@ -58,11 +58,7 @@ function detect_upload_mime(string $tmp): ?string
     return $mime;
 }
 
-/**
- * Нормализация на стойности от колоната "Type" в Excel.
- * Приема single/multiple, single_choice/multiple_choice,
- * single-choice/multiple-choice, както и български варианти.
- */
+/** Нормализация на стойности от колоната "Type" в Excel. */
 function normalize_ui_type(string $raw): string
 {
     $t = strtolower(trim($raw));
@@ -94,14 +90,33 @@ function normalize_ui_type(string $raw): string
 
 function import_questions_from_excel(string $filePath, array &$errors): array
 {
-    if (!class_exists('SimpleXLSX')) {
-        require_once __DIR__ . '/lib/SimpleXLSX.php';
+    // Зареждаме библиотеката, но класът може да е или \Shuchkin\SimpleXLSX, или глобален SimpleXLSX
+    if (!class_exists('\Shuchkin\SimpleXLSX') && !class_exists('SimpleXLSX')) {
+        $libPath = __DIR__ . '/lib/SimpleXLSX.php';
+        if (is_file($libPath)) {
+            require_once $libPath;
+        }
     }
-    $xlsx = SimpleXLSX::parse($filePath);
-    if (!$xlsx) {
-        $errors[] = 'Unable to read the Excel file: ' . SimpleXLSX::parseError();
+    // Избор на правилния клас
+    $cls = null;
+    if (class_exists('\Shuchkin\SimpleXLSX')) {
+        $cls = '\Shuchkin\SimpleXLSX';
+    } elseif (class_exists('SimpleXLSX')) {
+        $cls = 'SimpleXLSX';
+    } else {
+        $errors[] = 'SimpleXLSX library not found. Put lib/SimpleXLSX.php (vendor version with namespace Shuchkin).';
         return [];
     }
+
+    $xlsx = $cls::parse($filePath);
+    if (!$xlsx) {
+        // извикваме статичната грешка, ако я има
+        $err = method_exists($cls, 'parseError') ? $cls::parseError() : 'Unable to read the Excel file.';
+        $errors[] = 'Unable to read the Excel file: ' . $err;
+        return [];
+    }
+
+    // rows() API е съвместим и при двете версии
     $rows = $xlsx->rows();
     if (!$rows || count($rows) < 2) {
         $errors[] = 'The Excel file does not contain any data to import.';
@@ -206,9 +221,8 @@ function import_questions_from_excel(string $filePath, array &$errors): array
             $tokens = preg_split('/[;,\s]+/', $correctRaw);
             foreach ($tokens as $token) {
                 $token = trim($token);
-                if ($token === '') {
+                if ($token === '')
                     continue;
-                }
                 if (ctype_digit($token)) {
                     $correctSlots[] = (int) $token;
                 } elseif (preg_match('/^[A-Za-z]$/', $token)) {
@@ -222,9 +236,8 @@ function import_questions_from_excel(string $filePath, array &$errors): array
         $correctCount = 0;
         foreach ($answersRaw as $candidate) {
             $isCorrect = in_array($candidate['slot'], $correctSlots, true) ? 1 : 0;
-            if ($isCorrect) {
+            if ($isCorrect)
                 $correctCount++;
-            }
             $answerList[] = [
                 'content' => $candidate['content'],
                 'is_correct' => $isCorrect,
@@ -403,7 +416,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ans = $q['answers'] ?? [];
 
             if ($q_content === '')
-                $errors[] = 'Vupros #' . ($idx + 1) . ': dobavete tekst на vaprosa.';
+                $errors[] = 'Vupros #' . ($idx + 1) . ': dobavete текст на vaprosa.';
             if ($q_points < 0) {
                 $errors[] = 'Vupros #' . ($idx + 1) . ': tochkite ne mogat da badat otricatelni.';
                 $q_points = 0;
@@ -571,7 +584,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             }
                             $filename = 'question_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
                             if (!move_uploaded_file($upload['tmp_name'], $dir . '/' . $filename)) {
-                                throw new RuntimeException('Neuspeshno kachvane na izobrazhenie.');
+                                throw new RuntimeException('Neuspeshno kachvane на izobrazhenie.');
                             }
                             $mediaUrl = 'uploads/' . $filename;
                             $mediaMime = $uploadMime;
@@ -708,7 +721,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="file" name="excel_file" class="form-control" accept=".xlsx" />
                     </div>
                     <div class="col-md-6 d-flex align-items-start gap-2">
-                        <!-- ВАЖНО: formnovalidate за да не блокира required на празните полета -->
+                        <!-- formnovalidate: заобикаля HTML5 required на празните полета -->
                         <button type="submit" name="import_excel" value="1" class="btn btn-outline-primary"
                             formnovalidate>
                             <i class="bi bi-file-earmark-spreadsheet me-1"></i>Load from Excel
