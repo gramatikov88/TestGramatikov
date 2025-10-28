@@ -372,6 +372,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!is_array($existingQuestions)) {
             $existingQuestions = [];
         }
+        $existingQuestions = array_values($existingQuestions);
         $questions = $existingQuestions;
 
         $excelFile = $_FILES['excel_file'] ?? null;
@@ -387,8 +388,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     $importedQuestions = import_questions_from_excel($excelFile['tmp_name'], $errors);
                     if ($importedQuestions) {
-                        $questions = array_values($importedQuestions);
-                        $importNotice = count($importedQuestions) . ' questions loaded from the Excel file. Review them, make adjustments if needed, and click "Save" to persist the test.';
+                        $questions = array_values(array_merge($existingQuestions, $importedQuestions));
+                        $importNotice = count($importedQuestions) . ' questions added from the Excel file. Review them, make adjustments if needed, and click "Save" to persist the test.';
                     } elseif (!$errors) {
                         $errors[] = 'No questions were detected in the Excel file.';
                     }
