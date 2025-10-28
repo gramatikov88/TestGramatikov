@@ -49,6 +49,23 @@ CREATE TABLE users (
   KEY idx_users_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Password reset requests
+CREATE TABLE password_resets (
+  id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id       BIGINT UNSIGNED NOT NULL,
+  selector      VARCHAR(32) NOT NULL,
+  token_hash    VARCHAR(255) NOT NULL,
+  requested_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  expires_at    DATETIME NOT NULL,
+  used_at       DATETIME NULL,
+  request_ip    VARCHAR(45) NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_password_resets_selector (selector),
+  KEY idx_password_resets_user (user_id),
+  KEY idx_password_resets_expires (expires_at),
+  CONSTRAINT fk_password_resets_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Classes (grade + section = паралелка)
 CREATE TABLE classes (
   id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

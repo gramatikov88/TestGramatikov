@@ -23,6 +23,11 @@ $posted = [
     'email' => '',
 ];
 
+$resetSuccess = !empty($_SESSION['password_reset_success'] ?? null);
+if ($resetSuccess) {
+    unset($_SESSION['password_reset_success']);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $posted['email'] = trim((string)($_POST['email'] ?? ''));
     $password = (string)($_POST['password'] ?? '');
@@ -101,6 +106,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php endforeach; ?>
                     </ul>
                 </div>
+            <?php elseif ($resetSuccess): ?>
+                <div class="alert alert-success">
+                    <i class="bi bi-check2-circle me-2"></i>Your password was updated. Please sign in with the new password.
+                </div>
             <?php endif; ?>
 
             <form method="post" novalidate>
@@ -114,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="password" class="form-control" id="password" name="password" required />
                 </div>
                 <div class="d-flex align-items-center justify-content-between">
-                    <a class="small" href="#">Забравена парола?</a>
+                    <a class="small" href="forgot_password.php">Forgot your password?</a>
                     <button type="submit" class="btn btn-primary"><i class="bi bi-box-arrow-in-right me-1"></i>Вход</button>
                 </div>
             </form>

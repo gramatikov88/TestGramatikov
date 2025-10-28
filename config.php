@@ -28,6 +28,21 @@ function generate_token(int $bytes = 16): string {
     return rtrim(strtr(base64_encode(random_bytes($bytes)), '+/', '-_'), '=');
 }
 
+function send_app_mail(string $to, string $subject, string $body): bool {
+    $fromEmail = getenv('APP_MAIL_FROM') ?: 'no-reply@testgramatikov.local';
+    $fromName = getenv('APP_MAIL_FROM_NAME') ?: 'TestGramatikov';
+
+    $encodedSubject = mb_encode_mimeheader($subject, 'UTF-8', 'B', "\r\n");
+    $headers = [
+        'MIME-Version: 1.0',
+        'Content-type: text/plain; charset=UTF-8',
+        'From: ' . $fromName . ' <' . $fromEmail . '>',
+        'Reply-To: ' . $fromEmail,
+    ];
+
+    return mail($to, $encodedSubject, $body, implode("\r\n", $headers));
+}
+
 function app_url(string $path = ''): string {
     $base = getenv('APP_BASE_URL');
     if ($base) {
@@ -191,4 +206,57 @@ function ensure_test_theme_and_q_media(PDO $pdo): void {
             try { $pdo->exec("ALTER TABLE question_bank ADD COLUMN media_mime VARCHAR(100) NULL AFTER media_url"); } catch (Throwable $e) {}
         }
     } catch (Throwable $e) { /* ignore */ }
+}
+
+function ensure_password_resets_table(PDO $pdo): void {
+    static $done = false;
+    if ($done) {
+        return;
+    }
+    try {
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = :db AND TABLE_NAME = "password_resets"');
+        $stmt->execute([':db' => DB_NAME]);
+        if ((int)$stmt->fetchColumn() === 0) {
+            $pdo->exec(
+                "CREATE TABLE password_resets (
+                    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    user_id BIGINT UNSIGNED NOT NULL,
+                    selector VARCHAR(32) NOT NULL,
+                    token_hash VARCHAR(255) NOT NULL,
+                    requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    expires_at DATETIME NOT NULL,
+                    used_at DATETIME NULL,
+                    request_ip VARCHAR(45) NULL,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY uq_password_resets_selector (selector),
+                    KEY idx_password_resets_user (user_id),
+                    KEY idx_password_resets_expires (expires_at),
+                    CONSTRAINT fk_password_resets_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+            );
+        } else {
+            // Ensure newer columns exist when deploying on older dumps
+            $columns = [
+                'selector' => 'ALTER TABLE password_resets ADD COLUMN selector VARCHAR(32) NOT NULL AFTER user_id',
+                'token_hash' => 'ALTER TABLE password_resets ADD COLUMN token_hash VARCHAR(255) NOT NULL AFTER selector',
+                'requested_at' => 'ALTER TABLE password_resets ADD COLUMN requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER token_hash',
+                'expires_at' => 'ALTER TABLE password_resets ADD COLUMN expires_at DATETIME NOT NULL AFTER requested_at',
+                'used_at' => 'ALTER TABLE password_resets ADD COLUMN used_at DATETIME NULL AFTER expires_at',
+                'request_ip' => 'ALTER TABLE password_resets ADD COLUMN request_ip VARCHAR(45) NULL AFTER used_at',
+            ];
+            foreach ($columns as $column => $sql) {
+                $stmt = $pdo->prepare('SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = :db AND TABLE_NAME = "password_resets" AND COLUMN_NAME = :column');
+                $stmt->execute([':db' => DB_NAME, ':column' => $column]);
+                if ((int)$stmt->fetchColumn() === 0) {
+                    try { $pdo->exec($sql); } catch (Throwable $e) {}
+                }
+            }
+            try { $pdo->exec('ALTER TABLE password_resets ADD UNIQUE KEY uq_password_resets_selector (selector)'); } catch (Throwable $e) {}
+            try { $pdo->exec('ALTER TABLE password_resets ADD KEY idx_password_resets_user (user_id)'); } catch (Throwable $e) {}
+            try { $pdo->exec('ALTER TABLE password_resets ADD KEY idx_password_resets_expires (expires_at)'); } catch (Throwable $e) {}
+        }
+    } catch (Throwable $e) {
+        // ignore to avoid blocking the request
+    }
+    $done = true;
 }
