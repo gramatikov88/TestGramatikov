@@ -61,40 +61,34 @@ function detect_upload_mime(string $tmp): ?string
 /**
  * Нормализация на стойности от колоната "Type" в Excel.
  * Приема single/multiple, single_choice/multiple_choice,
- * single-choice/multiple-choice, както и бг синоними.
+ * single-choice/multiple-choice, както и български варианти.
  */
 function normalize_ui_type(string $raw): string
 {
     $t = strtolower(trim($raw));
-    // замени тирета и интервали с подчертаване за приемственост
     $t = str_replace(['-', ' '], '_', $t);
 
-    // английски варианти
     if (in_array($t, ['single', 'single_choice'], true))
         return 'single';
     if (in_array($t, ['multiple', 'multiple_choice'], true))
         return 'multiple';
 
-    // чести правописни варианти
     if (in_array($t, ['singlechoice'], true))
         return 'single';
     if (in_array($t, ['multiplechoice'], true))
         return 'multiple';
 
-    // български синоними
     if (in_array($t, ['единичен', 'единствен', 'единичен_избор'], true))
         return 'single';
     if (in_array($t, ['множествен', 'множествен_избор', 'множество'], true))
         return 'multiple';
 
-    // последен опит: премахни всички не-буквено-цифрови и прецени пак
     $t2 = preg_replace('/[^a-zа-я0-9_]+/u', '', $t);
     if (in_array($t2, ['single', 'singlechoice'], true))
         return 'single';
     if (in_array($t2, ['multiple', 'multiplechoice'], true))
         return 'multiple';
 
-    // по подразбиране single (и оставяме импортът да продължи)
     return 'single';
 }
 
@@ -179,16 +173,13 @@ function import_questions_from_excel(string $filePath, array &$errors): array
             continue;
         }
 
-        // --- НОВО: по-гъвкава нормализация на типа ---
         $type = 'single';
         if ($typeCol !== null) {
             $rawType = trim((string) ($row[$typeCol] ?? 'single'));
             $norm = normalize_ui_type($rawType);
-            if (in_array($norm, ['single', 'multiple'], true)) {
-                $type = $norm;
-            } else {
+            $type = in_array($norm, ['single', 'multiple'], true) ? $norm : 'single';
+            if ($type === 'single' && $norm !== 'single' && $rawType !== '') {
                 $errors[] = 'Row ' . $rowNumber . ': unsupported type "' . $rawType . '". Using "single".';
-                $type = 'single';
             }
         }
 
@@ -372,7 +363,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!is_array($existingQuestions)) {
             $existingQuestions = [];
         }
-        $existingQuestions = array_values($existingQuestions);
         $questions = $existingQuestions;
 
         $excelFile = $_FILES['excel_file'] ?? null;
@@ -388,8 +378,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     $importedQuestions = import_questions_from_excel($excelFile['tmp_name'], $errors);
                     if ($importedQuestions) {
-                        $questions = array_values(array_merge($existingQuestions, $importedQuestions));
-                        $importNotice = count($importedQuestions) . ' questions added from the Excel file. Review them, make adjustments if needed, and click "Save" to persist the test.';
+                        $questions = array_values($importedQuestions);
+                        $importNotice = count($importedQuestions) . ' questions loaded from the Excel file. Review them, make adjustments if needed, and click "Save" to persist the test.';
                     } elseif (!$errors) {
                         $errors[] = 'No questions were detected in the Excel file.';
                     }
@@ -413,13 +403,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ans = $q['answers'] ?? [];
 
             if ($q_content === '')
-                $errors[] = 'Vupros #' . ($idx + 1) . ': dobavete tekst na vaprosa.';
+                $errors[] = 'Vupros #' . ($idx + 1) . ': dobavete tekst на vaprosa.';
             if ($q_points < 0) {
                 $errors[] = 'Vupros #' . ($idx + 1) . ': tochkite ne mogat da badat otricatelni.';
                 $q_points = 0;
             }
             if (!is_array($ans) || count($ans) < 2) {
-                $errors[] = 'Vupros #' . ($idx + 1) . ': dobavete pone dva otgovora.';
+                $errors[] = 'Vupros #' . ($idx + 1) . ': dobavete pone dva otговора.';
                 $ans = is_array($ans) ? $ans : [];
             }
 
@@ -429,7 +419,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $a_content = trim((string) ($a['content'] ?? ''));
                 $a_correct = !empty($a['is_correct']) ? 1 : 0;
                 if ($a_content === '')
-                    $errors[] = 'Vupros #' . ($idx + 1) . ', otgovor #' . ($aIdx + 1) . ': dobavete tekst.';
+                    $errors[] = 'Vupros #' . ($idx + 1) . ', otgovор #' . ($aIdx + 1) . ': dobavete текст.';
                 if ($a_correct)
                     $correctCount++;
                 $preparedAnswers[] = ['content' => $a_content, 'is_correct' => $a_correct];
@@ -481,7 +471,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->beginTransaction();
 
                 if ($editing) {
-                    // Обнови теста
                     $stmt = $pdo->prepare('
                         UPDATE tests
                         SET title=:title, description=:descr, visibility=:vis, status=:st, subject_id=:sub,
@@ -503,10 +492,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ':tid' => $user['id'],
                     ]);
 
-                    // Изчисти старите връзки тест-въпрос
                     $pdo->prepare('DELETE FROM test_questions WHERE test_id = :tid')->execute([':tid' => $test_id]);
                 } else {
-                    // Създай тест (AUTO_INCREMENT)
                     $stmt = $pdo->prepare('
                         INSERT INTO tests (owner_teacher_id, subject_id, title, description, visibility, status, time_limit_sec, max_attempts, is_randomized, is_strict_mode, theme)
                         VALUES (:tid, :sub, :title, :descr, :vis, :st, :tls, :maxa, :rand, :strict, :theme)
@@ -532,7 +519,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $editing = true;
                 }
 
-                // Вкарай въпросите/отговорите
                 $order = 1;
                 $insQ = $pdo->prepare('INSERT INTO question_bank (owner_teacher_id, visibility, qtype, body) VALUES (:tid, :vis, :qtype, :body)');
                 $insA = $pdo->prepare('INSERT INTO answers (question_id, content, is_correct, order_index) VALUES (:qid, :content, :is_correct, :ord)');
@@ -566,15 +552,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if ($uploadMime && in_array($uploadMime, $allowedMimes, true)) {
                             $extension = strtolower(pathinfo($upload['name'] ?? '', PATHINFO_EXTENSION));
                             if ($extension === '') {
-                                if ($uploadMime === 'image/jpeg') {
+                                if ($uploadMime === 'image/jpeg')
                                     $extension = 'jpg';
-                                } elseif ($uploadMime === 'image/png') {
+                                elseif ($uploadMime === 'image/png')
                                     $extension = 'png';
-                                } elseif ($uploadMime === 'image/gif') {
+                                elseif ($uploadMime === 'image/gif')
                                     $extension = 'gif';
-                                } elseif ($uploadMime === 'image/webp') {
+                                elseif ($uploadMime === 'image/webp')
                                     $extension = 'webp';
-                                }
                             }
                             $extension = preg_replace('/[^a-z0-9]/i', '', $extension);
                             if ($extension === '' || $extension === null) {
@@ -586,7 +571,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             }
                             $filename = 'question_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
                             if (!move_uploaded_file($upload['tmp_name'], $dir . '/' . $filename)) {
-                                throw new RuntimeException('Neuspeshno kachvane на izobrazhenie.');
+                                throw new RuntimeException('Neuspeshno kachvane na izobrazhenie.');
                             }
                             $mediaUrl = 'uploads/' . $filename;
                             $mediaMime = $uploadMime;
@@ -723,8 +708,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="file" name="excel_file" class="form-control" accept=".xlsx" />
                     </div>
                     <div class="col-md-6 d-flex align-items-start gap-2">
-                        <button type="submit" name="import_excel" value="1" class="btn btn-outline-primary"><i
-                                class="bi bi-file-earmark-spreadsheet me-1"></i>Load from Excel</button>
+                        <!-- ВАЖНО: formnovalidate за да не блокира required на празните полета -->
+                        <button type="submit" name="import_excel" value="1" class="btn btn-outline-primary"
+                            formnovalidate>
+                            <i class="bi bi-file-earmark-spreadsheet me-1"></i>Load from Excel
+                        </button>
                         <div class="small text-muted">Upload an .xlsx file with columns: Question, Type, Points, Answer
                             1...Answer N, Correct (use indexes such as 1 or 1,3).</div>
                     </div>
@@ -936,8 +924,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <div class="card-footer bg-white d-flex justify-content-end gap-2">
                 <button type="submit" name="save_test" value="1" class="btn btn-primary"><i
-                        class="bi bi-check2-circle me-1"></i>Запази
-                    теста</button>
+                        class="bi bi-check2-circle me-1"></i>Запази теста</button>
             </div>
         </form>
     </main>
