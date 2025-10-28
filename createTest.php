@@ -58,6 +58,175 @@ function detect_upload_mime(string $tmp): ?string
     return $mime;
 }
 
+function import_questions_from_excel(string $filePath, array &$errors): array
+{
+    if (!class_exists('SimpleXLSX')) {
+        require_once __DIR__ . '/lib/SimpleXLSX.php';
+    }
+    $xlsx = SimpleXLSX::parse($filePath);
+    if (!$xlsx) {
+        $errors[] = 'Unable to read the Excel file: ' . SimpleXLSX::parseError();
+        return [];
+    }
+    $rows = $xlsx->rows();
+    if (!$rows || count($rows) < 2) {
+        $errors[] = 'The Excel file does not contain any data to import.';
+        return [];
+    }
+
+    $header = array_map(function ($cell) {
+        return strtolower(trim((string) $cell));
+    }, $rows[0]);
+
+    $questionCol = $typeCol = $pointsCol = $correctCol = null;
+    $answerColumns = [];
+
+    foreach ($header as $idx => $label) {
+        if ($label === 'question') {
+            $questionCol = $idx;
+        } elseif ($label === 'type') {
+            $typeCol = $idx;
+        } elseif ($label === 'points') {
+            $pointsCol = $idx;
+        } elseif ($label === 'correct' || $label === 'correct answers') {
+            $correctCol = $idx;
+        } elseif (preg_match('/^answer\s*(\d+)$/', $label, $m)) {
+            $answerColumns[] = ['col' => $idx, 'slot' => (int) $m[1]];
+        }
+    }
+
+    if ($questionCol === null || $correctCol === null || count($answerColumns) < 2) {
+        $errors[] = 'Expected header columns: Question, Type, Points, Answer 1..N, and Correct.';
+        return [];
+    }
+
+    usort($answerColumns, function (array $a, array $b) {
+        return $a['slot'] <=> $b['slot'];
+    });
+
+    $questions = [];
+    $rowCount = count($rows);
+    for ($i = 1; $i < $rowCount; $i++) {
+        $row = $rows[$i];
+        $rowNumber = $i + 1;
+        $questionText = trim((string) ($row[$questionCol] ?? ''));
+
+        $answersRaw = [];
+        foreach ($answerColumns as $info) {
+            $answerText = trim((string) ($row[$info['col']] ?? ''));
+            if ($answerText !== '') {
+                $answersRaw[] = ['content' => $answerText, 'slot' => $info['slot']];
+            }
+        }
+
+        if ($questionText === '') {
+            $hasAnswerData = false;
+            foreach ($answersRaw as $candidate) {
+                if ($candidate['content'] !== '') {
+                    $hasAnswerData = true;
+                    break;
+                }
+            }
+            if (!$hasAnswerData) {
+                continue;
+            }
+            $errors[] = 'Row ' . $rowNumber . ': missing question text.';
+            continue;
+        }
+
+        if (count($answersRaw) < 2) {
+            $errors[] = 'Row ' . $rowNumber . ': provide at least two answers.';
+            continue;
+        }
+
+        $type = 'single';
+        if ($typeCol !== null) {
+            $rawType = strtolower(trim((string) ($row[$typeCol] ?? 'single')));
+            if (in_array($rawType, ['single', 'single_choice'], true)) {
+                $type = 'single';
+            } elseif (in_array($rawType, ['multiple', 'multiple_choice'], true)) {
+                $type = 'multiple';
+            } else {
+                $errors[] = 'Row ' . $rowNumber . ': unsupported type "' . $rawType . '".';
+                $type = 'single';
+            }
+        }
+
+        $points = 1.0;
+        if ($pointsCol !== null) {
+            $rawPoints = trim((string) ($row[$pointsCol] ?? ''));
+            if ($rawPoints !== '') {
+                $normalizedPoints = str_replace(',', '.', $rawPoints);
+                if (is_numeric($normalizedPoints)) {
+                    $points = (float) $normalizedPoints;
+                } else {
+                    $errors[] = 'Row ' . $rowNumber . ': points must be numeric.';
+                }
+            }
+            if ($points < 0) {
+                $errors[] = 'Row ' . $rowNumber . ': points cannot be negative.';
+                $points = 0;
+            }
+        }
+
+        $correctRaw = trim((string) ($row[$correctCol] ?? ''));
+        $correctSlots = [];
+        if ($correctRaw !== '') {
+            $tokens = preg_split('/[;,\\s]+/', $correctRaw);
+            foreach ($tokens as $token) {
+                $token = trim($token);
+                if ($token === '') {
+                    continue;
+                }
+                if (ctype_digit($token)) {
+                    $correctSlots[] = (int) $token;
+                } elseif (preg_match('/^[A-Za-z]$/', $token)) {
+                    $correctSlots[] = ord(strtoupper($token)) - 64;
+                }
+            }
+        }
+        $correctSlots = array_unique($correctSlots);
+
+        $answerList = [];
+        $correctCount = 0;
+        foreach ($answersRaw as $candidate) {
+            $isCorrect = in_array($candidate['slot'], $correctSlots, true) ? 1 : 0;
+            if ($isCorrect) {
+                $correctCount++;
+            }
+            $answerList[] = [
+                'content' => $candidate['content'],
+                'is_correct' => $isCorrect,
+            ];
+        }
+
+        if ($type === 'single' && $correctCount !== 1) {
+            $errors[] = 'Row ' . $rowNumber . ': single choice questions must have exactly one correct answer.';
+            continue;
+        }
+        if ($type === 'multiple' && $correctCount === 0) {
+            $errors[] = 'Row ' . $rowNumber . ': multiple choice questions must have at least one correct answer.';
+            continue;
+        }
+
+        $questions[] = [
+            'content' => $questionText,
+            'type' => $type,
+            'points' => $points,
+            'answers' => $answerList,
+            'media_url' => '',
+            'media_mime' => '',
+            'existing_media_url' => '',
+            'existing_media_mime' => '',
+            'remove_media' => 0,
+            'media_upload' => null,
+            'media_upload_mime' => null,
+        ];
+    }
+
+    return $questions;
+}
+
 
 /* ---------------- Page state ---------------- */
 $errors = [];
@@ -66,6 +235,7 @@ $test_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $editing = $test_id > 0;
 $test = null;
 $questions = [];
+$importNotice = null;
 
 if ($editing) {
     // Лоуд на тест само ако е собственик
@@ -135,6 +305,7 @@ if ($subjectChoices) {
 
 /* ---------------- Handle POST ---------------- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $isImport = isset($_POST['import_excel']);
     // Основни полета
     $title = trim((string) ($_POST['title'] ?? ''));
     $description = trim((string) ($_POST['description'] ?? ''));
@@ -155,6 +326,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $questions = $_POST['questions'] ?? [];
     $questionMediaFiles = $_FILES['question_media'] ?? null;
     $processedQuestions = [];
+
+    if ($isImport) {
+        $existingQuestions = $_POST['questions'] ?? [];
+        if (!is_array($existingQuestions)) {
+            $existingQuestions = [];
+        }
+        $questions = $existingQuestions;
+
+        $excelFile = $_FILES['excel_file'] ?? null;
+        if (!$excelFile || ($excelFile['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+            $errors[] = 'Please choose an Excel (.xlsx) file to import.';
+        } elseif (($excelFile['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+            $errors[] = 'The Excel file could not be uploaded.';
+        } else {
+            $extension = strtolower(pathinfo($excelFile['name'] ?? '', PATHINFO_EXTENSION));
+            if ($extension !== 'xlsx') {
+                $errors[] = 'Only .xlsx files are supported for import.';
+            } else {
+                try {
+                    $importedQuestions = import_questions_from_excel($excelFile['tmp_name'], $errors);
+                    if ($importedQuestions) {
+                        $questions = array_values($importedQuestions);
+                        $importNotice = count($importedQuestions) . ' questions loaded from the Excel file. Review them, make adjustments if needed, and click "Save" to persist the test.';
+                    } elseif (!$errors) {
+                        $errors[] = 'No questions were detected in the Excel file.';
+                    }
+                } catch (Throwable $e) {
+                    $errors[] = 'Excel import failed: ' . $e->getMessage();
+                }
+            }
+        }
+    } else {
 
     if ($title === '')
         $errors[] = 'Molya, vavedete zaglavie na testa.';
@@ -388,6 +591,7 @@ if (!$errors) {
             $errors[] = 'Грешка при запис: ' . $e->getMessage();
         }
     }
+    }
 }
 
 /* ---------------- View state ---------------- */
@@ -467,8 +671,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         <?php endif; ?>
 
+        <?php if ($importNotice): ?>
+            <div class="alert alert-info"><?= htmlspecialchars($importNotice) ?></div>
+        <?php endif; ?>
+
         <form method="post" enctype="multipart/form-data" class="card shadow-sm mb-4" id="testForm">
             <div class="card-header bg-white"><strong>Основни данни</strong></div>
+            <div class="card-body border-bottom bg-light">
+                <h5 class="h6 mb-3">Import questions from Excel</h5>
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <input type="file" name="excel_file" class="form-control" accept=".xlsx" />
+                    </div>
+                    <div class="col-md-6 d-flex align-items-start gap-2">
+                        <button type="submit" name="import_excel" value="1" class="btn btn-outline-primary"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Load from Excel</button>
+                        <div class="small text-muted">Upload an .xlsx file with columns: Question, Type, Points, Answer 1...Answer N, Correct (use indexes such as 1 or 1,3).</div>
+                    </div>
+                </div>
+            </div>
             <div class="card-body row g-3">
                 <div class="col-md-6">
                     <label class="form-label">Заглавие</label>
@@ -667,7 +887,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div class="card-footer bg-white d-flex justify-content-end gap-2">
-                <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Запази
+                <button type="submit" name="save_test" value="1" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Запази
                     теста</button>
             </div>
         </form>
@@ -767,3 +987,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </body>
 
 </html>
+
