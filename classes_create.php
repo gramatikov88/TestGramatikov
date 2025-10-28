@@ -96,6 +96,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['__action'] ?? '') === 'sav
 
     if ($name === '') $errors[] = 'Моля, въведете име на клас.';
     if ($section === '') $errors[] = 'Моля, въведете паралелка (буква).';
+    // промяна на името на класа
+    $changeName = '';
+    if ($editing && $class) {
+        if ($class['name'] !== $name) {
+            $changeName = 'yes';
+        }
+    }
+
+    if ($changeName === 'yes') {
+        // Логика за промяна на името на класа
+        $stmt = $pdo->prepare('UPDATE classes SET name = :new_name WHERE id = :cid AND teacher_id = :tid');
+        $stmt->execute([':new_name' => $name, ':cid' => $class_id, ':tid' => (int)$user['id']]);
+    }
 
     if (!$errors) {
         try {
