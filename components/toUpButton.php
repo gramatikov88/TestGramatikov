@@ -5,7 +5,7 @@
             const toUpButton = document.querySelector(".to-up-button");
 
             window.addEventListener("scroll", function () {
-                if (window.scrollY > 300) {
+                if (window.scrollY > 100) {
                     toUpButton.style.display = "flex";
                 } else {
                     toUpButton.style.display = "none";
