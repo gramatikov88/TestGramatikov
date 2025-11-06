@@ -1,4 +1,17 @@
 <!-- бутон за връщане нагоре -->
+ <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const toUpButton = document.querySelector(".to-up-button");
+
+        window.addEventListener("scroll", function () {
+            if (window.scrollY > 300) {
+                toUpButton.style.display = "flex";
+            } else {
+                toUpButton.style.display = "none";
+            }
+        });
+    });
+ </script>
 <a href="#top" class="to-up-button d-flex align-items-center justify-content-center ">
     <i class="bi bi-arrow-up-short"></i>
 </a>
