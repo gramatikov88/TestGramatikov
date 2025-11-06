@@ -103,9 +103,7 @@ try {
 </head>
 
 <body>
-    <a href="#top" class="to-up-button d-flex align-items-center justify-content-center">
-        <i class="bi bi-arrow-up-short"></i>
-    </a>
+    <дiv id="top"></div>
     <?php include __DIR__ . '/components/header.php'; ?>
 
     <main class="container my-4 my-md-5">
