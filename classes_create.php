@@ -71,10 +71,10 @@ if ($editing && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['__action'] ?? 
             ':tid' => (int)$user['id'],
         ]);
         $pdo->commit();
-        $_SESSION['flash_success'] = 'QR code refreshed. Share the new link with students.';
+        $_SESSION['flash_success'] = 'Генериран е нов QR код. Можете да го споделите с учениците.';
     } catch (Throwable $e) {
         if ($pdo->inTransaction()) { try { $pdo->rollBack(); } catch (Throwable $__){ } }
-        $_SESSION['flash_error'] = 'Could not refresh the QR code. Please try again.';
+        $_SESSION['flash_error'] = 'Неуспешно обновяване на QR кода. Моля, опитайте отново.';
     }
     header('Location: classes_create.php?id=' . $class_id . '#share');
     exit;

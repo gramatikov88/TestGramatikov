@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $emailInput = trim((string)($_POST['email'] ?? ''));
 
     if ($emailInput === '' || !filter_var($emailInput, FILTER_VALIDATE_EMAIL)) {
-        $errors[] = 'Please enter a valid email address.';
+        $errors[] = 'Моля, въведете валиден имейл адрес.';
     }
 
     if (!$errors) {
@@ -76,8 +76,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <main class="container my-4 my-md-5 d-flex justify-content-center">
     <div class="card shadow-sm auth-card w-100">
         <div class="card-body p-4 p-md-5">
-            <h1 class="h3 mb-3">Forgot password</h1>
-            <p class="text-muted mb-4">Enter the email you used to register. We will send a link to choose a new password.</p>
+            <h1 class="h3 mb-3">Забравена парола</h1>
+            <p class="text-muted mb-4">Въведете имейла, с който сте регистриран. Ще получите имейл с линк за промяна на паролата.</p>
 
             <?php if ($errors): ?>
                 <div class="alert alert-danger">
@@ -90,18 +90,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php elseif ($success): ?>
                 <div class="alert alert-success">
                     <i class="bi bi-envelope-check me-2"></i>
-                    If the address is registered, we sent password reset instructions to it.
+                    Ако адресът е регистриран, изпратихме инструкции за нулиране на паролата на него.
                 </div>
             <?php endif; ?>
 
             <form method="post" novalidate>
                 <div class="mb-3">
-                    <label for="email" class="form-label">Email address</label>
+                    <label for="email" class="form-label">Email адрес</label>
                     <input type="email" class="form-control" id="email" name="email" value="<?= htmlspecialchars($emailInput) ?>" required />
                 </div>
                 <div class="d-flex align-items-center justify-content-between">
-                    <a class="small" href="login.php"><i class="bi bi-arrow-left me-1"></i>Back to login</a>
-                    <button type="submit" class="btn btn-primary"><i class="bi bi-send me-1"></i>Send link</button>
+                    <a class="small" href="login.php"><i class="bi bi-arrow-left me-1"></i>Назад към входа</a>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-send me-1"></i>Изпрати линк</button>
                 </div>
             </form>
         </div>

@@ -111,15 +111,15 @@ function import_questions_from_excel(string $filePath, array &$errors): array
     $xlsx = $cls::parse($filePath);
     if (!$xlsx) {
         // извикваме статичната грешка, ако я има
-        $err = method_exists($cls, 'parseError') ? $cls::parseError() : 'Unable to read the Excel file.';
-        $errors[] = 'Unable to read the Excel file: ' . $err;
+        $err = method_exists($cls, 'parseError') ? $cls::parseError() : 'Неуспешно четене на Excel файла.';
+        $errors[] = 'Неуспешно четене на Excel файла: ' . $err;
         return [];
     }
 
     // rows() API е съвместим и при двете версии
     $rows = $xlsx->rows();
     if (!$rows || count($rows) < 2) {
-        $errors[] = 'The Excel file does not contain any data to import.';
+        $errors[] = 'Excel файлът не съдържа данни за импортиране.';
         return [];
     }
 
@@ -245,11 +245,11 @@ function import_questions_from_excel(string $filePath, array &$errors): array
         }
 
         if ($type === 'single' && $correctCount !== 1) {
-            $errors[] = 'Row ' . $rowNumber . ': single choice questions must have exactly one correct answer.';
+            $errors[] = 'Row ' . $rowNumber . ': Въпроси с единичен избор трябва да имат точно един верен отговор.';
             continue;
         }
         if ($type === 'multiple' && $correctCount === 0) {
-            $errors[] = 'Row ' . $rowNumber . ': multiple choice questions must have at least one correct answer.';
+            $errors[] = 'Row ' . $rowNumber . ': Въпроси с множествен избор трябва да имат поне един верен отговор.';
             continue;
         }
 
@@ -392,21 +392,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $importedQuestions = import_questions_from_excel($excelFile['tmp_name'], $errors);
                     if ($importedQuestions) {
                         $questions = array_values($importedQuestions);
-                        $importNotice = count($importedQuestions) . ' questions loaded from the Excel file. Review them, make adjustments if needed, and click "Save" to persist the test.';
+                        $importNotice = count($importedQuestions) . ' въпросите са заредени от Excel файла. Прегледайте ги, направете корекции ако е необходимо и натиснете „Запази“, за да запазите теста.';
                     } elseif (!$errors) {
-                        $errors[] = 'No questions were detected in the Excel file.';
+                        $errors[] = 'Не бяха открити въпроси в Excel файла.';
                     }
                 } catch (Throwable $e) {
-                    $errors[] = 'Excel import failed: ' . $e->getMessage();
+                    $errors[] = 'Неуспешен импорт на Excel файла: ' . $e->getMessage();
                 }
             }
         }
     } else {
 
         if ($title === '')
-            $errors[] = 'Molya, vavedete zaglavie na testa.';
+            $errors[] = 'Моля, въведете заглавие на теста.';
         if (!is_array($questions) || count($questions) === 0)
-            $errors[] = 'Dobavete pone edin vapros.';
+            $errors[] = 'Добавете поне един въпрос.';
 
         foreach ($questions as $idx => $q) {
             $q_content = trim((string) ($q['content'] ?? ''));
@@ -416,13 +416,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ans = $q['answers'] ?? [];
 
             if ($q_content === '')
-                $errors[] = 'Vupros #' . ($idx + 1) . ': dobavete текст на vaprosa.';
+                $errors[] = 'Въпрос #' . ($idx + 1) . ': добавете текст на въпроса.';
             if ($q_points < 0) {
-                $errors[] = 'Vupros #' . ($idx + 1) . ': tochkite ne mogat da badat otricatelni.';
+                $errors[] = 'Въпрос #' . ($idx + 1) . ': точките не могат да бъдат отрицателни.';
                 $q_points = 0;
             }
             if (!is_array($ans) || count($ans) < 2) {
-                $errors[] = 'Vupros #' . ($idx + 1) . ': dobavete pone dva otговора.';
+                $errors[] = 'Въпрос #' . ($idx + 1) . ': добавете поне два отговора.';
                 $ans = is_array($ans) ? $ans : [];
             }
 
@@ -432,15 +432,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $a_content = trim((string) ($a['content'] ?? ''));
                 $a_correct = !empty($a['is_correct']) ? 1 : 0;
                 if ($a_content === '')
-                    $errors[] = 'Vupros #' . ($idx + 1) . ', otgovор #' . ($aIdx + 1) . ': dobavete текст.';
+                    $errors[] = 'Въпрос #' . ($idx + 1) . ', отговор #' . ($aIdx + 1) . ': добавете текст.';
                 if ($a_correct)
                     $correctCount++;
                 $preparedAnswers[] = ['content' => $a_content, 'is_correct' => $a_correct];
             }
             if ($q_type_ui === 'single' && $correctCount !== 1)
-                $errors[] = 'Vupros #' . ($idx + 1) . ': izberete tochno edin veren otgovor.';
+                $errors[] = 'Въпрос #' . ($idx + 1) . ': изберете точно един верен отговор.';
             elseif ($q_type_ui === 'multiple' && $correctCount === 0)
-                $errors[] = 'Vupros #' . ($idx + 1) . ': markirajte pone edin veren otgovor.';
+                $errors[] = 'Въпрос #' . ($idx + 1) . ': маркирайте поне един верен отговор.';
 
             $existingMediaUrl = trim((string) ($q['existing_media_url'] ?? ''));
             $existingMediaMime = trim((string) ($q['existing_media_mime'] ?? ''));
@@ -457,7 +457,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $candidate['mime'] = $mediaUploadMime;
                         $mediaUpload = $candidate;
                     } else {
-                        $errors[] = 'Vupros #' . ($idx + 1) . ': izobrazhenieto tryabva da e JPG, PNG, GIF ili WEBP.';
+                        $errors[] = 'Въпрос #' . ($idx + 1) . ': изображението трябва да е JPG, PNG, GIF или WEBP.';
                     }
                 }
             }
@@ -584,7 +584,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             }
                             $filename = 'question_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
                             if (!move_uploaded_file($upload['tmp_name'], $dir . '/' . $filename)) {
-                                throw new RuntimeException('Neuspeshno kachvane на izobrazhenie.');
+                                throw new RuntimeException('Неуспешно записване на каченото изображение.');
                             }
                             $mediaUrl = 'uploads/' . $filename;
                             $mediaMime = $uploadMime;

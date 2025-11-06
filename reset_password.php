@@ -35,10 +35,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $selector !== '' && $token !== '') 
         $pdo = db();
         ensure_password_resets_table($pdo);
         if (!find_valid_reset($pdo, $selector, $token)) {
-            $prefetchMessage = 'The reset link is invalid or has expired. Request a new one to continue.';
+            $prefetchMessage = 'Линкът за нулиране е невалиден или е изтекъл. Моля, поискайте нов.';
         }
     } catch (Throwable $e) {
-        $prefetchMessage = 'We could not verify the reset link. Please try again later.';
+        $prefetchMessage = 'Не успяхме да проверим линка за нулиране. Моля, опитайте отново по-късно.';
     }
 }
 
@@ -49,13 +49,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $passwordConfirm = (string)($_POST['password_confirm'] ?? '');
 
     if ($selector === '' || $token === '') {
-        $errors[] = 'The reset link is missing or incomplete.';
+        $errors[] = 'Линкът за нулиране е невалиден или непълен.';
     }
     if (strlen($password) < 8) {
-        $errors[] = 'The new password must be at least 8 characters.';
+        $errors[] = 'Новата парола трябва да е поне 8 символа.';
     }
     if ($password !== $passwordConfirm) {
-        $errors[] = 'Password confirmation does not match.';
+        $errors[] = 'Потвърждението на паролата не съвпада.';
     }
 
     if (!$errors) {
@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $reset = find_valid_reset($pdo, $selector, $token);
             if (!$reset) {
-                $errors[] = 'The reset link is invalid or has expired. Please request a new one.';
+                $errors[] = 'Линкът за нулиране е невалиден или е изтекъл. Моля, поискайте нов.';
             } else {
                 $pdo->beginTransaction();
                 $hash = password_hash($password, PASSWORD_DEFAULT);
@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (isset($pdo) && $pdo instanceof PDO && $pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-            $errors[] = 'Unexpected error while saving the new password. Please try again later.';
+            $errors[] = 'Неочаквана грешка при запазване на новата парола. Моля, опитайте отново по-късно.';
         }
     }
 }
@@ -108,8 +108,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <main class="container my-4 my-md-5 d-flex justify-content-center">
     <div class="card shadow-sm auth-card w-100">
         <div class="card-body p-4 p-md-5">
-            <h1 class="h3 mb-3">Choose a new password</h1>
-            <p class="text-muted mb-4">Pick a strong password that you have not used before. It must be at least 8 characters long.</p>
+            <h1 class="h3 mb-3">Изберете нова парола</h1>
+            <p class="text-muted mb-4">Изберете силна парола, която не сте използвали преди. Тя трябва да е поне 8 символа.</p>
 
             <?php if ($errors): ?>
                 <div class="alert alert-danger">
@@ -138,8 +138,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="password" class="form-control" id="password_confirm" name="password_confirm" minlength="8" required />
                 </div>
                 <div class="d-flex align-items-center justify-content-between">
-                    <a class="small" href="forgot_password.php"><i class="bi bi-envelope me-1"></i>Request another link</a>
-                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Save new password</button>
+                    <a class="small" href="forgot_password.php"><i class="bi bi-envelope me-1"></i>Изпратете нов линк</a>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Запази новата парола</button>
                 </div>
             </form>
         </div>

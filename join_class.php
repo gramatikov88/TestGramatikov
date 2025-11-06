@@ -128,11 +128,11 @@ if ($class) {
             <?php endif; ?>
 
             <?php if ($statusMessage === 'joined'): ?>
-                <div class="alert alert-success"><i class="bi bi-check-circle-fill me-2"></i>You have joined the class successfully.</div>
+                <div class="alert alert-success"><i class="bi bi-check-circle-fill me-2"></i>Присъединихте се успешно към класа.</div>
             <?php elseif ($statusMessage === 'already'): ?>
-                <div class="alert alert-info"><i class="bi bi-info-circle-fill me-2"></i>You are already enrolled in this class.</div>
+                <div class="alert alert-info"><i class="bi bi-info-circle-fill me-2"></i>Вие вече сте записани в този клас.</div>
             <?php elseif ($statusMessage === 'error'): ?>
-                <div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>We could not add you to the class. Please try again.</div>
+                <div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Не успяхме да ви добавим в класа. Моля, опитайте отново.</div>
             <?php endif; ?>
 
             <?php if ($class): ?>
