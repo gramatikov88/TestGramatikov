@@ -103,7 +103,8 @@ try {
 </head>
 
 <body>
-    <дiv id="top"></div>
+    <?php include __DIR__ . '/components/to_up_button.php'; ?>
+    <div id="top"></div>
     <?php include __DIR__ . '/components/header.php'; ?>
 
     <main class="container my-4 my-md-5">
