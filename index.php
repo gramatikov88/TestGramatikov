@@ -103,7 +103,6 @@ try {
 
 <body>
     <div id="top"></div>
-
     <?php include __DIR__ . '/components/toUpButton.php'; ?>
     <?php include __DIR__ . '/components/header.php'; ?>
 
