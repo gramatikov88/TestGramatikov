@@ -1,7 +1,6 @@
 <?php
 session_start();
 require_once __DIR__ . '/config.php';
-include __DIR__ . '/components/toUpButton.php';
 $pdo = null;
 $homeCategories = [];
 $recentTests = [];
@@ -103,9 +102,11 @@ try {
 </head>
 
 <body>
-    <?php include __DIR__ . '/components/toUpButton.php'; ?>
     <div id="top"></div>
+
+    <?php include __DIR__ . '/components/toUpButton.php'; ?>
     <?php include __DIR__ . '/components/header.php'; ?>
+
 
     <main class="container my-4 my-md-5">
         <!-- Hero -->
@@ -132,7 +133,8 @@ try {
                             <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
                         </form>
                         <div class="small text-muted mt-2">Популярни:
-                            <?= htmlspecialchars($popularStr ?: 'граматика, лексика, пунктуация, математика') ?></div>
+                            <?= htmlspecialchars($popularStr ?: 'граматика, лексика, пунктуация, математика') ?>
+                        </div>
                     </div>
                 </div>
             </div>
