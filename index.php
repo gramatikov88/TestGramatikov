@@ -64,7 +64,7 @@ try {
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>TestGramatikov – Начало</title>
+    <title>TestGramatikov</title>
     <!--js for topBtn-->
     <script src="backToTop.js"></script>
     <!-- Bootstrap 5 -->
