@@ -65,8 +65,7 @@ try {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>TestGramatikov</title>
-    <!--js for topBtn-->
-    <script src="backToTop.js"></script>
+
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -105,7 +104,6 @@ try {
 <body>
 
     <?php include __DIR__ . '/components/header.php'; ?>
-    <div id="top"></div>
 
     <main class="container my-4 my-md-5">
         <!-- Hero -->
@@ -291,7 +289,8 @@ try {
             </div>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
+        <!--js for topBtn-->
+        <script src="backToTop.js"></script>
     </footer>
 </body>
 
