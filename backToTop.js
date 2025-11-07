@@ -1,17 +1,18 @@
-let btn = document.getElementById('topBtn');
-
-window.scroll = function () { scrollFunction() };
-
-function scrollFunction() {
-    if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
-        btn.style.display = "block";
-        console.log("Is working");
-    } else {
-        btn.style.display = "none";
+(() => {
+    const btn = document.getElementById('backToTopBtn');
+    if (!btn) {
+        return;
     }
-}
 
-function topFunction() {
-    document.body.scrollTop = 0;
-    document.documentElement.scrollTop = 0;
-}
+    const toggleBtn = () => {
+        const shouldShow = window.scrollY > 250;
+        btn.classList.toggle('show', shouldShow);
+    };
+
+    btn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    document.addEventListener('scroll', toggleBtn, { passive: true });
+    toggleBtn();
+})();
