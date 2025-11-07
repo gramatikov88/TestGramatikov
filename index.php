@@ -105,7 +105,6 @@ try {
 
     <?php include __DIR__ . '/components/header.php'; ?>
     <div id="top"></div>
-    <?php include __DIR__ . '/components/toUpButton.php'; ?>
 
     <main class="container my-4 my-md-5">
         <!-- Hero -->
@@ -257,6 +256,28 @@ try {
             </div>
         </section>
     </main>
+
+    <button onclick="topFunction()" id="topBtn" title="go to top">↑</button>
+    <style>
+        #topBtn {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 30px;
+            z-index: 99;
+            border: none;
+            outline: none;
+            background-color: red;
+            color: white;
+            cursor: pointer;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 18px;
+        }
+        #topBtn::hover {
+            background-color: #555;
+        }
+    </style>
 
     <footer class="border-top py-4">
         <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
