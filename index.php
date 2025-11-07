@@ -112,7 +112,7 @@ try {
         <section class="hero p-4 p-md-5 mb-4 mb-md-5">
             <div class="row align-items-center g-4 g-md-5">
                 <div class="col-lg-7">
-                    <span class="badge bg-light text-dark mb-3"></span>
+                    <span class="badge bg-light text-dark mb-3">Интерактивни тестове • Статистика • Напредък</span>
                     <h1 class="display-5 fw-bold mb-3">Учи и тествай уменията си по интелигентен начин</h1>
                     <p class="lead mb-4">Платформа за бързи и адаптивни тестове – подходяща за ученици, учители и
                         самоподготовка. Избирай от готови тестове или създай свои.</p>
