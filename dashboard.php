@@ -462,8 +462,21 @@ if ($user['role'] === 'teacher') {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
+        :root {
+            --tg-dashboard-bg-light: linear-gradient(180deg, #f4f7fb 0%, #ffffff 60%);
+            --tg-dashboard-bg-dark: radial-gradient(circle at top, rgba(59, 130, 246, 0.25), transparent 55%) #050b18;
+            --tg-card-bg-light: #ffffff;
+            --tg-card-bg-dark: #111927;
+        }
+
         body {
-            background: linear-gradient(180deg, #f4f7fb 0%, #ffffff 60%);
+            background: var(--tg-dashboard-bg-light);
+            min-height: 100vh;
+        }
+
+        html[data-bs-theme="dark"] body {
+            background: var(--tg-dashboard-bg-dark);
+            color: #e2e8f0;
         }
 
         .brand-badge {
@@ -473,12 +486,18 @@ if ($user['role'] === 'teacher') {
         }
 
         .dashboard-hero {
-            background: radial-gradient(circle at top right, rgba(111, 66, 193, 0.2), transparent 55%),
+            background: radial-gradient(circle at top right, rgba(111, 66, 193, 0.25), transparent 55%),
                 linear-gradient(135deg, #0d6efd, #6f42c1);
             border-radius: 1.5rem;
             color: #fff;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 25px 45px rgba(13, 52, 115, .35);
+        }
+
+        html[data-bs-theme="dark"] .dashboard-hero {
+            background: linear-gradient(135deg, #1f3b8c, #6f42c1);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, .55);
         }
 
         .dashboard-hero::after {
@@ -515,6 +534,11 @@ if ($user['role'] === 'teacher') {
             height: 100%;
         }
 
+        html[data-bs-theme="dark"] .stat-pill {
+            background: rgba(15, 23, 42, .75);
+            color: #f8fafc;
+        }
+
         .stat-pill small {
             text-transform: uppercase;
             color: #6c757d;
@@ -524,19 +548,34 @@ if ($user['role'] === 'teacher') {
         .section-card {
             border: none;
             border-radius: 1rem;
-            background: #fff;
+            background: var(--tg-card-bg-light);
             box-shadow: 0 20px 40px rgba(15, 23, 42, .08);
+            transition: box-shadow .2s ease, transform .2s ease;
+        }
+
+        html[data-bs-theme="dark"] .section-card {
+            background: var(--tg-card-bg-dark);
+            box-shadow: 0 25px 45px rgba(0, 0, 0, .65);
         }
 
         .section-card .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
             background: transparent;
             border-bottom: 1px solid rgba(15, 23, 42, .06);
+            padding: 1rem 1.5rem;
         }
 
-        .section-title {
+        html[data-bs-theme="dark"] .section-card .card-header {
+            border-bottom-color: rgba(148, 163, 184, .15);
+        }
+
+        .section-card .card-header .section-title {
             display: flex;
             align-items: center;
             gap: .65rem;
+            flex: 1;
         }
 
         .section-title i {
@@ -544,11 +583,20 @@ if ($user['role'] === 'teacher') {
             color: #0d6efd;
         }
 
+        html[data-bs-theme="dark"] .section-title i {
+            color: #60a5fa;
+        }
+
         .list-elevated .list-group-item {
             border: none;
             border-radius: .75rem;
             margin-bottom: .75rem;
             background: #f8f9fb;
+        }
+
+        html[data-bs-theme="dark"] .list-elevated .list-group-item {
+            background: rgba(255, 255, 255, .04);
+            color: inherit;
         }
 
         .list-elevated .list-group-item:last-child {
@@ -560,6 +608,11 @@ if ($user['role'] === 'teacher') {
             border-radius: 1rem;
             padding: 1rem;
             background: rgba(13, 110, 253, .03);
+        }
+
+        html[data-bs-theme="dark"] .filter-card form {
+            background: rgba(255, 255, 255, .02);
+            border-color: rgba(96, 165, 250, .4);
         }
 
         .filter-card form .form-label {
@@ -590,10 +643,55 @@ if ($user['role'] === 'teacher') {
             text-align: center;
         }
 
+        html[data-bs-theme="dark"] .empty-state {
+            background: rgba(255, 255, 255, .05);
+        }
+
         .section-card .card-body > .text-muted {
             background: #f8f9fb;
             border-radius: 1rem;
             padding: 1.25rem;
+        }
+
+        html[data-bs-theme="dark"] .section-card .card-body > .text-muted {
+            background: rgba(255, 255, 255, .04);
+        }
+
+        .card-toggle {
+            width: 2.25rem;
+            height: 2.25rem;
+            border-radius: 50%;
+            border: 1px solid rgba(13, 110, 253, .25);
+            background: rgba(13, 110, 253, .12);
+            color: #0d6efd;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .2s ease, transform .2s ease;
+            cursor: pointer;
+        }
+
+        html[data-bs-theme="dark"] .card-toggle {
+            border-color: rgba(255, 255, 255, .2);
+            background: rgba(255, 255, 255, .08);
+            color: #f8fafc;
+        }
+
+        .card-toggle .bi {
+            transition: transform .2s ease;
+        }
+
+        .card-toggle[aria-expanded="false"] .bi {
+            transform: rotate(180deg);
+        }
+
+        .section-card.is-collapsed .card-body,
+        .section-card.is-collapsed .card-footer {
+            display: none !important;
+        }
+
+        .section-card.is-collapsed {
+            opacity: .92;
         }
     </style>
 </head>
@@ -1228,6 +1326,34 @@ if ($user['role'] === 'teacher') {
             </div>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+            <script>
+            (() => {
+                document.querySelectorAll('.section-card').forEach(card => {
+                    const header = card.querySelector('.card-header');
+                    const body = card.querySelector('.card-body');
+                    if (!header || !body) {
+                        return;
+                    }
+
+                    let toggle = header.querySelector('.card-toggle');
+                    if (!toggle) {
+                        toggle = document.createElement('button');
+                        toggle.type = 'button';
+                        toggle.className = 'card-toggle';
+                        toggle.setAttribute('aria-expanded', 'true');
+                        toggle.setAttribute('aria-label', 'Свий или разгъни секцията');
+                        toggle.innerHTML = '<i class="bi bi-chevron-up"></i>';
+                        header.appendChild(toggle);
+                    }
+
+                    toggle.addEventListener('click', () => {
+                        const collapsed = !card.classList.contains('is-collapsed');
+                        card.classList.toggle('is-collapsed', collapsed);
+                        toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                    });
+                });
+            })();
+        </script>
     </footer>
 </body>
 
