@@ -424,6 +424,33 @@ if ($pdo) {
         }
     }
 }
+
+$heroStats = [];
+$heroSubtitle = $user['role'] === 'teacher'
+    ? 'Организирай класове, задания и оценки от едно място.'
+    : 'Проследявай заданията си и подобрявай резултатите си.';
+
+if ($user['role'] === 'teacher') {
+    $pendingGradesTotal = 0;
+    foreach ($teacher['assignments_current'] as $pending) {
+        $pendingGradesTotal += (int) ($pending['needs_grade'] ?? 0);
+    }
+    $heroStats = [
+        ['label' => 'Класове', 'value' => count($teacher['classes'])],
+        ['label' => 'Тестове', 'value' => count($teacher['tests'])],
+        ['label' => 'За оценяване', 'value' => $pendingGradesTotal],
+    ];
+} else {
+    $avgPercent = null;
+    if (!empty($student['overview']['avg_percent'])) {
+        $avgPercent = round((float) $student['overview']['avg_percent'], 1) . '%';
+    }
+    $heroStats = [
+        ['label' => 'Класове', 'value' => count($student['classes'])],
+        ['label' => 'Активни задания', 'value' => count($student['open_assignments'])],
+        ['label' => 'Среден резултат', 'value' => $avgPercent ?? '—'],
+    ];
+}
 ?>
 <!DOCTYPE html>
 <html lang="bg">
@@ -435,14 +462,138 @@ if ($pdo) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
+        body {
+            background: linear-gradient(180deg, #f4f7fb 0%, #ffffff 60%);
+        }
+
         .brand-badge {
-            background: rgba(13, 110, 253, .1);
-            border: 1px solid rgba(13, 110, 253, .2);
+            background: rgba(13, 110, 253, .12);
+            border: 1px solid rgba(13, 110, 253, .25);
             color: #0d6efd;
         }
 
-        .card-min {
-            min-height: 120px;
+        .dashboard-hero {
+            background: radial-gradient(circle at top right, rgba(111, 66, 193, 0.2), transparent 55%),
+                linear-gradient(135deg, #0d6efd, #6f42c1);
+            border-radius: 1.5rem;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-hero::after {
+            content: '';
+            position: absolute;
+            inset: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, .2);
+            border-radius: 1.5rem;
+            pointer-events: none;
+        }
+
+        .hero-label {
+            text-transform: uppercase;
+            letter-spacing: .15em;
+            font-size: .75rem;
+            opacity: .85;
+        }
+
+        .hero-actions .btn {
+            backdrop-filter: blur(6px);
+            border-color: rgba(255, 255, 255, .4);
+            color: #fff;
+        }
+
+        .hero-actions .btn:hover {
+            background: rgba(255, 255, 255, .15);
+        }
+
+        .stat-pill {
+            background: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 12px 26px rgba(13, 110, 253, .15);
+            padding: 1rem 1.25rem;
+            height: 100%;
+        }
+
+        .stat-pill small {
+            text-transform: uppercase;
+            color: #6c757d;
+            letter-spacing: .08em;
+        }
+
+        .section-card {
+            border: none;
+            border-radius: 1rem;
+            background: #fff;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, .08);
+        }
+
+        .section-card .card-header {
+            background: transparent;
+            border-bottom: 1px solid rgba(15, 23, 42, .06);
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: .65rem;
+        }
+
+        .section-title i {
+            font-size: 1.2rem;
+            color: #0d6efd;
+        }
+
+        .list-elevated .list-group-item {
+            border: none;
+            border-radius: .75rem;
+            margin-bottom: .75rem;
+            background: #f8f9fb;
+        }
+
+        .list-elevated .list-group-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-card form {
+            border: 1px dashed rgba(13, 110, 253, .35);
+            border-radius: 1rem;
+            padding: 1rem;
+            background: rgba(13, 110, 253, .03);
+        }
+
+        .filter-card form .form-label {
+            font-weight: 600;
+            font-size: .9rem;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -1.45rem;
+            top: .75rem;
+            width: .45rem;
+            height: .45rem;
+            border-radius: 50%;
+            background: #0d6efd;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-left: .5rem;
+        }
+
+        .empty-state {
+            background: #f8f9fb;
+            border-radius: 1rem;
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+        .section-card .card-body > .text-muted {
+            background: #f8f9fb;
+            border-radius: 1rem;
+            padding: 1.25rem;
         }
     </style>
 </head>
@@ -450,37 +601,60 @@ if ($pdo) {
 <body>
     <?php include __DIR__ . '/components/header.php'; ?>
     <div id="top"></div>
-    <?php include __DIR__ . '/components/toUpButton.php'; ?>
 
     <main class="container my-4 my-md-5">
-        <div class="d-flex align-items-center justify-content-between mb-4">
-            <div>
-                <h1 class="h3 m-0">Здравей, <?= htmlspecialchars($user['first_name'] . ' ' . $user['last_name']) ?></h1>
-                <div class="text-muted">Твоето табло (роля: <?= htmlspecialchars($user['role']) ?>)</div>
-            </div>
-            <?php if ($user['role'] === 'teacher'): ?>
-                <div class="d-flex gap-2">
-                    <a class="btn btn-primary" href="createTest.php"><i class="bi bi-magic me-1"></i>Нов тест</a>
-                    <a class="btn btn-outline-primary" href="classes_create.php"><i class="bi bi-people me-1"></i>Нов
-                        клас</a>
-                    <a class="btn btn-outline-secondary" href="assignments_create.php"><i
-                            class="bi bi-megaphone me-1"></i>Ново задание</a>
-                    <a class="btn btn-outline-primary" href="subjects_create.php"><i
-                            class="bi bi-journal-text me-1"></i>Предмети</a>
+                <section class="dashboard-hero p-4 p-md-5 mb-4 mb-md-5">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-7 position-relative">
+                    <span class="hero-label mb-2">Твоят профил · <?= htmlspecialchars($user['role']) ?></span>
+                    <h1 class="display-5 fw-bold mb-3">Здравей, <?= htmlspecialchars($user['first_name']) ?>!</h1>
+                    <p class="lead mb-4"><?= htmlspecialchars($heroSubtitle) ?></p>
+                    <div class="hero-actions d-flex flex-wrap gap-2">
+                        <?php if ($user['role'] === 'teacher'): ?>
+                            <a class="btn btn-light btn-lg" href="createTest.php"><i class="bi bi-magic me-2"></i>Нов тест</a>
+                            <a class="btn btn-outline-light btn-lg" href="classes_create.php"><i class="bi bi-people me-2"></i>Нов клас</a>
+                            <a class="btn btn-outline-light btn-lg" href="assignments_create.php"><i class="bi bi-megaphone me-2"></i>Задание</a>
+                            <a class="btn btn-outline-light btn-lg" href="subjects_create.php"><i class="bi bi-journal-text me-2"></i>Тема</a>
+                        <?php else: ?>
+                            <a class="btn btn-light btn-lg" href="#student-assignments"><i class="bi bi-clipboard-check me-2"></i>Активни задания</a>
+                            <a class="btn btn-outline-light btn-lg" href="tests.php"><i class="bi bi-play-fill me-2"></i>Стартирай тест</a>
+                        <?php endif; ?>
+                    </div>
                 </div>
-            <?php endif; ?>
-        </div>
+                <div class="col-lg-5">
+                    <div class="row g-3">
+                        <?php foreach ($heroStats as $stat): ?>
+                            <div class="col-6 col-lg-12">
+                                <div class="stat-pill">
+                                    <div class="h2 fw-bold mb-1"><?= htmlspecialchars((string) $stat['value']) ?></div>
+                                    <small><?= htmlspecialchars($stat['label']) ?></small>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <?php if ($user['role'] === 'teacher'): ?>
-            <div class="card shadow-sm mb-3">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center"><strong>Филтри и
-                        сортиране</strong><a href="dashboard.php?reset=1" class="btn btn-sm btn-outline-danger">Reset</a>
+            <div class="card section-card filter-card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="section-title m-0">
+                        <i class="bi bi-funnel-fill"></i>
+                        <div>
+                            <div class="fw-semibold">Филтри и сортиране</div>
+                            <small class="text-muted">Намери бързо нужните записи</small>
+                        </div>
+                    </div>
+                    <a href="dashboard.php?reset=1" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Изчисти
+                    </a>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-lg-4">
-                            <form method="get" class="border rounded p-2 h-100">
-                                <div class="fw-semibold mb-2">Класове</div>
+                            <form method="get" class="rounded p-3 h-100">
+                                <label class="form-label text-uppercase small fw-semibold mb-2 d-block">Класове</label>
                                 <input type="text" name="c_q" value="<?= htmlspecialchars($_GET['c_q'] ?? '') ?>"
                                     class="form-control form-control-sm mb-2" placeholder="Търсене..." />
                                 <select name="c_sort" class="form-select form-select-sm mb-2">
@@ -498,8 +672,8 @@ if ($pdo) {
                             </form>
                         </div>
                         <div class="col-lg-4">
-                            <form method="get" class="border rounded p-2 h-100">
-                                <div class="fw-semibold mb-2">Тестове</div>
+                            <form method="get" class="rounded p-3 h-100">
+                                <label class="form-label text-uppercase small fw-semibold mb-2 d-block">Тестове</label>
                                 <input type="text" name="t_q" value="<?= htmlspecialchars($_GET['t_q'] ?? '') ?>"
                                     class="form-control form-control-sm mb-2" placeholder="Търсене..." />
                                 <?php
@@ -547,8 +721,8 @@ if ($pdo) {
                             </form>
                         </div>
                         <div class="col-lg-4">
-                            <form method="get" class="border rounded p-2 h-100">
-                                <div class="fw-semibold mb-2">Опити</div>
+                            <form method="get" class="rounded p-3 h-100">
+                                <label class="form-label text-uppercase small fw-semibold mb-2 d-block">Задания</label>
                                 <input type="text" name="a_q" value="<?= htmlspecialchars($_GET['a_q'] ?? '') ?>"
                                     class="form-control form-control-sm mb-2" placeholder="Търсене (зад./име)..." />
                                 <div class="d-flex gap-2 mb-2">
@@ -582,13 +756,13 @@ if ($pdo) {
                 <!-- Teacher Dashboard -->
                 <div class="row g-3 g-md-4">
                     <div class="col-lg-6">
-                        <div class="card shadow-sm h-100">
-                            <div class="card-header bg-white"><strong>Твоите класове</strong></div>
+                        <div class="card section-card h-100">
+                            <div class="card-header"><div class="section-title"><i class="bi bi-people-fill"></i><strong>Твоите класове</strong></div></div>
                             <div class="card-body">
                                 <?php if (empty($teacher['classes'])): ?>
                                     <div class="text-muted">Нямате създадени класове.</div>
                                 <?php else: ?>
-                                    <div class="list-group">
+                                    <div class="list-group list-elevated">
                                         <?php foreach ($teacher['classes'] as $c): ?>
                                             <div class="list-group-item d-flex justify-content-between align-items-center">
                                                 <div>
@@ -613,13 +787,13 @@ if ($pdo) {
                         </div>
                     </div>
                     <div class="col-lg-6">
-                        <div class="card shadow-sm h-100">
-                            <div class="card-header bg-white"><strong>Тестове</strong></div>
+                        <div class="card section-card h-100">
+                            <div class="card-header"><div class="section-title"><i class="bi bi-kanban"></i><strong>Тестове</strong></div></div>
                             <div class="card-body">
                                 <?php if (empty($teacher['tests'])): ?>
                                     <div class="text-muted">Все още нямате тестове.</div>
                                 <?php else: ?>
-                                    <div class="list-group">
+                                    <div class="list-group list-elevated">
                                         <?php foreach ($teacher['tests'] as $t): ?>
                                             <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
                                                 href="test_edit.php?id=<?= (int) $t['id'] ?>">
@@ -642,13 +816,13 @@ if ($pdo) {
 
                 <div class="row g-3 g-md-4 mt-1 mt-md-2">
                     <div class="col-lg-6">
-                        <div class="card shadow-sm h-100">
-                            <div class="card-header bg-white"><strong>Последни опити</strong></div>
+                        <div class="card section-card h-100">
+                            <div class="card-header"><div class="section-title"><i class="bi bi-activity"></i><strong>Последни опити</strong></div></div>
                             <div class="card-body">
                                 <?php if (empty($teacher['recent_attempts'])): ?>
                                     <div class="text-muted">Още няма предадени опити.</div>
                                 <?php else: ?>
-                                    <div class="list-group">
+                                    <div class="list-group list-elevated">
                                         <?php foreach ($teacher['recent_attempts'] as $ra):
                                             $p = percent($ra['score_obtained'], $ra['max_score']);
                                             $autoGrade = grade_from_percent($p);
@@ -762,13 +936,13 @@ if ($pdo) {
                         </div>
                     </div>
                     <div class="col-lg-6">
-                        <div class="card shadow-sm h-100">
-                            <div class="card-header bg-white"><strong>Аналитика по клас</strong></div>
+                        <div class="card section-card h-100">
+                            <div class="card-header"><div class="section-title"><i class="bi bi-graph-up-arrow"></i><strong>Аналитика по клас</strong></div></div>
                             <div class="card-body">
                                 <?php if (empty($teacher['class_stats'])): ?>
                                     <div class="text-muted">Няма налични данни за статистика.</div>
                                 <?php else: ?>
-                                    <div class="list-group">
+                                    <div class="list-group list-elevated">
                                         <?php foreach ($teacher['class_stats'] as $cs): ?>
                                             <div class="list-group-item d-flex justify-content-between align-items-center">
                                                 <div>
@@ -789,13 +963,13 @@ if ($pdo) {
 
                 <div class="row g-3 g-md-4 mt-1 mt-md-2">
                     <div class="col-lg-6">
-                        <div class="card shadow-sm h-100">
-                            <div class="card-header bg-white"><strong>Текущи задания</strong></div>
+                        <div class="card section-card h-100">
+                            <div class="card-header"><div class="section-title"><i class="bi bi-clipboard-check"></i><strong>Текущи задания</strong></div></div>
                             <div class="card-body">
                                 <?php if (empty($teacher['assignments_current'])): ?>
                                     <div class="text-muted">Няма текущи или предстоящи задания.</div>
                                 <?php else: ?>
-                                    <div class="list-group">
+                                    <div class="list-group list-elevated">
                                         <?php foreach ($teacher['assignments_current'] as $assignment): ?>
                                             <?php
                                             $submittedCount = (int) ($assignment['submitted_count'] ?? 0);
@@ -856,13 +1030,13 @@ if ($pdo) {
                         </div>
                     </div>
                     <div class="col-lg-6">
-                        <div class="card shadow-sm h-100">
-                            <div class="card-header bg-white"><strong>Минали задания</strong></div>
+                        <div class="card section-card h-100">
+                            <div class="card-header"><div class="section-title"><i class="bi bi-archive"></i><strong>Минали задания</strong></div></div>
                             <div class="card-body">
                                 <?php if (empty($teacher['assignments_past'])): ?>
                                     <div class="text-muted">Няма приключили задания.</div>
                                 <?php else: ?>
-                                    <div class="list-group">
+                                    <div class="list-group list-elevated">
                                         <?php foreach ($teacher['assignments_past'] as $assignment): ?>
                                             <?php
                                             $submittedCount = (int) ($assignment['submitted_count'] ?? 0);
@@ -919,13 +1093,13 @@ if ($pdo) {
                 <!-- Student Dashboard -->
                 <div class="row g-3 g-md-4">
                     <div class="col-lg-6">
-                        <div class="card shadow-sm h-100">
-                            <div class="card-header bg-white"><strong>Моите класове</strong></div>
+                        <div class="card section-card h-100">
+                            <div class="card-header"><div class="section-title"><i class="bi bi-people"></i><strong>Моите класове</strong></div></div>
                             <div class="card-body">
                                 <?php if (empty($student['classes'])): ?>
                                     <div class="text-muted">Не сте добавени в клас.</div>
                                 <?php else: ?>
-                                    <div class="list-group">
+                                    <div class="list-group list-elevated">
                                         <?php foreach ($student['classes'] as $c): ?>
                                             <div class="list-group-item">
                                                 <?= htmlspecialchars($c['grade'] . $c['section']) ?> •
@@ -939,13 +1113,13 @@ if ($pdo) {
                         </div>
                     </div>
                     <div class="col-lg-6">
-                        <div class="card shadow-sm h-100">
-                            <div class="card-header bg-white"><strong>Отворени задания</strong></div>
+                        <div class="card section-card h-100" id="student-assignments">
+                            <div class="card-header"><div class="section-title"><i class="bi bi-clipboard-data"></i><strong>Отворени задания</strong></div></div>
                             <div class="card-body">
                                 <?php if (empty($student['open_assignments'])): ?>
                                     <div class="text-muted">Нямате активни задания в момента.</div>
                                 <?php else: ?>
-                                    <div class="list-group">
+                                    <div class="list-group list-elevated">
                                         <?php foreach ($student['open_assignments'] as $a):
                                             $lastAttemptId = $student['open_attempts_map'][(int) $a['id']] ?? null; ?>
                                             <div class="list-group-item d-flex justify-content-between align-items-center">
@@ -981,13 +1155,13 @@ if ($pdo) {
 
                 <div class="row g-3 g-md-4 mt-1 mt-md-2">
                     <div class="col-lg-6">
-                        <div class="card shadow-sm h-100">
-                            <div class="card-header bg-white"><strong>Последни опити</strong></div>
+                        <div class="card section-card h-100">
+                            <div class="card-header"><div class="section-title"><i class="bi bi-clock-history"></i><strong>Последни опити</strong></div></div>
                             <div class="card-body">
                                 <?php if (empty($student['recent_attempts'])): ?>
                                     <div class="text-muted">Все още нямате предадени опити.</div>
                                 <?php else: ?>
-                                    <div class="list-group">
+                                    <div class="list-group list-elevated">
                                         <?php foreach ($student['recent_attempts'] as $ra):
                                             $p = percent($ra['score_obtained'], $ra['max_score']);
                                             $autoGrade = grade_from_percent($p);
@@ -1015,8 +1189,8 @@ if ($pdo) {
                         </div>
                     </div>
                     <div class="col-lg-6">
-                        <div class="card shadow-sm h-100">
-                            <div class="card-header bg-white"><strong>Общ напредък</strong></div>
+                        <div class="card section-card h-100">
+                            <div class="card-header"><div class="section-title"><i class="bi bi-speedometer2"></i><strong>Общ напредък</strong></div></div>
                             <div class="card-body">
                                 <?php if (!$student['overview']): ?>
                                     <div class="text-muted">Няма достатъчно данни.</div>
