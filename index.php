@@ -98,37 +98,6 @@ try {
             color: #fff;
         }
 
-        .back-to-top {
-            position: fixed;
-            right: 1.5rem;
-            bottom: 1.5rem;
-            width: 3rem;
-            height: 3rem;
-            border: none;
-            border-radius: 50%;
-            background: #0d6efd;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 12px 24px rgba(13, 110, 253, .35);
-            opacity: 0;
-            transform: translateY(1.5rem);
-            pointer-events: none;
-            transition: opacity .3s ease, transform .3s ease;
-            z-index: 1050;
-        }
-
-        .back-to-top.show {
-            opacity: 1;
-            pointer-events: auto;
-            transform: translateY(0);
-        }
-
-        .back-to-top:focus-visible {
-            outline: 3px solid #fff;
-            outline-offset: 2px;
-        }
     </style>
 
 </head>
@@ -288,12 +257,6 @@ try {
         </section>
     </main>
 
-    <button type="button" id="backToTopBtn" class="back-to-top" aria-label="Върни се в началото">
-        <i class="bi bi-arrow-up"></i>
-    </button>
-
-
-
     <footer class="border-top py-4">
         <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
             <div class="text-muted">&copy; <?php echo date('Y'); ?> TestGramatikov</div>
@@ -304,8 +267,6 @@ try {
             </div>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-        <!--js for topBtn-->
-        <script src="backToTop.js"></script>
 
     </footer>
 </body>

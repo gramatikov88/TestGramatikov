@@ -1043,9 +1043,6 @@ if ($pdo) {
                 </div>
             <?php endif; ?>
     </main>
-    <button type="button" id="backToTopBtn" class="back-to-top" aria-label="Върни се в началото">
-        <i class="bi bi-arrow-up"></i>
-    </button>
 
     <footer class="border-top py-4">
         <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
@@ -1057,7 +1054,6 @@ if ($pdo) {
             </div>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="backToTop.js"></script>
     </footer>
 </body>
 

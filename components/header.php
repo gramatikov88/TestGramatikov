@@ -108,6 +108,37 @@ require_once __DIR__ . '/../config.php';
 .form-check-input[type="checkbox"]{
   border-radius: .25rem;
 }
+
+/* Back-to-top button shared styles */
+.back-to-top{
+  position:fixed;
+  right:1.5rem;
+  bottom:1.5rem;
+  width:3rem;
+  height:3rem;
+  border:none;
+  border-radius:50%;
+  background:#0d6efd;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 12px 24px rgba(13,110,253,.35);
+  opacity:0;
+  transform:translateY(1.5rem);
+  pointer-events:none;
+  transition:opacity .3s ease, transform .3s ease;
+  z-index:1050;
+}
+.back-to-top.show{
+  opacity:1;
+  pointer-events:auto;
+  transform:translateY(0);
+}
+.back-to-top:focus-visible{
+  outline:3px solid #fff;
+  outline-offset:2px;
+}
 </style>
 
 <header class="border-bottom bg-body">
@@ -150,6 +181,10 @@ require_once __DIR__ . '/../config.php';
   </nav>
 </header>
 
+<button type="button" id="backToTopBtn" class="back-to-top" aria-label="Върни се в началото">
+  <i class="bi bi-arrow-up"></i>
+</button>
+
 <script>
 (function(){
   function setTheme(val){
@@ -161,3 +196,4 @@ require_once __DIR__ . '/../config.php';
   });
 })();
 </script>
+<script src="backToTop.js" defer></script>
