@@ -102,10 +102,10 @@ try {
 </head>
 
 <body>
+
+    <?php include __DIR__ . '../components/header.php'; ?>
     <div id="top"></div>
     <?php include __DIR__ . '../components/toUpButton.php'; ?>
-    <?php include __DIR__ . '../components/header.php'; ?>
-
 
     <main class="container my-4 my-md-5">
         <!-- Hero -->
