@@ -699,6 +699,29 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
             border: 0;
         }
 
+        .dashboard-columns {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .dashboard-columns > .row {
+            display: contents;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        .dashboard-columns > .row > [class*="col"] {
+            display: contents;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+
+        .dashboard-columns .section-card {
+            height: 100%;
+        }
+
         .filter-card form {
             border: 1px dashed rgba(13, 110, 253, .35);
             border-radius: 1rem;
@@ -982,6 +1005,7 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                         </div>
                     </div>
                 </div>
+            </div>
             <?php endif; ?>
 
             <?php if (!$pdo): ?>
@@ -989,8 +1013,9 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                 </div>
             <?php endif; ?>
 
-            <?php if ($user['role'] === 'teacher'): ?>
-                <!-- Teacher Dashboard -->
+        <?php if ($user['role'] === 'teacher'): ?>
+            <!-- Teacher Dashboard -->
+            <div class="dashboard-columns teacher-panel">
                 <div class="row g-3 g-md-4">
                     <div class="col-lg-6">
                         <div class="card section-card h-100" data-card-key="teacher-classes">
@@ -1413,7 +1438,11 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                             <?php endif; ?>
                         </div>
                     </div>
-                    <div class="row g-3 g-md-4 mt-1 mt-md-2">
+            </div>
+        <?php else: ?>
+            <!-- Student Dashboard -->
+            <div class="dashboard-columns student-panel">
+                <div class="row g-3 g-md-4 mt-1 mt-md-2">
                     <div class="col-lg-6">
                         <div class="card section-card h-100" data-card-key="student-recent-attempts">
                             <div class="card-header"><div class="section-title"><i class="bi bi-clock-history"></i><strong>Последни опити</strong></div></div>
