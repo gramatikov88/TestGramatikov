@@ -636,7 +636,67 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
         .list-actions {
             display: flex;
             flex-wrap: wrap;
-            gap: .5rem;
+            gap: .4rem;
+            justify-content: flex-end;
+        }
+
+        .action-icon-btn {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: .75rem;
+            border: 1px solid rgba(148, 163, 184, .45);
+            background: transparent;
+            color: inherit;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .2s ease, color .2s ease, border-color .2s ease;
+        }
+
+        html[data-bs-theme="dark"] .action-icon-btn {
+            border-color: rgba(148, 163, 184, .5);
+        }
+
+        .action-icon-btn--primary {
+            border-color: rgba(13, 110, 253, .4);
+            color: #0d6efd;
+        }
+
+        .action-icon-btn--primary:hover {
+            background: rgba(13, 110, 253, .1);
+        }
+
+        .action-icon-btn--danger {
+            border-color: rgba(220, 53, 69, .4);
+            color: #dc3545;
+        }
+
+        .action-icon-btn--danger:hover {
+            background: rgba(220, 53, 69, .12);
+        }
+
+        .action-icon-btn--muted {
+            border-color: rgba(148, 163, 184, .6);
+            color: rgba(15, 23, 42, .75);
+        }
+
+        html[data-bs-theme="dark"] .action-icon-btn--muted {
+            color: rgba(226, 232, 240, .85);
+        }
+
+        .action-icon-btn--muted:hover {
+            background: rgba(148, 163, 184, .12);
+        }
+
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
         }
 
         .filter-card form {
@@ -941,34 +1001,42 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                 <?php else: ?>
                                     <div class="list-group list-elevated">
                                         <?php foreach ($teacher['classes'] as $c): ?>
-                                            <div class="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
-                                                <div>
-                                                    <a class="text-decoration-none"
-                                                        href="classes_create.php?id=<?= (int) $c['id'] ?>&created_at=<?= urlencode($c['created_at']) ?>">
-                                                        <?= htmlspecialchars($c['grade'] . $c['section']) ?> •
-                                                        <?= htmlspecialchars($c['school_year']) ?>
-                                                        <span
-                                                            class="text-muted small ms-2"><?= htmlspecialchars($c['name']) ?></span>
-                                                    </a>
-                                                </div>
-                                                <div class="list-actions">
-                                                    <a class="btn btn-sm btn-outline-secondary"
-                                                        href="classes_create.php?id=<?= (int) $c['id'] ?>&created_at=<?= urlencode($c['created_at']) ?>"><i
-                                                            class="bi bi-pencil"></i> <span class="d-none d-lg-inline">Редактирай</span></a>
-                                                    <a class="btn btn-sm btn-outline-primary"
-                                                        href="classes_create.php?id=<?= (int) $c['id'] ?>&created_at=<?= urlencode($c['created_at']) ?>#students"><i
-                                                            class="bi bi-person-plus"></i> <span class="d-none d-lg-inline">Добави ученици</span></a>
-                                                    <form method="post" action="teacher_actions.php" class="m-0"
-                                                        onsubmit="return confirm('Наистина ли да изтрием този клас и свързаните му назначения?');">
-                                                        <input type="hidden" name="action" value="delete_class">
-                                                        <input type="hidden" name="class_id" value="<?= (int) $c['id'] ?>">
-                                                        <input type="hidden" name="redirect" value="<?= $currentUrlSafe ?>">
-                                                        <button class="btn btn-sm btn-outline-danger" type="submit"><i
-                                                                class="bi bi-trash"></i> <span class="d-none d-lg-inline">Изтрий</span></button>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        <?php endforeach; ?>
+                        <div class="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                            <div>
+                                <a class="text-decoration-none"
+                                    href="classes_create.php?id=<?= (int) $c['id'] ?>&created_at=<?= urlencode($c['created_at']) ?>">
+                                    <?= htmlspecialchars($c['grade'] . $c['section']) ?>  •
+                                    <?= htmlspecialchars($c['school_year']) ?>
+                                    <span class="text-muted small ms-2"><?= htmlspecialchars($c['name']) ?></span>
+                                </a>
+                            </div>
+                            <div class="list-actions">
+                                <a class="action-icon-btn action-icon-btn--muted"
+                                    href="classes_create.php?id=<?= (int) $c['id'] ?>&created_at=<?= urlencode($c['created_at']) ?>"
+                                    title="Редактирай клас">
+                                    <i class="bi bi-pencil"></i>
+                                    <span class="visually-hidden">Редактирай</span>
+                                </a>
+                                <a class="action-icon-btn action-icon-btn--primary"
+                                    href="classes_create.php?id=<?= (int) $c['id'] ?>&created_at=<?= urlencode($c['created_at']) ?>#students"
+                                    title="Добави ученици">
+                                    <i class="bi bi-person-plus"></i>
+                                    <span class="visually-hidden">Добави ученици</span>
+                                </a>
+                                <form method="post" action="teacher_actions.php" class="m-0"
+                                    onsubmit="return confirm('Наистина ли да изтрием този клас и свързаните ученици/назначения?');">
+                                    <input type="hidden" name="action" value="delete_class">
+                                    <input type="hidden" name="class_id" value="<?= (int) $c['id'] ?>">
+                                    <input type="hidden" name="redirect" value="<?= $currentUrlSafe ?>">
+                                    <button class="action-icon-btn action-icon-btn--danger" type="submit" title="Изтрий клас">
+                                        <i class="bi bi-trash"></i>
+                                        <span class="visually-hidden">Изтрий</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+
                                     </div>
                                 <?php endif; ?>
                             </div>
@@ -983,34 +1051,37 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                 <?php else: ?>
                                     <div class="list-group list-elevated">
                                         <?php foreach ($teacher['tests'] as $t): ?>
-                                            <div class="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
-                                                <div class="me-2">
-                                                    <div class="fw-semibold">
-                                                        <a class="text-decoration-none"
-                                                            href="test_edit.php?id=<?= (int) $t['id'] ?>"><?= htmlspecialchars($t['title']) ?></a>
-                                                        <span
-                                                            class="badge bg-light text-dark ms-2"><?= htmlspecialchars($t['visibility']) ?></span>
-                                                        <span
-                                                            class="badge bg-secondary ms-1"><?= htmlspecialchars($t['status']) ?></span>
-                                                    </div>
-                                                    <small class="text-muted">Обновен: <?= htmlspecialchars($t['updated_at']) ?></small>
-                                                </div>
-                                                <div class="list-actions">
-                                                    <a class="btn btn-sm btn-outline-primary"
-                                                        href="test_edit.php?id=<?= (int) $t['id'] ?>"><i class="bi bi-pencil"></i> <span
-                                                            class="d-none d-lg-inline">Редактирай</span></a>
-                                                    <form method="post" action="teacher_actions.php" class="m-0"
-                                                        data-confirm="Изтриване на теста „<?= htmlspecialchars($t['title'], ENT_QUOTES) ?>“? Свързани задания и опити също ще бъдат премахнати."
-                                                        onsubmit="return confirm(this.dataset.confirm);">
-                                                        <input type="hidden" name="action" value="delete_test">
-                                                        <input type="hidden" name="test_id" value="<?= (int) $t['id'] ?>">
-                                                        <input type="hidden" name="redirect" value="<?= $currentUrlSafe ?>">
-                                                        <button class="btn btn-sm btn-outline-danger" type="submit"><i
-                                                                class="bi bi-trash"></i> <span class="d-none d-lg-inline">Изтрий</span></button>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        <?php endforeach; ?>
+                        <div class="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
+                            <div class="me-2">
+                                <div class="fw-semibold">
+                                    <a class="text-decoration-none"
+                                        href="test_edit.php?id=<?= (int) $t['id'] ?>"><?= htmlspecialchars($t['title']) ?></a>
+                                    <span class="badge bg-light text-dark ms-2"><?= htmlspecialchars($t['visibility']) ?></span>
+                                    <span class="badge bg-secondary ms-1"><?= htmlspecialchars($t['status']) ?></span>
+                                </div>
+                                <small class="text-muted">Обновен: <?= htmlspecialchars($t['updated_at']) ?></small>
+                            </div>
+                            <div class="list-actions">
+                                <a class="action-icon-btn action-icon-btn--primary"
+                                    href="test_edit.php?id=<?= (int) $t['id'] ?>"
+                                    title="Редактирай тест">
+                                    <i class="bi bi-pencil"></i>
+                                    <span class="visually-hidden">Редактирай</span>
+                                </a>
+                                <form method="post" action="teacher_actions.php" class="m-0"
+                                    data-confirm="Изтриване на тест „<?= htmlspecialchars($t['title'], ENT_QUOTES) ?>“? Свързаните задания и опити също ще бъдат премахнати."
+                                    onsubmit="return confirm(this.dataset.confirm);">
+                                    <input type="hidden" name="action" value="delete_test">
+                                    <input type="hidden" name="test_id" value="<?= (int) $t['id'] ?>">
+                                    <input type="hidden" name="redirect" value="<?= $currentUrlSafe ?>">
+                                    <button class="action-icon-btn action-icon-btn--danger" type="submit" title="Изтрий тест">
+                                        <i class="bi bi-trash"></i>
+                                        <span class="visually-hidden">Изтрий</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
                                     </div>
                                 <?php endif; ?>
                             </div>
@@ -1168,240 +1239,181 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                 <div class="row g-3 g-md-4 mt-1 mt-md-2">
                     <div class="col-lg-6">
                         <div class="card section-card h-100" data-card-key="teacher-assignments-current">
-                            <div class="card-header"><div class="section-title"><i class="bi bi-clipboard-check"></i><strong>Текущи задания</strong></div></div>
-                            <div class="card-body">
-                                <?php if (empty($teacher['assignments_current'])): ?>
-                                    <div class="text-muted">Няма текущи или предстоящи задания.</div>
-                                <?php else: ?>
-                                    <div class="list-group list-elevated">
-                                        <?php foreach ($teacher['assignments_current'] as $assignment): ?>
-                                            <?php
-                                            $submittedCount = (int) ($assignment['submitted_count'] ?? 0);
-                                            $gradedCount = (int) ($assignment['graded_count'] ?? 0);
-                                            $needsGrade = (int) ($assignment['needs_grade'] ?? 0);
-                                            $primaryClassId = isset($assignment['primary_class_id']) ? (int) $assignment['primary_class_id'] : 0;
-                                            $overviewLink = 'assignment_overview.php?id=' . (int) $assignment['id'];
-                                            if ($primaryClassId > 0) {
-                                                $overviewLink .= '&class_id=' . $primaryClassId;
-                                            }
-                                            $status = $assignment['status'] ?? 'current';
-                                            $badgeClass = 'bg-success';
-                                            $badgeLabel = 'Активно';
-                                            if ($status === 'upcoming') {
-                                                $badgeClass = "bg-warning text-dark";
-                                                $badgeLabel = 'Предстоящо';
-                                            }
-                                            $classTargets = $assignment['classes'] ?? [];
-                                            ?>
-                                            <div class="list-group-item">
-                                                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3">
-                                                    <div class="me-3 flex-grow-1">
-                                                        <div class="fw-semibold">
-                                                            <a class="text-decoration-none"
-                                                                href="<?= htmlspecialchars($overviewLink) ?>"><?= htmlspecialchars($assignment['title']) ?></a>
-                                                            <?php if (!empty($assignment['is_strict_mode'])): ?>
-                                                                <span class="badge bg-danger ms-2">Строг режим</span>
-                                                            <?php endif; ?>
-                                                        </div>
-                                                        <div class="text-muted small">
-                                                            <?php if (!empty($assignment['open_at'])): ?>От: <?= htmlspecialchars($assignment['open_at']) ?><?php endif; ?>
-                                                            <?php if (!empty($assignment['due_at'])): ?><span class="ms-2">До: <?= htmlspecialchars($assignment['due_at']) ?></span>
-                                                            <?php elseif (!empty($assignment['close_at'])): ?><span class="ms-2">Затваря се: <?= htmlspecialchars($assignment['close_at']) ?></span><?php endif; ?>
-                                                        </div>
-                                                        <div class="text-muted small">
-                                                            Подадени: <?= $submittedCount ?> / Оценени: <?= $gradedCount ?>
-                                                        </div>
-                                                        <?php if ($needsGrade > 0): ?>
-                                                            <span class="badge bg-warning text-dark mt-2 d-inline-block">За оценяване: <?= $needsGrade ?></span>
-                                                        <?php endif; ?>
-                                                        <?php if (!empty($classTargets)): ?>
-                                                            <div class="d-flex flex-wrap gap-2 mt-3">
-                                                                <?php foreach ($classTargets as $target): ?>
-                                                                    <?php
-                                                                    $labelParts = [];
-                                                                    $labelParts[] = trim(($target['grade'] ?? '') . ($target['section'] ?? ''));
-                                                                    if (!empty($target['school_year'])) { $labelParts[] = $target['school_year']; }
-                                                                    if (!empty($target['name'])) { $labelParts[] = $target['name']; }
-                                                                    $chipLabel = implode(' • ', array_filter($labelParts));
-                                                                    ?>
-                                                                    <form method="post" action="teacher_actions.php"
-                                                                        class="assignment-chip"
-                                                                        data-confirm="Да премахнем ли заданието от клас „<?= htmlspecialchars($chipLabel, ENT_QUOTES) ?>“?"
-                                                                        onsubmit="return confirm(this.dataset.confirm);">
-                                                                        <input type="hidden" name="action" value="assignment_remove_class">
-                                                                        <input type="hidden" name="assignment_id" value="<?= (int) $assignment['id'] ?>">
-                                                                        <input type="hidden" name="class_id" value="<?= (int) $target['id'] ?>">
-                                                                        <input type="hidden" name="redirect" value="<?= $currentUrlSafe ?>">
-                                                                        <span><?= htmlspecialchars($chipLabel) ?></span>
-                                                                        <button type="submit" aria-label="Премахни"><i class="bi bi-x"></i></button>
-                                                                    </form>
-                                                                <?php endforeach; ?>
-                                                            </div>
-                                                        <?php endif; ?>
+                        <div class="card-header"><div class="section-title"><i class="bi bi-clipboard-check"></i><strong>Текущи задания</strong></div></div>
+                        <div class="card-body">
+                            <?php if (empty($teacher['assignments_current'])): ?>
+                                <div class="text-muted">Няма текущи или предстоящи задания.</div>
+                            <?php else: ?>
+                                <div class="list-group list-elevated">
+                                    <?php foreach ($teacher['assignments_current'] as $assignment): ?>
+                                        <?php
+                                        $submittedCount = (int) ($assignment['submitted_count'] ?? 0);
+                                        $gradedCount = (int) ($assignment['graded_count'] ?? 0);
+                                        $needsGrade = (int) ($assignment['needs_grade'] ?? 0);
+                                        $primaryClassId = isset($assignment['primary_class_id']) ? (int) $assignment['primary_class_id'] : 0;
+                                        $overviewLink = 'assignment_overview.php?id=' . (int) $assignment['id'];
+                                        if ($primaryClassId > 0) {
+                                            $overviewLink .= '&class_id=' . $primaryClassId;
+                                        }
+                                        $status = $assignment['status'] ?? 'current';
+                                        $badgeClass = 'bg-success';
+                                        $badgeLabel = 'Активно';
+                                        if ($status === 'upcoming') {
+                                            $badgeClass = "bg-warning text-dark";
+                                            $badgeLabel = 'Предстоящо';
+                                        }
+                                        $classTargets = $assignment['classes'] ?? [];
+                                        ?>
+                                        <div class="list-group-item">
+                                            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3">
+                                                <div class="me-3 flex-grow-1">
+                                                    <div class="fw-semibold">
+                                                        <a class="text-decoration-none"
+                                                            href="<?= htmlspecialchars($overviewLink) ?>"><?= htmlspecialchars($assignment['title']) ?></a>
+                                                        <?php if (!empty($assignment['is_strict_mode'])): ?><span class="badge bg-danger ms-2">Строг режим</span><?php endif; ?>
                                                     </div>
-                                                    <div class="list-actions justify-content-end">
-                                                        <span class="badge <?= $badgeClass ?> align-self-center"><?= $badgeLabel ?></span>
-                                                        <a class="btn btn-sm btn-outline-primary"
-                                                            href="assignments_create.php?id=<?= (int) $assignment['id'] ?>"><i class="bi bi-pencil"></i> <span class="d-none d-lg-inline">Редактирай</span></a>
-                                                        <form method="post" action="teacher_actions.php" class="m-0"
-                                                            data-confirm="Изтриване на заданието „<?= htmlspecialchars($assignment['title'], ENT_QUOTES) ?>“? Всички опити ще бъдат премахнати."
-                                                            onsubmit="return confirm(this.dataset.confirm);">
-                                                            <input type="hidden" name="action" value="delete_assignment">
-                                                            <input type="hidden" name="assignment_id" value="<?= (int) $assignment['id'] ?>">
-                                                            <input type="hidden" name="redirect" value="<?= $currentUrlSafe ?>">
-                                                            <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash"></i> <span class="d-none d-lg-inline">Изтрий</span></button>
-                                                        </form>
+                                                    <div class="text-muted small">
+                                                        <?php if (!empty($assignment['open_at'])): ?>От: <?= htmlspecialchars($assignment['open_at']) ?><?php endif; ?>
+                                                        <?php if (!empty($assignment['due_at'])): ?><span class="ms-2">До: <?= htmlspecialchars($assignment['due_at']) ?></span>
+                                                        <?php elseif (!empty($assignment['close_at'])): ?><span class="ms-2">Затваря се: <?= htmlspecialchars($assignment['close_at']) ?></span><?php endif; ?>
                                                     </div>
+                                                    <div class="text-muted small">Подадени: <?= $submittedCount ?> / Оценени: <?= $gradedCount ?></div>
+                                                    <?php if ($needsGrade > 0): ?><span class="badge bg-warning text-dark mt-2 d-inline-block">За оценяване: <?= $needsGrade ?></span><?php endif; ?>
+                                                    <?php if (!empty($classTargets)): ?>
+                                                        <div class="d-flex flex-wrap gap-2 mt-3">
+                                                            <?php foreach ($classTargets as $target): ?>
+                                                                <?php
+                                                                $labelParts = [];
+                                                                $labelParts[] = trim(($target['grade'] ?? '') . ($target['section'] ?? ''));
+                                                                if (!empty($target['school_year'])) { $labelParts[] = $target['school_year']; }
+                                                                if (!empty($target['name'])) { $labelParts[] = $target['name']; }
+                                                                $chipLabel = implode(' • ', array_filter($labelParts));
+                                                                ?>
+                                                                <form method="post" action="teacher_actions.php"
+                                                                    class="assignment-chip"
+                                                                    data-confirm="Да премахнем ли заданието от клас „<?= htmlspecialchars($chipLabel, ENT_QUOTES) ?>“?"
+                                                                    onsubmit="return confirm(this.dataset.confirm);">
+                                                                    <input type="hidden" name="action" value="assignment_remove_class">
+                                                                    <input type="hidden" name="assignment_id" value="<?= (int) $assignment['id'] ?>">
+                                                                    <input type="hidden" name="class_id" value="<?= (int) $target['id'] ?>">
+                                                                    <input type="hidden" name="redirect" value="<?= $currentUrlSafe ?>">
+                                                                    <span><?= htmlspecialchars($chipLabel) ?></span>
+                                                                    <button type="submit" aria-label="Премахни"><i class="bi bi-x"></i></button>
+                                                                </form>
+                                                            <?php endforeach; ?>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="list-actions justify-content-end">
+                                                    <span class="badge <?= $badgeClass ?> align-self-center"><?= $badgeLabel ?></span>
+                                                    <a class="action-icon-btn action-icon-btn--primary"
+                                                        href="assignments_create.php?id=<?= (int) $assignment['id'] ?>"
+                                                        title="Редактирай заданието">
+                                                        <i class="bi bi-pencil"></i>
+                                                        <span class="visually-hidden">Редактирай</span>
+                                                    </a>
+                                                    <form method="post" action="teacher_actions.php" class="m-0"
+                                                        data-confirm="Изтриване на заданието „<?= htmlspecialchars($assignment['title'], ENT_QUOTES) ?>“? Всички опити ще бъдат премахнати."
+                                                        onsubmit="return confirm(this.dataset.confirm);">
+                                                        <input type="hidden" name="action" value="delete_assignment">
+                                                        <input type="hidden" name="assignment_id" value="<?= (int) $assignment['id'] ?>">
+                                                        <input type="hidden" name="redirect" value="<?= $currentUrlSafe ?>">
+                                                        <button class="action-icon-btn action-icon-btn--danger" type="submit" title="Изтрий заданието">
+                                                            <i class="bi bi-trash"></i>
+                                                            <span class="visually-hidden">Изтрий</span>
+                                                        </button>
+                                                    </form>
                                                 </div>
                                             </div>
-                                        <?php endforeach; ?>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <div class="col-lg-6">
                         <div class="card section-card h-100" data-card-key="teacher-assignments-past">
-                            <div class="card-header"><div class="section-title"><i class="bi bi-archive"></i><strong>Минали задания</strong></div></div>
-                            <div class="card-body">
-                                <?php if (empty($teacher['assignments_past'])): ?>
-                                    <div class="text-muted">Няма приключили задания.</div>
-                                <?php else: ?>
-                                    <div class="list-group list-elevated">
-                                        <?php foreach ($teacher['assignments_past'] as $assignment): ?>
-                                            <?php
-                                            $submittedCount = (int) ($assignment['submitted_count'] ?? 0);
-                                            $gradedCount = (int) ($assignment['graded_count'] ?? 0);
-                                            $needsGrade = (int) ($assignment['needs_grade'] ?? 0);
-                                            $primaryClassId = isset($assignment['primary_class_id']) ? (int) $assignment['primary_class_id'] : 0;
-                                            $overviewLink = 'assignment_overview.php?id=' . (int) $assignment['id'];
-                                            if ($primaryClassId > 0) {
-                                                $overviewLink .= '&class_id=' . $primaryClassId;
-                                            }
-                                            $classTargets = $assignment['classes'] ?? [];
-                                            ?>
-                                            <div class="list-group-item">
-                                                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3">
-                                                    <div class="me-3 flex-grow-1">
-                                                        <div class="fw-semibold">
-                                                            <a class="text-decoration-none"
-                                                                href="<?= htmlspecialchars($overviewLink) ?>"><?= htmlspecialchars($assignment['title']) ?></a>
-                                                            <?php if (!empty($assignment['is_strict_mode'])): ?>
-                                                                <span class="badge bg-danger ms-2">Строг режим</span>
-                                                            <?php endif; ?>
+                        <div class="card-header"><div class="section-title"><i class="bi bi-archive"></i><strong>Минали задания</strong></div></div>
+                        <div class="card-body">
+                            <?php if (empty($teacher['assignments_past'])): ?>
+                                <div class="text-muted">Няма приключили задания.</div>
+                            <?php else: ?>
+                                <div class="list-group list-elevated">
+                                    <?php foreach ($teacher['assignments_past'] as $assignment): ?>
+                                        <?php
+                                        $submittedCount = (int) ($assignment['submitted_count'] ?? 0);
+                                        $gradedCount = (int) ($assignment['graded_count'] ?? 0);
+                                        $needsGrade = (int) ($assignment['needs_grade'] ?? 0);
+                                        $primaryClassId = isset($assignment['primary_class_id']) ? (int) $assignment['primary_class_id'] : 0;
+                                        $overviewLink = 'assignment_overview.php?id=' . (int) $assignment['id'];
+                                        if ($primaryClassId > 0) {
+                                            $overviewLink .= '&class_id=' . $primaryClassId;
+                                        }
+                                        $classTargets = $assignment['classes'] ?? [];
+                                        ?>
+                                        <div class="list-group-item">
+                                            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3">
+                                                <div class="me-3 flex-grow-1">
+                                                    <div class="fw-semibold">
+                                                        <a class="text-decoration-none"
+                                                            href="<?= htmlspecialchars($overviewLink) ?>"><?= htmlspecialchars($assignment['title']) ?></a>
+                                                        <?php if (!empty($assignment['is_strict_mode'])): ?><span class="badge bg-danger ms-2">Строг режим</span><?php endif; ?>
+                                                    </div>
+                                                    <div class="text-muted small"><?php if (!empty($assignment['due_at'])): ?>Завършено на: <?= htmlspecialchars($assignment['due_at']) ?><?php endif; ?></div>
+                                                    <?php if (!empty($classTargets)): ?>
+                                                        <div class="d-flex flex-wrap gap-2 mt-3">
+                                                            <?php foreach ($classTargets as $target): ?>
+                                                                <?php
+                                                                $labelParts = [];
+                                                                $labelParts[] = trim(($target['grade'] ?? '') . ($target['section'] ?? ''));
+                                                                if (!empty($target['school_year'])) { $labelParts[] = $target['school_year']; }
+                                                                if (!empty($target['name'])) { $labelParts[] = $target['name']; }
+                                                                $chipLabel = implode(' • ', array_filter($labelParts));
+                                                                ?>
+                                                                <form method="post" action="teacher_actions.php"
+                                                                    class="assignment-chip"
+                                                                    data-confirm="Да премахнем ли заданието от клас „<?= htmlspecialchars($chipLabel, ENT_QUOTES) ?>“?"
+                                                                    onsubmit="return confirm(this.dataset.confirm);">
+                                                                    <input type="hidden" name="action" value="assignment_remove_class">
+                                                                    <input type="hidden" name="assignment_id" value="<?= (int) $assignment['id'] ?>">
+                                                                    <input type="hidden" name="class_id" value="<?= (int) $target['id'] ?>">
+                                                                    <input type="hidden" name="redirect" value="<?= $currentUrlSafe ?>">
+                                                                    <span><?= htmlspecialchars($chipLabel) ?></span>
+                                                                    <button type="submit" aria-label="Премахни"><i class="bi bi-x"></i></button>
+                                                                </form>
+                                                            <?php endforeach; ?>
                                                         </div>
-                                                        <div class="text-muted small"><?php if (!empty($assignment['due_at'])): ?>Завършено на: <?= htmlspecialchars($assignment['due_at']) ?><?php endif; ?></div>
-                                                        <?php if (!empty($classTargets)): ?>
-                                                            <div class="d-flex flex-wrap gap-2 mt-3">
-                                                                <?php foreach ($classTargets as $target): ?>
-                                                                    <?php
-                                                                    $labelParts = [];
-                                                                    $labelParts[] = trim(($target['grade'] ?? '') . ($target['section'] ?? ''));
-                                                                    if (!empty($target['school_year'])) { $labelParts[] = $target['school_year']; }
-                                                                    if (!empty($target['name'])) { $labelParts[] = $target['name']; }
-                                                                    $chipLabel = implode(' • ', array_filter($labelParts));
-                                                                    ?>
-                                                                    <form method="post" action="teacher_actions.php"
-                                                                        class="assignment-chip"
-                                                                        data-confirm="Да премахнем ли заданието от клас „<?= htmlspecialchars($chipLabel, ENT_QUOTES) ?>“?"
-                                                                        onsubmit="return confirm(this.dataset.confirm);">
-                                                                        <input type="hidden" name="action" value="assignment_remove_class">
-                                                                        <input type="hidden" name="assignment_id" value="<?= (int) $assignment['id'] ?>">
-                                                                        <input type="hidden" name="class_id" value="<?= (int) $target['id'] ?>">
-                                                                        <input type="hidden" name="redirect" value="<?= $currentUrlSafe ?>">
-                                                                        <span><?= htmlspecialchars($chipLabel) ?></span>
-                                                                        <button type="submit" aria-label="Премахни"><i class="bi bi-x"></i></button>
-                                                                    </form>
-                                                                <?php endforeach; ?>
-                                                            </div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <div class="list-actions justify-content-end">
-                                                        <div class="text-muted small align-self-center">Подадени: <?= $submittedCount ?> / Оценени: <?= $gradedCount ?></div>
-                                                        <?php if ($needsGrade > 0): ?>
-                                                            <span class="badge bg-warning text-dark align-self-center">За проверка: <?= $needsGrade ?></span>
-                                                        <?php endif; ?>
-                                                        <a class="btn btn-sm btn-outline-primary"
-                                                            href="assignments_create.php?id=<?= (int) $assignment['id'] ?>"><i class="bi bi-pencil"></i> <span class="d-none d-lg-inline">Редактирай</span></a>
-                                                        <form method="post" action="teacher_actions.php" class="m-0"
-                                                            data-confirm="Изтриване на заданието „<?= htmlspecialchars($assignment['title'], ENT_QUOTES) ?>“?"
-                                                            onsubmit="return confirm(this.dataset.confirm);">
-                                                            <input type="hidden" name="action" value="delete_assignment">
-                                                            <input type="hidden" name="assignment_id" value="<?= (int) $assignment['id'] ?>">
-                                                            <input type="hidden" name="redirect" value="<?= $currentUrlSafe ?>">
-                                                            <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi би-trash"></i> <span class="d-none д-lg-inline">Изтрий</span></button>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="card section-card h-100" data-card-key="student-classes">
-                            <div class="card-header"><div class="section-title"><i class="bi bi-people"></i><strong>Моите класове</strong></div></div>
-                            <div class="card-body">
-                                <?php if (empty($student['classes'])): ?>
-                                    <div class="text-muted">Не сте добавени в клас.</div>
-                                <?php else: ?>
-                                    <div class="list-group list-elevated">
-                                        <?php foreach ($student['classes'] as $c): ?>
-                                            <div class="list-group-item">
-                                                <?= htmlspecialchars($c['grade'] . $c['section']) ?> •
-                                                <?= htmlspecialchars($c['school_year']) ?>
-                                                <span class="text-muted small ms-2"><?= htmlspecialchars($c['name']) ?></span>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="card section-card h-100" id="student-assignments" data-card-key="student-open-assignments">
-                            <div class="card-header"><div class="section-title"><i class="bi bi-clipboard-data"></i><strong>Отворени задания</strong></div></div>
-                            <div class="card-body">
-                                <?php if (empty($student['open_assignments'])): ?>
-                                    <div class="text-muted">Нямате активни задания в момента.</div>
-                                <?php else: ?>
-                                    <div class="list-group list-elevated">
-                                        <?php foreach ($student['open_assignments'] as $a):
-                                            $lastAttemptId = $student['open_attempts_map'][(int) $a['id']] ?? null; ?>
-                                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                                <div class="me-2">
-                                                    <div class="fw-semibold"><a class="text-decoration-none"
-                                                            href="assignment.php?id=<?= (int) $a['id'] ?>"><?= htmlspecialchars($a['title']) ?></a>
-                                                    </div>
-                                                    <div class="text-muted small">Тест: <?= htmlspecialchars($a['test_title']) ?>
-                                                    </div>
-                                                </div>
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <small class="text-muted">
-                                                        <?php if (!empty($a['due_at'])): ?>До
-                                                            <?= htmlspecialchars($a['due_at']) ?>            <?php else: ?>Без срок<?php endif; ?>
-                                                    </small>
-                                                    <?php if ($lastAttemptId): ?>
-                                                        <a class="btn btn-sm btn-outline-secondary"
-                                                            href="student_attempt.php?id=<?= (int) $lastAttemptId ?>"><i
-                                                                class="bi bi-eye"></i> Преглед</a>
                                                     <?php endif; ?>
-                                                    <a class="btn btn-sm btn-primary"
-                                                        href="assignment.php?id=<?= (int) $a['id'] ?>"><i
-                                                            class="bi bi-play-fill"></i> Реши</a>
+                                                </div>
+                                                <div class="list-actions justify-content-end">
+                                                    <div class="text-muted small align-self-center">Подадени: <?= $submittedCount ?> / Оценени: <?= $gradedCount ?></div>
+                                                    <?php if ($needsGrade > 0): ?><span class="badge bg-warning text-dark align-self-center">За проверка: <?= $needsGrade ?></span><?php endif; ?>
+                                                    <a class="action-icon-btn action-icon-btn--muted"
+                                                        href="assignments_create.php?id=<?= (int) $assignment['id'] ?>"
+                                                        title="Отвори заданието">
+                                                        <i class="bi bi-pencil"></i>
+                                                        <span class="visually-hidden">Редактирай</span>
+                                                    </a>
+                                                    <form method="post" action="teacher_actions.php" class="m-0"
+                                                        data-confirm="Изтриване на заданието „<?= htmlspecialchars($assignment['title'], ENT_QUOTES) ?>“?"
+                                                        onsubmit="return confirm(this.dataset.confirm);">
+                                                        <input type="hidden" name="action" value="delete_assignment">
+                                                        <input type="hidden" name="assignment_id" value="<?= (int) $assignment['id'] ?>">
+                                                        <input type="hidden" name="redirect" value="<?= $currentUrlSafe ?>">
+                                                        <button class="action-icon-btn action-icon-btn--danger" type="submit" title="Изтрий заданието">
+                                                            <i class="bi bi-trash"></i>
+                                                            <span class="visually-hidden">Изтрий</span>
+                                                        </button>
+                                                    </form>
                                                 </div>
                                             </div>
-                                        <?php endforeach; ?>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
-                </div>
-
-                <div class="row g-3 g-md-4 mt-1 mt-md-2">
+                    <div class="row g-3 g-md-4 mt-1 mt-md-2">
                     <div class="col-lg-6">
                         <div class="card section-card h-100" data-card-key="student-recent-attempts">
                             <div class="card-header"><div class="section-title"><i class="bi bi-clock-history"></i><strong>Последни опити</strong></div></div>

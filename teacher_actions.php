@@ -73,11 +73,12 @@ try {
             $classId = (int) ($_POST['class_id'] ?? 0);
             if ($assignmentId > 0 && $classId > 0) {
                 $stmt = $pdo->prepare('DELETE ac FROM assignment_classes ac
-                                        JOIN assignments a ON a.id = ac.assignment_id AND a.assigned_by_teacher_id = :tid
-                                        JOIN classes c ON c.id = ac.class_id AND c.teacher_id = :tid
+                                        JOIN assignments a ON a.id = ac.assignment_id AND a.assigned_by_teacher_id = :tid1
+                                        JOIN classes c ON c.id = ac.class_id AND c.teacher_id = :tid2
                                         WHERE ac.assignment_id = :aid AND ac.class_id = :cid');
                 $stmt->execute([
-                    ':tid' => $teacherId,
+                    ':tid1' => $teacherId,
+                    ':tid2' => $teacherId,
                     ':aid' => $assignmentId,
                     ':cid' => $classId,
                 ]);
