@@ -709,7 +709,7 @@ if ($user['role'] === 'teacher') {
                     <p class="lead mb-4"><?= htmlspecialchars($heroSubtitle) ?></p>
                     <div class="hero-actions d-flex flex-wrap gap-2">
                         <?php if ($user['role'] === 'teacher'): ?>
-                            <a class="btn btn-light btn-lg" href="createTest.php"><i class="bi bi-magic me-2"></i>Нов тест</a>
+                            <a class="btn btn-primary btn-lg" href="createTest.php"><i class="bi bi-magic me-2"></i>Нов тест</a>
                             <a class="btn btn-outline-light btn-lg" href="classes_create.php"><i class="bi bi-people me-2"></i>Нов клас</a>
                             <a class="btn btn-outline-light btn-lg" href="assignments_create.php"><i class="bi bi-megaphone me-2"></i>Задание</a>
                             <a class="btn btn-outline-light btn-lg" href="subjects_create.php"><i class="bi bi-journal-text me-2"></i>Тема</a>
@@ -1340,10 +1340,14 @@ if ($user['role'] === 'teacher') {
                         toggle = document.createElement('button');
                         toggle.type = 'button';
                         toggle.className = 'card-toggle';
-                        toggle.setAttribute('aria-expanded', 'true');
+                        toggle.setAttribute('aria-expanded', 'false');
                         toggle.setAttribute('aria-label', 'Свий или разгъни секцията');
                         toggle.innerHTML = '<i class="bi bi-chevron-up"></i>';
                         header.appendChild(toggle);
+                    }
+
+                    if (!card.classList.contains('is-collapsed')) {
+                        card.classList.add('is-collapsed');
                     }
 
                     toggle.addEventListener('click', () => {
