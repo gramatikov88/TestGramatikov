@@ -735,7 +735,7 @@ if ($user['role'] === 'teacher') {
         </section>
 
         <?php if ($user['role'] === 'teacher'): ?>
-            <div class="card section-card filter-card mb-4">
+            <div class="card section-card filter-card mb-4" data-locked-open="true">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <div class="section-title m-0">
                         <i class="bi bi-funnel-fill"></i>
