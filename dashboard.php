@@ -1326,12 +1326,13 @@ if ($user['role'] === 'teacher') {
             </div>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-            <script>
+        <script>
             (() => {
-                document.querySelectorAll('.section-card').forEach(card => {
+                const cards = document.querySelectorAll('.section-card');
+                cards.forEach((card, index) => {
                     const header = card.querySelector('.card-header');
-                    const body = card.querySelector('.card-body');
-                    if (!header || !body) {
+                    const bodies = card.querySelectorAll('.card-body, .card-footer');
+                    if (!header || bodies.length === 0) {
                         return;
                     }
 
@@ -1340,17 +1341,42 @@ if ($user['role'] === 'teacher') {
                         toggle = document.createElement('button');
                         toggle.type = 'button';
                         toggle.className = 'card-toggle';
-                        toggle.setAttribute('aria-expanded', 'false');
                         toggle.setAttribute('aria-label', 'Свий или разгъни секцията');
                         toggle.innerHTML = '<i class="bi bi-chevron-up"></i>';
                         header.appendChild(toggle);
                     }
 
-                    card.classList.add('is-collapsed');
+                    const keyBase = card.id || card.getAttribute('data-card-key') || `card-${index}`;
+                    const storageKey = `tg-dashboard-card-${keyBase}`;
+
+                    const setCollapsed = (collapsed) => {
+                        card.classList.toggle('is-collapsed', collapsed);
+                        toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                        bodies.forEach(el => {
+                            el.hidden = collapsed;
+                        });
+                    };
+
+                    let initialCollapsed = true;
+                    try {
+                        const stored = localStorage.getItem(storageKey);
+                        if (stored !== null) {
+                            initialCollapsed = stored === '1';
+                        }
+                    } catch (err) {
+                        // ignore storage issues
+                    }
+
+                    setCollapsed(initialCollapsed);
 
                     toggle.addEventListener('click', () => {
-                        const collapsed = card.classList.toggle('is-collapsed');
-                        toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                        const nextCollapsed = !card.classList.contains('is-collapsed');
+                        setCollapsed(nextCollapsed);
+                        try {
+                            localStorage.setItem(storageKey, nextCollapsed ? '1' : '0');
+                        } catch (err) {
+                            // ignore storage issues
+                        }
                     });
                 });
             })();
