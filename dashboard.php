@@ -1346,13 +1346,10 @@ if ($user['role'] === 'teacher') {
                         header.appendChild(toggle);
                     }
 
-                    if (!card.classList.contains('is-collapsed')) {
-                        card.classList.add('is-collapsed');
-                    }
+                    card.classList.add('is-collapsed');
 
                     toggle.addEventListener('click', () => {
-                        const collapsed = !card.classList.contains('is-collapsed');
-                        card.classList.toggle('is-collapsed', collapsed);
+                        const collapsed = card.classList.toggle('is-collapsed');
                         toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
                     });
                 });
