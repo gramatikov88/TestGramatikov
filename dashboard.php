@@ -1337,7 +1337,10 @@ if ($user['role'] === 'teacher') {
                     }
 
                     let toggle = header.querySelector('.card-toggle');
-                    if (!toggle) {
+                    const lockedOpen = card.dataset.lockedOpen === 'true';
+                    const defaultOpen = card.dataset.defaultOpen === 'true';
+
+                    if (!toggle && !lockedOpen) {
                         toggle = document.createElement('button');
                         toggle.type = 'button';
                         toggle.className = 'card-toggle';
@@ -1351,23 +1354,37 @@ if ($user['role'] === 'teacher') {
 
                     const setCollapsed = (collapsed) => {
                         card.classList.toggle('is-collapsed', collapsed);
-                        toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
                         bodies.forEach(el => {
                             el.hidden = collapsed;
                         });
+                        if (toggle) {
+                            toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                        }
                     };
 
-                    let initialCollapsed = true;
-                    try {
-                        const stored = localStorage.getItem(storageKey);
-                        if (stored !== null) {
-                            initialCollapsed = stored === '1';
+                    let initialCollapsed = lockedOpen ? false : !defaultOpen;
+                    if (!lockedOpen) {
+                        try {
+                            const stored = localStorage.getItem(storageKey);
+                            if (stored !== null) {
+                                initialCollapsed = stored === '1';
+                            }
+                        } catch (err) {
+                            // ignore storage issues
                         }
-                    } catch (err) {
-                        // ignore storage issues
                     }
 
                     setCollapsed(initialCollapsed);
+
+                    if (lockedOpen) {
+                        if (toggle) {
+                            toggle.remove();
+                        }
+                        bodies.forEach(el => {
+                            el.hidden = false;
+                        });
+                        return;
+                    }
 
                     toggle.addEventListener('click', () => {
                         const nextCollapsed = !card.classList.contains('is-collapsed');
