@@ -788,7 +788,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="small text-hint mt-2">
                             Качете файла след като попълните таблицата в excel:
                             <em>Question, Type, Points, Answer 1…Answer N, Correct</em>
-                            (използвайте следните индекси <em>1</em> or <em>1,3</em>).
+                            (използвайте <em>1</em> or <em>1,3</em>).
                         </div>
                     </div>
                 </div>
@@ -1098,8 +1098,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </body>
 
 </html>
-
-
-
-
-
