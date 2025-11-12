@@ -778,7 +778,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             formnovalidate>
                             <i class="bi bi-file-earmark-spreadsheet me-1"></i>Load from Excel
                         </button>
-                        <div class="small">Upload an .xlsx file with columns: Question, Type, Points, Answer
+                        <div class="small text-info">Upload an .xlsx file with columns: Question, Type, Points, Answer
                             1...Answer N, Correct (use indexes such as 1 or 1,3).</div>
                     </div>
                 </div>
