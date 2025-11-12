@@ -766,7 +766,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <form method="post" enctype="multipart/form-data" class="card card-dark mb-4" id="testForm">
-            <div class="card-header"><strong>Основни данни</strong></div>
+            <div class="card-header mb-10"><strong>Основни данни</strong></div>
             <div class="card-body">
                 <h5 class="h6 mb-3">Import questions from Excel</h5>
                 <div class="row g-3 align-items-start">
