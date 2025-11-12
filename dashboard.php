@@ -1424,7 +1424,7 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                 <div class="card-header">
                                     <div class="section-title"><i class="bi bi-clipboard-check"></i><strong>Минали задания</strong></div>
                                 </div>
-                                <div class="card-body">
+                                <div class="card-body w-100">
                                     <?php if (empty($teacher['assignments_past'])): ?>
                                         <div class="text-muted">Няма приключили задания.</div>
                                     <?php else: ?>
