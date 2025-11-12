@@ -1112,9 +1112,7 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="row g-3 g-md-4 mt-1 mt-md-2">
                     <div class="col-lg-6">
                         <div class="card section-card h-100" data-card-key="teacher-recent-attempts">
                             <div class="card-header"><div class="section-title"><i class="bi bi-activity"></i><strong>Последни опити</strong></div></div>
@@ -1259,9 +1257,7 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="row g-3 g-md-4 mt-1 mt-md-2">
                     <div class="col-lg-6">
                         <div class="card section-card h-100" data-card-key="teacher-assignments-current">
                         <div class="card-header"><div class="section-title"><i class="bi bi-clipboard-check"></i><strong>Текущи задания</strong></div></div>
