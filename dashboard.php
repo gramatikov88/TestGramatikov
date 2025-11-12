@@ -699,13 +699,24 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
             border: 0;
         }
 
+        /* ---- ЛЕЙАУТ НА КАРТИТЕ ----
+           Мобилни: 1 на ред
+           ≥992px (desktop): точно 2 на ред
+        */
         .dashboard-columns {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            grid-template-columns: 1fr;
             gap: 1.5rem;
             margin-bottom: 1.5rem;
         }
 
+        @media (min-width: 992px) {
+            .dashboard-columns {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        /* Нулирай влиянието на вложени Bootstrap редове/колони в секциите на таблото */
         .dashboard-columns > .row {
             display: contents;
             margin-left: 0 !important;
