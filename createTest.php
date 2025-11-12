@@ -765,22 +765,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="alert alert-info"><?= htmlspecialchars($importNotice) ?></div>
         <?php endif; ?>
 
-        <form method="post" enctype="multipart/form-data" class="card shadow-sm mb-4" id="testForm">
-            <div class="card-header bg-white"><strong>Основни данни</strong></div>
-            <div class="card-body border-bottom bg-light">
-                <h5 class="h6 mb-3 text-success">Import questions from Excel</h5>
-                <div class="row g-2">
+        <form method="post" enctype="multipart/form-data" class="card card-dark mb-4" id="testForm">
+            <div class="card-header"><strong>Основни данни</strong></div>
+            <div class="card-body">
+                <h5 class="h6 mb-3">Import questions from Excel</h5>
+                <div class="row g-3 align-items-start">
                     <div class="col-md-6">
-                        <input type="file" name="excel_file" class="form-control" accept=".xlsx" />
+                        <label for="excel_file" class="form-label">Избор на файл (.xlsx)</label>
+                        <input id="excel_file" type="file" name="excel_file" class="form-control" accept=".xlsx" />
                     </div>
-                    <div class="col-md-6 d-flex align-items-start gap-2">
+                    <div class="col-md-6 d-flex flex-column gap-2 pt-1">
                         <!-- formnovalidate: заобикаля HTML5 required на празните полета -->
-                        <button type="submit" name="import_excel" value="1" class="btn btn-outline-primary"
-                            formnovalidate>
-                            <i class="bi bi-file-earmark-spreadsheet me-1"></i>Load from Excel
+                        <button type="submit" name="import_excel" value="1"
+                            class="btn btn-outline-primary btn-upload align-self-start" formnovalidate>
+                            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Load from Excel
                         </button>
-                        <div class="small text-info">Upload an .xlsx file with columns: Question, Type, Points, Answer
-                            1...Answer N, Correct (use indexes such as 1 or 1,3).</div>
+                        <div class="small text-hint">
+                            Upload an .xlsx file with columns:
+                            <em>Question, Type, Points, Answer 1…Answer N, Correct</em>
+                            (use indexes such as <em>1</em> or <em>1,3</em>).
+                        </div>
                     </div>
                 </div>
             </div>
