@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 require_once __DIR__ . '/config.php';
 header('Content-Type: text/html; charset=utf-8');
@@ -766,21 +766,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <form method="post" enctype="multipart/form-data" class="card card-dark mb-4" id="testForm">
-            <div class="card-header mb-10"><strong>Основни данни</strong></div>
-            <div class="card-body">
+            <div class="card-header"><strong>Основни данни</strong></div>
+            <div class="card-body mb-4">
                 <h5 class="h6 mb-3">Import questions from Excel</h5>
                 <div class="row g-3 align-items-start">
                     <div class="col-md-6">
                         <label for="excel_file" class="form-label">Избор на файл (.xlsx)</label>
                         <input id="excel_file" type="file" name="excel_file" class="form-control" accept=".xlsx" />
                     </div>
-                    <div class="col-md-6 d-flex flex-column gap-2 pt-1">
-                        <!-- formnovalidate: заобикаля HTML5 required на празните полета -->
-                        <button type="submit" name="import_excel" value="1"
-                            class="btn btn-outline-primary btn-upload align-self-start" formnovalidate>
-                            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Load from Excel
-                        </button>
-                        <div class="small text-hint">
+                    <div class="col-md-6">
+                        <div class="d-flex flex-wrap gap-2">
+                            <!-- formnovalidate: заобикаля HTML5 required на празните полета -->
+                            <button type="submit" name="import_excel" value="1"
+                                class="btn btn-outline-primary btn-upload" formnovalidate>
+                                <i class="bi bi-file-earmark-spreadsheet me-1"></i> Load from Excel
+                            </button>
+                            <a href="download_template.php" class="btn btn-outline-primary btn-upload">
+                                <i class="bi bi-download me-1"></i> Download template (.xlsx)
+                            </a>
+                        </div>
+                        <div class="small text-hint mt-2">
                             Upload an .xlsx file with columns:
                             <em>Question, Type, Points, Answer 1…Answer N, Correct</em>
                             (use indexes such as <em>1</em> or <em>1,3</em>).
@@ -1093,3 +1098,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </body>
 
 </html>
+
+
+
+
+
