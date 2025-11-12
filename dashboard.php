@@ -1067,7 +1067,6 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                             </div>
                         </div>
                     </div>
-                    </div>
                     <div class="col-lg-6">
                         <div class="card section-card h-100" data-card-key="teacher-tests">
                             <div class="card-header"><div class="section-title"><i class="bi bi-kanban"></i><strong>Тестове</strong></div></div>
@@ -1439,6 +1438,7 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                             <?php endif; ?>
                         </div>
                     </div>
+                </div>
             </div>
         <?php else: ?>
             <!-- Student Dashboard -->
