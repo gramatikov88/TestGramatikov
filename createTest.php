@@ -768,7 +768,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="post" enctype="multipart/form-data" class="card card-dark mb-4" id="testForm">
             <div class="card-header"><strong>Основни данни</strong></div>
             <div class="card-body mb-4">
-                <h5 class="h6 mb-3">Import questions from Excel</h5>
+                <h5 class="h6 mb-3">Можете да заредите въпрости от таблица в excel</h5>
                 <div class="row g-3 align-items-start">
                     <div class="col-md-6">
                         <label for="excel_file" class="form-label">Избор на файл (.xlsx)</label>
@@ -779,16 +779,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <!-- formnovalidate: заобикаля HTML5 required на празните полета -->
                             <button type="submit" name="import_excel" value="1"
                                 class="btn btn-outline-primary btn-upload" formnovalidate>
-                                <i class="bi bi-file-earmark-spreadsheet me-1"></i> Load from Excel
+                                <i class="bi bi-file-earmark-spreadsheet me-1"></i>Зареди от Excel
                             </button>
                             <a href="download_template.php" class="btn btn-outline-primary btn-upload">
-                                <i class="bi bi-download me-1"></i> Download template (.xlsx)
+                                <i class="bi bi-download me-1"></i> Изтеглете темплейт (.xlsx)
                             </a>
                         </div>
                         <div class="small text-hint mt-2">
-                            Upload an .xlsx file with columns:
+                            Качете файла след като попълните таблицата в excel:
                             <em>Question, Type, Points, Answer 1…Answer N, Correct</em>
-                            (use indexes such as <em>1</em> or <em>1,3</em>).
+                            (използвайте следните индекси <em>1</em> or <em>1,3</em>).
                         </div>
                     </div>
                 </div>
