@@ -1414,13 +1414,14 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                                     </div>
                                                 </div>
                                             </div>
-                                        <?php endforeach; ?>
+                    <?php endforeach; ?>
                                     </div>
                                 <?php endif; ?>
                             </div>
                         </div>
-                        <div class="col-lg-6">
-                            <div class="card section-card h-100" data-card-key="teacher-assignments-current">
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card section-card h-100" data-card-key="teacher-assignments-past">
                                 <div class="card-header">
                                     <div class="section-title"><i class="bi bi-clipboard-check"></i><strong>Минали задания</strong></div>
                                 </div>
