@@ -767,7 +767,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="post" enctype="multipart/form-data" class="card shadow-sm mb-4" id="testForm">
             <div class="card-header bg-white"><strong>Основни данни</strong></div>
             <div class="card-body border-bottom bg-light">
-                <h5 class="h6 mb-3">Import questions from Excel</h5>
+                <h5 class="h6 mb-3 text-success">Import questions from Excel</h5>
                 <div class="row g-2">
                     <div class="col-md-6">
                         <input type="file" name="excel_file" class="form-control" accept=".xlsx" />
