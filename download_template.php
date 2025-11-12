@@ -1,5 +1,5 @@
 ﻿<?php
-$templatePath = __DIR__ . "/templates/questions_template.xlsx";
+$templatePath = __DIR__ . "../templates/questions_template.xlsx";
 
 if (!is_file($templatePath) || !is_readable($templatePath)) {
     http_response_code(404);
