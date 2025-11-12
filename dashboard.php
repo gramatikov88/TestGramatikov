@@ -731,6 +731,7 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
 
         .dashboard-columns .section-card {
             height: 100%;
+            width: 100%;
         }
 
         .filter-card form {
