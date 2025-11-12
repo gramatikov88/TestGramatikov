@@ -684,6 +684,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             padding: 1rem;
             margin-bottom: 1rem;
         }
+
+        /* Dark theme polish for the create test form */
+        #testForm {
+            background: #0c1524;
+            border-color: rgba(148, 163, 184, .25);
+            color: #e2e8f0;
+        }
+
+        #testForm .card-header {
+            background: #131c2d;
+            color: #f8fafc;
+            border-bottom: 1px solid rgba(148, 163, 184, .25);
+            font-weight: 600;
+            letter-spacing: .01em;
+        }
+
+        #testForm .card-body {
+            background: #0f1828;
+            color: #e2e8f0;
+        }
+
+        #testForm .card-body.bg-light {
+            background: #111b2c;
+        }
+
+        #testForm .card-body h5,
+        #testForm .card-body .form-label {
+            color: #f1f5f9;
+        }
+
+        #testForm .card-body .text-muted {
+            color: rgba(226, 232, 240, .75) !important;
+        }
+
+        #testForm .form-control,
+        #testForm .form-select {
+            background: #0b1526;
+            border-color: rgba(148, 163, 184, .35);
+            color: #f8fafc;
+        }
+
+        #testForm .form-control:focus,
+        #testForm .form-select:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 .15rem rgba(59, 130, 246, .25);
+        }
+
+        #testForm .form-control::file-selector-button {
+            background: #171f30;
+            color: #f8fafc;
+            border: none;
+        }
     </style>
 </head>
 
