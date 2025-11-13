@@ -1044,7 +1044,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
         <script>
-            // динамика за въпроси/отговори
+            function getQuestionType(qEl) {
+                const select = qEl ? qEl.querySelector('[data-q-type]') : null;
+                return select ? select.value : 'single';
+            }
+            function getQuestionIndex(qEl) {
+                return qEl ? Array.from(document.querySelectorAll('[data-q]')).indexOf(qEl) : -1;
+            }
+            function appendAnswerRow(answersWrap, qi, ai, content = '', isCorrect = false) {
+                if (!answersWrap || qi < 0 || ai < 0)
+                    return;
+                const row = document.createElement('div');
+                row.className = 'answer-row';
+                row.setAttribute('data-answer', '');
+                row.innerHTML = `
+                    <input type="text" class="form-control" name="questions[${qi}][answers][${ai}][content]" placeholder="Отговор..." required />
+                    <div class="form-check d-flex align-items-center">
+                        <input class="form-check-input" type="checkbox" name="questions[${qi}][answers][${ai}][is_correct]" />
+                        <label class="form-check-label ms-1">Верен</label>
+                    </div>
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="rmAnswer(this)"><i class="bi bi-x"></i></button>
+                `;
+                const textInput = row.querySelector('input[type="text"]');
+                if (textInput)
+                    textInput.value = content;
+                const checkbox = row.querySelector('input[type="checkbox"]');
+                if (checkbox)
+                    checkbox.checked = !!isCorrect;
+                answersWrap.appendChild(row);
+            }
+            function ensureTrueFalseAnswers(qEl, shouldRenumber = true) {
+                if (!qEl)
+                    return;
+                const answersWrap = qEl.querySelector('[data-answers]');
+                if (!answersWrap)
+                    return;
+                const qi = getQuestionIndex(qEl);
+                if (qi < 0)
+                    return;
+                let rows = answersWrap.querySelectorAll('[data-answer]');
+                while (rows.length > 2) {
+                    rows[rows.length - 1].remove();
+                    rows = answersWrap.querySelectorAll('[data-answer]');
+                }
+                const defaults = ['Вярно', 'Грешно'];
+                while (rows.length < 2) {
+                    appendAnswerRow(answersWrap, qi, rows.length);
+                    rows = answersWrap.querySelectorAll('[data-answer]');
+                }
+                rows = answersWrap.querySelectorAll('[data-answer]');
+                rows.forEach((row, idx) => {
+                    const input = row.querySelector('input[type="text"]');
+                    if (input && input.value.trim() === '' && defaults[idx])
+                        input.value = defaults[idx];
+                });
+                const hasCorrect = Array.from(rows).some(row => {
+                    const checkbox = row.querySelector('input[type="checkbox"]');
+                    return checkbox && checkbox.checked;
+                });
+                if (!hasCorrect && rows[0]) {
+                    const checkbox = rows[0].querySelector('input[type="checkbox"]');
+                    if (checkbox)
+                        checkbox.checked = true;
+                }
+                if (shouldRenumber)
+                    renumber();
+            }
+            function handleTypeChange(selectEl) {
+                if (!selectEl)
+                    return;
+                const qEl = selectEl.closest('[data-q]');
+                if (!qEl)
+                    return;
+                if (selectEl.value === 'true_false')
+                    ensureTrueFalseAnswers(qEl);
+            }
             function renumber() {
                 const qs = document.querySelectorAll('[data-q]');
                 qs.forEach((qEl, qi) => {
@@ -1075,21 +1149,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 tmpl.querySelectorAll('[data-remove-media]').forEach(i => i.checked = false);
                 tmpl.querySelectorAll('[data-media-input]').forEach(i => i.value = '');
                 tmpl.querySelectorAll('[data-media-preview]').forEach(el => el.remove());
+                const typeSelect = tmpl.querySelector('[data-q-type]');
+                if (typeSelect)
+                    typeSelect.value = 'single';
                 const answersWrap = tmpl.querySelector('[data-answers]');
-                answersWrap.innerHTML = '';
-                for (let k = 0; k < 2; k++) {
-                    const row = document.createElement('div');
-                    row.className = 'answer-row';
-                    row.setAttribute('data-answer', '');
-                    row.innerHTML = `
-                    <input type="text" class="form-control" name="questions[0][answers][${k}][content]" placeholder="Отговор..." required />
-                    <div class="form-check d-flex align-items-center">
-                        <input class="form-check-input" type="checkbox" name="questions[0][answers][${k}][is_correct]" />
-                        <label class="form-check-label ms-1">Верен</label>
-                    </div>
-                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="rmAnswer(this)"><i class="bi bi-x"></i></button>
-                `;
-                    answersWrap.appendChild(row);
+                if (answersWrap) {
+                    answersWrap.innerHTML = '';
+                    appendAnswerRow(answersWrap, 0, 0);
+                    appendAnswerRow(answersWrap, 0, 1);
                 }
                 wrap.appendChild(tmpl);
                 renumber();
@@ -1097,32 +1164,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             function rmQuestion(btn) {
                 const card = btn.closest('[data-q]');
                 const wrap = document.getElementById('questions');
-                if (wrap.querySelectorAll('[data-q]').length <= 1) { alert('Трябва да има поне един въпрос.'); return; }
-                card.remove(); renumber();
+                if (wrap.querySelectorAll('[data-q]').length <= 1) {
+                    alert('Не може да изтриете последния въпрос.');
+                    return;
+                }
+                card.remove();
+                renumber();
             }
             function addAnswer(btn) {
                 const qEl = btn.closest('[data-q]');
+                if (!qEl)
+                    return;
+                if (getQuestionType(qEl) === 'true_false') {
+                    alert('Въпросите тип true/false имат фиксирани два отговора.');
+                    return;
+                }
                 const answersWrap = qEl.querySelector('[data-answers]');
-                const qi = Array.from(document.querySelectorAll('[data-q]')).indexOf(qEl);
+                if (!answersWrap)
+                    return;
+                const qi = getQuestionIndex(qEl);
                 const ai = answersWrap.querySelectorAll('[data-answer]').length;
-                const row = document.createElement('div');
-                row.className = 'answer-row'; row.setAttribute('data-answer', '');
-                row.innerHTML = `
-                <input type="text" class="form-control" name="questions[${qi}][answers][${ai}][content]" placeholder="Отговор..." required />
-                <div class="form-check d-flex align-items-center">
-                    <input class="form-check-input" type="checkbox" name="questions[${qi}][answers][${ai}][is_correct]" />
-                    <label class="form-check-label ms-1">Верен</label>
-                </div>
-                <button type="button" class="btn btn-outline-danger btn-sm" onclick="rmAnswer(this)"><i class="bi bi-x"></i></button>
-            `;
-                answersWrap.appendChild(row);
+                appendAnswerRow(answersWrap, qi, ai);
             }
             function rmAnswer(btn) {
                 const answersWrap = btn.closest('[data-answers]');
-                if (answersWrap.querySelectorAll('[data-answer]').length <= 2) { alert('Поне 2 отговора са задължителни.'); return; }
-                btn.closest('[data-answer]').remove(); renumber();
+                if (!answersWrap)
+                    return;
+                const qEl = btn.closest('[data-q]');
+                if (getQuestionType(qEl) === 'true_false') {
+                    alert('Въпросите тип true/false трябва да имат точно два отговора.');
+                    return;
+                }
+                if (answersWrap.querySelectorAll('[data-answer]').length <= 2) {
+                    alert('Трябва да оставите поне два отговора.');
+                    return;
+                }
+                btn.closest('[data-answer]').remove();
+                renumber();
             }
-        </script>
+            document.addEventListener('change', function (event) {
+                if (event.target.matches('[data-q-type]'))
+                    handleTypeChange(event.target);
+            });
+            document.querySelectorAll('[data-q-type]').forEach(select => {
+                if (select.value === 'true_false')
+                    ensureTrueFalseAnswers(select.closest('[data-q]'), false);
+            });
+</script>
     </footer>
 </body>
 
