@@ -29,11 +29,19 @@ function to_int($v, $min = null, $max = null)
 function map_ui_to_qtype(string $ui): string
 {
     // DB enum: single_choice | multiple_choice | true_false | short_answer | numeric
-    return $ui === 'multiple' ? 'multiple_choice' : 'single_choice';
+    if ($ui === 'multiple')
+        return 'multiple_choice';
+    if ($ui === 'true_false')
+        return 'true_false';
+    return 'single_choice';
 }
 function map_qtype_to_ui(?string $qt): string
 {
-    return $qt === 'multiple_choice' ? 'multiple' : 'single';
+    if ($qt === 'multiple_choice')
+        return 'multiple';
+    if ($qt === 'true_false')
+        return 'true_false';
+    return 'single';
 }
 
 function extract_question_media(array $files, int $index): ?array
@@ -74,6 +82,12 @@ function normalize_ui_type(string $raw): string
     if (in_array($t, ['multiplechoice'], true))
         return 'multiple';
 
+    if (in_array($t, ['true_false', 'truefalse', 'tf', 'boolean', 'bool', 'yes_no', 'yesno'], true))
+        return 'true_false';
+
+    if (in_array($t, ['вярно_грешно', 'вярногрешно', 'да_не', 'дане'], true))
+        return 'true_false';
+
     if (in_array($t, ['единичен', 'единствен', 'единичен_избор'], true))
         return 'single';
     if (in_array($t, ['множествен', 'множествен_избор', 'множество'], true))
@@ -84,6 +98,9 @@ function normalize_ui_type(string $raw): string
         return 'single';
     if (in_array($t2, ['multiple', 'multiplechoice'], true))
         return 'multiple';
+
+    if (in_array($t2, ['true_false', 'truefalse', 'tf', 'boolean', 'bool', 'yesno', 'yes_no'], true))
+        return 'true_false';
 
     return 'single';
 }
@@ -155,6 +172,7 @@ function import_questions_from_excel(string $filePath, array &$errors): array
 
     $questions = [];
     $rowCount = count($rows);
+    $supportedTypes = ['single', 'multiple', 'true_false'];
     for ($i = 1; $i < $rowCount; $i++) {
         $row = $rows[$i];
         $rowNumber = $i + 1;
@@ -192,9 +210,10 @@ function import_questions_from_excel(string $filePath, array &$errors): array
         if ($typeCol !== null) {
             $rawType = trim((string) ($row[$typeCol] ?? 'single'));
             $norm = normalize_ui_type($rawType);
-            $type = in_array($norm, ['single', 'multiple'], true) ? $norm : 'single';
-            if ($type === 'single' && $norm !== 'single' && $rawType !== '') {
-                $errors[] = 'Row ' . $rowNumber . ': unsupported type "' . $rawType . '". Using "single".';
+            if (in_array($norm, $supportedTypes, true)) {
+                $type = $norm;
+            } elseif ($rawType !== '') {
+                $errors[] = 'Row ' . $rowNumber . ': unsupported type "' . $rawType . '". Using "single" (allowed: single, multiple, true_false).';
             }
         }
 
@@ -244,7 +263,12 @@ function import_questions_from_excel(string $filePath, array &$errors): array
             ];
         }
 
-        if ($type === 'single' && $correctCount !== 1) {
+        if ($type === 'true_false' && count($answerList) !== 2) {
+            $errors[] = 'Row ' . $rowNumber . ': true/false questions must have exactly two answers.';
+            continue;
+        }
+
+        if (in_array($type, ['single', 'true_false'], true) && $correctCount !== 1) {
             $errors[] = 'Row ' . $rowNumber . ': Въпроси с единичен избор трябва да имат точно един верен отговор.';
             continue;
         }
@@ -411,7 +435,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         foreach ($questions as $idx => $q) {
             $q_content = trim((string) ($q['content'] ?? ''));
             $rawType = (string) ($q['type'] ?? 'single');
-            $q_type_ui = in_array($rawType, ['single', 'multiple'], true) ? $rawType : 'single';
+            $q_type_ui = in_array($rawType, ['single', 'multiple', 'true_false'], true) ? $rawType : 'single';
             $q_points = (float) ($q['points'] ?? 1);
             $ans = $q['answers'] ?? [];
 
@@ -437,10 +461,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $correctCount++;
                 $preparedAnswers[] = ['content' => $a_content, 'is_correct' => $a_correct];
             }
-            if ($q_type_ui === 'single' && $correctCount !== 1)
+            if (in_array($q_type_ui, ['single', 'true_false'], true) && $correctCount !== 1)
                 $errors[] = 'Въпрос #' . ($idx + 1) . ': изберете точно един верен отговор.';
             elseif ($q_type_ui === 'multiple' && $correctCount === 0)
                 $errors[] = 'Въпрос #' . ($idx + 1) . ': маркирайте поне един верен отговор.';
+            if ($q_type_ui === 'true_false' && count($preparedAnswers) !== 2)
+                $errors[] = 'Въпрос #' . ($idx + 1) . ': Въпросите тип true/false трябва да имат точно два отговора.';
 
             $existingMediaUrl = trim((string) ($q['existing_media_url'] ?? ''));
             $existingMediaMime = trim((string) ($q['existing_media_mime'] ?? ''));
@@ -539,7 +565,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 foreach ($questions as $q) {
                     $q_content = trim((string) $q['content']);
-                    $q_type_ui = in_array(($q['type'] ?? 'single'), ['single', 'multiple'], true) ? $q['type'] : 'single';
+                    $q_type_ui = in_array(($q['type'] ?? 'single'), ['single', 'multiple', 'true_false'], true) ? $q['type'] : 'single';
                     $q_points = (float) ($q['points'] ?? 1);
                     $answers = $q['answers'];
 
@@ -871,11 +897,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </div>
                                     <div class="col-md-2">
                                         <label class="form-label">Тип</label>
-                                        <select name="questions[<?= $qi ?>][type]" class="form-select">
+                                        <select name="questions[<?= $qi ?>][type]" class="form-select" data-q-type>
                                             <option value="single" <?= ($q['type'] === 'single') ? 'selected' : '' ?>>Единичен
                                                 избор</option>
                                             <option value="multiple" <?= ($q['type'] === 'multiple') ? 'selected' : '' ?>>
                                                 Множествен избор</option>
+                                            <option value="true_false" <?= ($q['type'] === 'true_false') ? 'selected' : '' ?>>
+                                                Вярно / грешно</option>
                                         </select>
                                     </div>
                                     <div class="col-md-2">
@@ -942,9 +970,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label">Тип</label>
-                                    <select name="questions[0][type]" class="form-select">
+                                    <select name="questions[0][type]" class="form-select" data-q-type>
                                         <option value="single">Единичен избор</option>
                                         <option value="multiple">Множествен избор</option>
+                                        <option value="true_false">Вярно / грешно</option>
                                     </select>
                                 </div>
                                 <div class="col-md-2">
