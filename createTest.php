@@ -33,6 +33,8 @@ function map_ui_to_qtype(string $ui): string
         return 'multiple_choice';
     if ($ui === 'true_false')
         return 'true_false';
+    if ($ui === 'fill')
+        return 'short_answer';
     return 'single_choice';
 }
 function map_qtype_to_ui(?string $qt): string
@@ -41,6 +43,8 @@ function map_qtype_to_ui(?string $qt): string
         return 'multiple';
     if ($qt === 'true_false')
         return 'true_false';
+    if ($qt === 'short_answer')
+        return 'fill';
     return 'single';
 }
 
@@ -82,6 +86,12 @@ function normalize_ui_type(string $raw): string
     if (in_array($t, ['multiplechoice'], true))
         return 'multiple';
 
+    if (in_array($t, ['fill', 'fill_blank', 'fill_blanks', 'fill_in_blank', 'fill_in_blanks', 'fill_in_the_blank', 'short_answer'], true))
+        return 'fill';
+
+    if (in_array($t, ['попълни', 'попълни_липсващите_думи', 'попълни_думите'], true))
+        return 'fill';
+
     if (in_array($t, ['true_false', 'truefalse', 'tf', 'boolean', 'bool', 'yes_no', 'yesno'], true))
         return 'true_false';
 
@@ -98,6 +108,12 @@ function normalize_ui_type(string $raw): string
         return 'single';
     if (in_array($t2, ['multiple', 'multiplechoice'], true))
         return 'multiple';
+
+    if (in_array($t2, ['fill', 'fillblank', 'fillblanks', 'fillinblank', 'fillintheblank', 'shortanswer'], true))
+        return 'fill';
+
+    if (in_array($t2, ['попълнилипсващитедуми', 'попълнидумите'], true))
+        return 'fill';
 
     if (in_array($t2, ['true_false', 'truefalse', 'tf', 'boolean', 'bool', 'yesno', 'yes_no'], true))
         return 'true_false';
@@ -172,7 +188,7 @@ function import_questions_from_excel(string $filePath, array &$errors): array
 
     $questions = [];
     $rowCount = count($rows);
-    $supportedTypes = ['single', 'multiple', 'true_false'];
+    $supportedTypes = ['single', 'multiple', 'true_false', 'fill'];
     for ($i = 1; $i < $rowCount; $i++) {
         $row = $rows[$i];
         $rowNumber = $i + 1;
@@ -201,11 +217,6 @@ function import_questions_from_excel(string $filePath, array &$errors): array
             continue;
         }
 
-        if (count($answersRaw) < 2) {
-            $errors[] = 'Row ' . $rowNumber . ': provide at least two answers.';
-            continue;
-        }
-
         $type = 'single';
         if ($typeCol !== null) {
             $rawType = trim((string) ($row[$typeCol] ?? 'single'));
@@ -213,8 +224,14 @@ function import_questions_from_excel(string $filePath, array &$errors): array
             if (in_array($norm, $supportedTypes, true)) {
                 $type = $norm;
             } elseif ($rawType !== '') {
-                $errors[] = 'Row ' . $rowNumber . ': unsupported type "' . $rawType . '". Using "single" (allowed: single, multiple, true_false).';
+                $errors[] = 'Row ' . $rowNumber . ': unsupported type "' . $rawType . '". Using "single" (allowed: single, multiple, true_false, fill).';
             }
+        }
+
+        $minAnswers = $type === 'fill' ? 1 : 2;
+        if (count($answersRaw) < $minAnswers) {
+            $errors[] = 'Row ' . $rowNumber . ': provide at least ' . $minAnswers . ' answer(s).';
+            continue;
         }
 
         $points = 1.0;
@@ -253,14 +270,24 @@ function import_questions_from_excel(string $filePath, array &$errors): array
 
         $answerList = [];
         $correctCount = 0;
-        foreach ($answersRaw as $candidate) {
-            $isCorrect = in_array($candidate['slot'], $correctSlots, true) ? 1 : 0;
-            if ($isCorrect)
-                $correctCount++;
-            $answerList[] = [
-                'content' => $candidate['content'],
-                'is_correct' => $isCorrect,
-            ];
+        if ($type === 'fill') {
+            foreach ($answersRaw as $candidate) {
+                $answerList[] = [
+                    'content' => $candidate['content'],
+                    'is_correct' => 1,
+                ];
+            }
+            $correctCount = count($answerList);
+        } else {
+            foreach ($answersRaw as $candidate) {
+                $isCorrect = in_array($candidate['slot'], $correctSlots, true) ? 1 : 0;
+                if ($isCorrect)
+                    $correctCount++;
+                $answerList[] = [
+                    'content' => $candidate['content'],
+                    'is_correct' => $isCorrect,
+                ];
+            }
         }
 
         if ($type === 'true_false' && count($answerList) !== 2) {
@@ -435,7 +462,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         foreach ($questions as $idx => $q) {
             $q_content = trim((string) ($q['content'] ?? ''));
             $rawType = (string) ($q['type'] ?? 'single');
-            $q_type_ui = in_array($rawType, ['single', 'multiple', 'true_false'], true) ? $rawType : 'single';
+            $q_type_ui = in_array($rawType, ['single', 'multiple', 'true_false', 'fill'], true) ? $rawType : 'single';
             $q_points = (float) ($q['points'] ?? 1);
             $ans = $q['answers'] ?? [];
 
@@ -445,8 +472,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $errors[] = 'Въпрос #' . ($idx + 1) . ': точките не могат да бъдат отрицателни.';
                 $q_points = 0;
             }
-            if (!is_array($ans) || count($ans) < 2) {
-                $errors[] = 'Въпрос #' . ($idx + 1) . ': добавете поне два отговора.';
+            $minAnswersRequired = $q_type_ui === 'fill' ? 1 : 2;
+            if (!is_array($ans) || count($ans) < $minAnswersRequired) {
+                $errors[] = 'Въпрос #' . ($idx + 1) . ': добавете поне ' . ($minAnswersRequired === 1 ? 'един верен отговор.' : 'два отговора.');
                 $ans = is_array($ans) ? $ans : [];
             }
 
@@ -454,7 +482,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $preparedAnswers = [];
             foreach ($ans as $aIdx => $a) {
                 $a_content = trim((string) ($a['content'] ?? ''));
-                $a_correct = !empty($a['is_correct']) ? 1 : 0;
+                $a_correct = $q_type_ui === 'fill' ? 1 : (!empty($a['is_correct']) ? 1 : 0);
                 if ($a_content === '')
                     $errors[] = 'Въпрос #' . ($idx + 1) . ', отговор #' . ($aIdx + 1) . ': добавете текст.';
                 if ($a_correct)
@@ -467,6 +495,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $errors[] = 'Въпрос #' . ($idx + 1) . ': маркирайте поне един верен отговор.';
             if ($q_type_ui === 'true_false' && count($preparedAnswers) !== 2)
                 $errors[] = 'Въпрос #' . ($idx + 1) . ': Въпросите тип true/false трябва да имат точно два отговора.';
+            if ($q_type_ui === 'fill' && count($preparedAnswers) === 0)
+                $errors[] = 'Въпрос #' . ($idx + 1) . ': добавете поне един верен отговор.';
 
             $existingMediaUrl = trim((string) ($q['existing_media_url'] ?? ''));
             $existingMediaMime = trim((string) ($q['existing_media_mime'] ?? ''));
@@ -565,7 +595,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 foreach ($questions as $q) {
                     $q_content = trim((string) $q['content']);
-                    $q_type_ui = in_array(($q['type'] ?? 'single'), ['single', 'multiple', 'true_false'], true) ? $q['type'] : 'single';
+                    $q_type_ui = in_array(($q['type'] ?? 'single'), ['single', 'multiple', 'true_false', 'fill'], true) ? $q['type'] : 'single';
                     $q_points = (float) ($q['points'] ?? 1);
                     $answers = $q['answers'];
 
@@ -904,6 +934,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 Множествен избор</option>
                                             <option value="true_false" <?= ($q['type'] === 'true_false') ? 'selected' : '' ?>>
                                                 Вярно / грешно</option>
+                                            <option value="fill" <?= ($q['type'] === 'fill') ? 'selected' : '' ?>>
+                                                Попълни липсващите думи</option>
                                         </select>
                                     </div>
                                     <div class="col-md-2">
@@ -974,6 +1006,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <option value="single">Единичен избор</option>
                                         <option value="multiple">Множествен избор</option>
                                         <option value="true_false">Вярно / грешно</option>
+                                        <option value="fill">Попълни липсващите думи</option>
                                     </select>
                                 </div>
                                 <div class="col-md-2">
@@ -1051,6 +1084,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             function getQuestionIndex(qEl) {
                 return qEl ? Array.from(document.querySelectorAll('[data-q]')).indexOf(qEl) : -1;
             }
+            function applyAnswerRowMode(row, type) {
+                if (!row)
+                    return;
+                const checkWrap = row.querySelector('.form-check');
+                const checkbox = checkWrap ? checkWrap.querySelector('input[type="checkbox"]') : null;
+                if (type === 'fill') {
+                    if (checkWrap)
+                        checkWrap.classList.add('d-none');
+                    if (checkbox)
+                        checkbox.checked = true;
+                } else {
+                    if (checkWrap)
+                        checkWrap.classList.remove('d-none');
+                }
+            }
             function appendAnswerRow(answersWrap, qi, ai, content = '', isCorrect = false) {
                 if (!answersWrap || qi < 0 || ai < 0)
                     return;
@@ -1072,6 +1120,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (checkbox)
                     checkbox.checked = !!isCorrect;
                 answersWrap.appendChild(row);
+                const qEl = answersWrap.closest('[data-q]');
+                applyAnswerRowMode(row, getQuestionType(qEl));
             }
             function ensureTrueFalseAnswers(qEl, shouldRenumber = true) {
                 if (!qEl)
@@ -1107,7 +1157,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (checkbox)
                         checkbox.checked = true;
                 }
+                rows.forEach(row => applyAnswerRowMode(row, 'true_false'));
                 if (shouldRenumber)
+                    renumber();
+            }
+            function syncQuestionUI(qEl, options = {}) {
+                if (!qEl)
+                    return;
+                const { renumberAfter = true } = options;
+                const type = getQuestionType(qEl);
+                if (type === 'true_false')
+                    ensureTrueFalseAnswers(qEl, false);
+                const answersWrap = qEl.querySelector('[data-answers]');
+                if (answersWrap) {
+                    const qi = getQuestionIndex(qEl);
+                    if (type === 'fill' && answersWrap.querySelectorAll('[data-answer]').length === 0)
+                        appendAnswerRow(answersWrap, qi, 0);
+                    answersWrap.querySelectorAll('[data-answer]').forEach(row => applyAnswerRowMode(row, type));
+                }
+                if (renumberAfter)
                     renumber();
             }
             function handleTypeChange(selectEl) {
@@ -1116,8 +1184,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 const qEl = selectEl.closest('[data-q]');
                 if (!qEl)
                     return;
-                if (selectEl.value === 'true_false')
-                    ensureTrueFalseAnswers(qEl);
+                syncQuestionUI(qEl);
             }
             function renumber() {
                 const qs = document.querySelectorAll('[data-q]');
@@ -1159,6 +1226,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     appendAnswerRow(answersWrap, 0, 1);
                 }
                 wrap.appendChild(tmpl);
+                syncQuestionUI(tmpl, { renumberAfter: false });
                 renumber();
             }
             function rmQuestion(btn) {
@@ -1191,12 +1259,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!answersWrap)
                     return;
                 const qEl = btn.closest('[data-q]');
-                if (getQuestionType(qEl) === 'true_false') {
+                const type = getQuestionType(qEl);
+                if (type === 'true_false') {
                     alert('Въпросите тип true/false трябва да имат точно два отговора.');
                     return;
                 }
-                if (answersWrap.querySelectorAll('[data-answer]').length <= 2) {
-                    alert('Трябва да оставите поне два отговора.');
+                const minAnswers = type === 'fill' ? 1 : 2;
+                if (answersWrap.querySelectorAll('[data-answer]').length <= minAnswers) {
+                    if (type === 'fill')
+                        alert('Въпросите тип "Попълни липсващите думи" изискват поне един верен отговор.');
+                    else
+                        alert('Трябва да оставите поне два отговора.');
                     return;
                 }
                 btn.closest('[data-answer]').remove();
@@ -1207,10 +1280,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     handleTypeChange(event.target);
             });
             document.querySelectorAll('[data-q-type]').forEach(select => {
-                if (select.value === 'true_false')
-                    ensureTrueFalseAnswers(select.closest('[data-q]'), false);
+                const qEl = select.closest('[data-q]');
+                syncQuestionUI(qEl, { renumberAfter: false });
             });
-</script>
+        </script>
     </footer>
 </body>
 
