@@ -216,10 +216,55 @@ if ($editing && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['__action'] ?? 
 
 // Зареждане на учениците в класа
 $students = [];
+$classAssignmentsCurrent = [];
+$classAssignmentsPast = [];
 if ($editing) {
     $stmt = $pdo->prepare('SELECT u.id, u.first_name, u.last_name, u.email FROM class_students cs JOIN users u ON u.id = cs.student_id WHERE cs.class_id = :cid ORDER BY u.first_name, u.last_name');
     $stmt->execute([':cid'=>$class_id]);
     $students = $stmt->fetchAll();
+
+    $assignStmt = $pdo->prepare('SELECT a.id, a.title, a.open_at, a.due_at, a.close_at, a.created_at,
+                                        SUM(CASE WHEN atp.status IN ("submitted","graded") THEN 1 ELSE 0 END) AS submitted_count,
+                                        SUM(CASE WHEN atp.status = "graded" OR atp.teacher_grade IS NOT NULL THEN 1 ELSE 0 END) AS graded_count,
+                                        SUM(CASE WHEN atp.status = "submitted" AND atp.teacher_grade IS NULL THEN 1 ELSE 0 END) AS needs_grade,
+                                        MAX(COALESCE(atp.submitted_at, atp.started_at)) AS last_activity_at
+                                 FROM assignments a
+                                 JOIN assignment_classes ac ON ac.assignment_id = a.id
+                                 LEFT JOIN attempts atp ON atp.assignment_id = a.id
+                                 WHERE ac.class_id = :cid AND a.assigned_by_teacher_id = :tid
+                                 GROUP BY a.id
+                                 ORDER BY COALESCE(a.close_at, a.due_at, a.open_at, NOW()) DESC');
+    $assignStmt->execute([':cid' => $class_id, ':tid' => (int) $user['id']]);
+    $assignmentRows = $assignStmt->fetchAll();
+    $now = date('Y-m-d H:i:s');
+    $nowTs = strtotime($now);
+    $staleThreshold = strtotime('-12 hours', $nowTs);
+    foreach ($assignmentRows as $row) {
+        $openAt = $row['open_at'] ?? null;
+        $dueAt = $row['due_at'] ?? null;
+        $closeAt = $row['close_at'] ?? null;
+        $lastActivity = $row['last_activity_at'] ?? null;
+        $createdAt = $row['created_at'] ?? null;
+        $isPast = false;
+        if ($closeAt && $closeAt < $now) {
+            $isPast = true;
+        } elseif (!$closeAt && $dueAt && $dueAt < $now) {
+            $isPast = true;
+        } elseif (!$closeAt && !$dueAt) {
+            $reference = $lastActivity ?: $createdAt;
+            if ($reference && strtotime($reference) <= $staleThreshold) {
+                $isPast = true;
+            }
+        }
+        if ($isPast) {
+            $row['status'] = 'past';
+            $classAssignmentsPast[] = $row;
+        } else {
+            $isOpen = !$openAt || $openAt <= $now;
+            $row['status'] = $isOpen ? 'current' : 'upcoming';
+            $classAssignmentsCurrent[] = $row;
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
