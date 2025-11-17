@@ -53,9 +53,34 @@ function normalize_filter_datetime(string $value): string
     return $value;
 }
 
+function render_preserved_filters(array $excludeKeys = []): void
+{
+    foreach ($_GET as $param => $value) {
+        if (in_array($param, $excludeKeys, true))
+            continue;
+        if (is_array($value))
+            continue;
+        echo '<input type="hidden" name="' . htmlspecialchars($param, ENT_QUOTES) . '" value="' . htmlspecialchars((string) $value, ENT_QUOTES) . '">' . PHP_EOL;
+    }
+}
+
+function format_class_label(array $class): string
+{
+    $parts = [];
+    $gradeSection = trim((string) ($class['grade'] ?? '') . (string) ($class['section'] ?? ''));
+    if ($gradeSection !== '')
+        $parts[] = $gradeSection;
+    if (!empty($class['school_year']))
+        $parts[] = (string) $class['school_year'];
+    if (!empty($class['name']))
+        $parts[] = (string) $class['name'];
+    return implode(' • ', $parts);
+}
+
 // Initialize containers
 $teacher = [
     'classes' => [],
+    'class_options' => [],
     'tests' => [],
     'recent_attempts' => [],
     'recent_attempts_meta' => [
@@ -64,9 +89,12 @@ $teacher = [
         'pages' => 1,
         'total' => 0,
     ],
+    'recent_attempts_class_options' => [],
     'assignments_current' => [],
     'assignments_past' => [],
+    'assignments_past_class_options' => [],
     'class_stats' => [],
+    'class_stats_options' => [],
 ];
 $student = [
     'classes' => [],
@@ -77,7 +105,7 @@ $student = [
 
 // Persist teacher dashboard filters in session
 if ($user['role'] === 'teacher') {
-    $filter_keys = ['c_q', 'c_sort', 't_q', 't_subject', 't_visibility', 't_status', 't_sort', 'a_q', 'a_from', 'a_to', 'a_sort', 'a_page', 'ap_page', 'ca_class_id', 'ca_sort'];
+    $filter_keys = ['c_q', 'c_sort', 'c_class_id', 't_q', 't_subject', 't_visibility', 't_status', 't_sort', 'a_q', 'a_from', 'a_to', 'a_sort', 'a_page', 'ra_class_id', 'ap_page', 'ap_class_id', 'ca_class_id', 'ca_sort'];
     if (isset($_GET['reset'])) {
         unset($_SESSION['dash_filters']);
         header('Location: dashboard.php');
@@ -115,6 +143,7 @@ if ($pdo) {
         $stmt = $pdo->prepare('SELECT id, grade, section, school_year, name, created_at FROM classes WHERE teacher_id = :tid ORDER BY school_year DESC, grade, section');
         $stmt->execute([':tid' => (int) $user['id']]);
         $teacher['classes'] = $stmt->fetchAll();
+        $teacher['class_options'] = $teacher['classes'];
 
         // Teacher: own tests (initial load; refined below by filters)
         $stmt = $pdo->prepare('SELECT id, title, visibility, status, updated_at FROM tests WHERE owner_teacher_id = :tid ORDER BY updated_at DESC LIMIT 12');
@@ -156,6 +185,7 @@ if ($pdo) {
 
         $c_q = isset($_GET['c_q']) ? trim((string) $_GET['c_q']) : '';
         $c_sort = $_GET['c_sort'] ?? '';
+        $c_class_id = (isset($_GET['c_class_id']) && $_GET['c_class_id'] !== '') ? (int) $_GET['c_class_id'] : null;
 
         $a_q = isset($_GET['a_q']) ? trim((string) $_GET['a_q']) : '';
         $a_from_raw = (string) ($_GET['a_from'] ?? '');
@@ -164,7 +194,9 @@ if ($pdo) {
         $a_to = $a_to_raw !== '' ? normalize_filter_datetime($a_to_raw) : '';
         $a_sort = $_GET['a_sort'] ?? '';
         $a_page = max(1, (int) ($_GET['a_page'] ?? 1));
+        $ra_class_id = (isset($_GET['ra_class_id']) && $_GET['ra_class_id'] !== '') ? (int) $_GET['ra_class_id'] : null;
         $ap_page = max(1, (int) ($_GET['ap_page'] ?? 1));
+        $ap_class_id = (isset($_GET['ap_class_id']) && $_GET['ap_class_id'] !== '') ? (int) $_GET['ap_class_id'] : null;
 
         $ca_class_id = (isset($_GET['ca_class_id']) && $_GET['ca_class_id'] !== '') ? (int) $_GET['ca_class_id'] : null;
         $ca_sort = $_GET['ca_sort'] ?? '';
@@ -175,6 +207,10 @@ if ($pdo) {
         if ($c_q !== '') {
             $clsSql .= ' AND (name LIKE :q OR section LIKE :q OR CONCAT(grade, section) LIKE :q)';
             $params[':q'] = '%' . $c_q . '%';
+        }
+        if ($c_class_id) {
+            $clsSql .= ' AND id = :class_filter_id';
+            $params[':class_filter_id'] = $c_class_id;
         }
         $order = ' ORDER BY school_year DESC, grade, section';
         if ($c_sort === 'grade_asc')
@@ -217,6 +253,22 @@ if ($pdo) {
         $stmt->execute($tParams);
         $teacher['tests'] = $stmt->fetchAll();
 
+        try {
+            $raClassSql = 'SELECT DISTINCT c.id, c.grade, c.section, c.school_year, c.name
+                           FROM classes c
+                           JOIN assignment_classes ac ON ac.class_id = c.id
+                           JOIN assignments a ON a.id = ac.assignment_id
+                           JOIN attempts atp ON atp.assignment_id = a.id
+                           WHERE c.teacher_id = :tid AND a.assigned_by_teacher_id = :tid
+                             AND atp.status IN ("submitted","graded")
+                           ORDER BY c.school_year DESC, c.grade, c.section';
+            $raClassStmt = $pdo->prepare($raClassSql);
+            $raClassStmt->execute([':tid' => (int) $user['id']]);
+            $teacher['recent_attempts_class_options'] = $raClassStmt->fetchAll();
+        } catch (Throwable $e) {
+            $teacher['recent_attempts_class_options'] = [];
+        }
+
         // Re-query recent attempts with filters + pagination
         $attemptsPerPage = 5;
         $aSelect = 'SELECT atp.id, atp.student_id, atp.submitted_at, atp.started_at, atp.score_obtained, atp.max_score, atp.teacher_grade,
@@ -237,6 +289,10 @@ if ($pdo) {
         if ($a_to !== '') {
             $aFrom .= ' AND COALESCE(atp.submitted_at, atp.started_at) <= :at';
             $aParams[':at'] = $a_to;
+        }
+        if ($ra_class_id) {
+            $aFrom .= ' AND EXISTS (SELECT 1 FROM assignment_classes ac WHERE ac.assignment_id = a.id AND ac.class_id = :ra_class_id)';
+            $aParams[':ra_class_id'] = $ra_class_id;
         }
         $aOrder = ' ORDER BY COALESCE(atp.submitted_at, atp.started_at) DESC';
         if ($a_sort === 'date_asc')
@@ -370,6 +426,31 @@ if ($pdo) {
         }
         $teacher['assignments_current'] = array_slice($currentAssignments, 0, 8);
 
+        $pastClassOptions = [];
+        foreach ($pastAssignments as $row) {
+            if (!empty($row['classes'])) {
+                foreach ($row['classes'] as $cls) {
+                    $cid = (int) ($cls['id'] ?? 0);
+                    if ($cid > 0) {
+                        $pastClassOptions[$cid] = $cls;
+                    }
+                }
+            }
+        }
+        $teacher['assignments_past_class_options'] = array_values($pastClassOptions);
+
+        if ($ap_class_id) {
+            $pastAssignments = array_values(array_filter($pastAssignments, function ($assignment) use ($ap_class_id) {
+                if (empty($assignment['classes']))
+                    return false;
+                foreach ($assignment['classes'] as $cls) {
+                    if ((int) ($cls['id'] ?? 0) === $ap_class_id)
+                        return true;
+                }
+                return false;
+            }));
+        }
+
         $pastPerPage = 5;
         $pastTotal = count($pastAssignments);
         $pastPages = max(1, (int) ceil($pastTotal / $pastPerPage));
@@ -405,7 +486,18 @@ if ($pdo) {
             $stmt->execute($caParams);
             $teacher['class_stats'] = $stmt->fetchAll();
         } catch (Throwable $e) {
-            // ignore
+            $teacher['class_stats'] = [];
+        }
+        try {
+            $statOptionsStmt = $pdo->prepare('SELECT DISTINCT c.id, c.grade, c.section, c.school_year, c.name
+                                              FROM v_class_assignment_stats v
+                                              JOIN classes c ON c.id = v.class_id
+                                              WHERE c.teacher_id = :tid
+                                              ORDER BY c.school_year DESC, c.grade, c.section');
+            $statOptionsStmt->execute([':tid' => (int) $user['id']]);
+            $teacher['class_stats_options'] = $statOptionsStmt->fetchAll();
+        } catch (Throwable $e) {
+            $teacher['class_stats_options'] = [];
         }
     } elseif ($user['role'] === 'student') {
         $stmt = $pdo->prepare('SELECT c.*
@@ -1062,6 +1154,20 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                 </div>
                             </div>
                             <div class="card-body">
+                                <?php if (!empty($teacher['class_options'])): ?>
+                                    <form method="get" class="d-flex flex-wrap gap-2 align-items-center mb-3">
+                                        <label class="text-muted small mb-0" for="filter-classes-select">Филтър по клас</label>
+                                        <select id="filter-classes-select" name="c_class_id" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                                            <option value=""><?= htmlspecialchars('Всички класове') ?></option>
+                                            <?php foreach ($teacher['class_options'] as $option): ?>
+                                                <option value="<?= (int) $option['id'] ?>" <?= ((int) ($_GET['c_class_id'] ?? 0) === (int) $option['id']) ? 'selected' : '' ?>>
+                                                    <?= htmlspecialchars(format_class_label($option)) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <?php render_preserved_filters(['c_class_id']); ?>
+                                    </form>
+                                <?php endif; ?>
                                 <?php if (empty($teacher['classes'])): ?>
                                     <div class="text-muted">Нямате създадени класове.</div>
                                 <?php else: ?>
@@ -1172,6 +1278,21 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                 </div>
                             </div>
                             <div class="card-body">
+                                <?php if (!empty($teacher['recent_attempts_class_options'])): ?>
+                                    <form method="get" class="d-flex flex-wrap gap-2 align-items-center mb-3">
+                                        <label class="text-muted small mb-0" for="filter-recent-attempts-select">Филтър по клас</label>
+                                        <select id="filter-recent-attempts-select" name="ra_class_id" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                                            <option value=""><?= htmlspecialchars('Всички класове') ?></option>
+                                            <?php foreach ($teacher['recent_attempts_class_options'] as $option): ?>
+                                                <option value="<?= (int) $option['id'] ?>" <?= ((int) ($_GET['ra_class_id'] ?? 0) === (int) $option['id']) ? 'selected' : '' ?>>
+                                                    <?= htmlspecialchars(format_class_label($option)) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <input type="hidden" name="a_page" value="1">
+                                        <?php render_preserved_filters(['ra_class_id', 'a_page']); ?>
+                                    </form>
+                                <?php endif; ?>
                                 <?php if (empty($teacher['recent_attempts'])): ?>
                                     <div class="text-muted">Още няма предадени опити.</div>
                                 <?php else: ?>
@@ -1297,6 +1418,20 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                         клас</strong></div>
                             </div>
                             <div class="card-body">
+                                <?php if (!empty($teacher['class_stats_options'])): ?>
+                                    <form method="get" class="d-flex flex-wrap gap-2 align-items-center mb-3">
+                                        <label class="text-muted small mb-0" for="filter-class-stats-select">Филтър по клас</label>
+                                        <select id="filter-class-stats-select" name="ca_class_id" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                                            <option value=""><?= htmlspecialchars('Всички класове') ?></option>
+                                            <?php foreach ($teacher['class_stats_options'] as $option): ?>
+                                                <option value="<?= (int) $option['id'] ?>" <?= ((int) ($_GET['ca_class_id'] ?? 0) === (int) $option['id']) ? 'selected' : '' ?>>
+                                                    <?= htmlspecialchars(format_class_label($option)) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <?php render_preserved_filters(['ca_class_id']); ?>
+                                    </form>
+                                <?php endif; ?>
                                 <?php if (empty($teacher['class_stats'])): ?>
                                     <div class="text-muted">Няма налични данни за статистика.</div>
                                 <?php else: ?>
@@ -1443,6 +1578,21 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                     <div class="section-title"><i class="bi bi-archive"></i><strong>Минали задания</strong></div>
                                 </div>
                                 <div class="card-body">
+                                    <?php if (!empty($teacher['assignments_past_class_options'])): ?>
+                                        <form method="get" class="d-flex flex-wrap gap-2 align-items-center mb-3">
+                                            <label class="text-muted small mb-0" for="filter-assignments-past-select">Филтър по клас</label>
+                                            <select id="filter-assignments-past-select" name="ap_class_id" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                                                <option value=""><?= htmlspecialchars('Всички класове') ?></option>
+                                                <?php foreach ($teacher['assignments_past_class_options'] as $option): ?>
+                                                    <option value="<?= (int) $option['id'] ?>" <?= ((int) ($_GET['ap_class_id'] ?? 0) === (int) $option['id']) ? 'selected' : '' ?>>
+                                                        <?= htmlspecialchars(format_class_label($option)) ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <input type="hidden" name="ap_page" value="1">
+                                            <?php render_preserved_filters(['ap_class_id', 'ap_page']); ?>
+                                        </form>
+                                    <?php endif; ?>
                                     <?php if (empty($teacher['assignments_past'])): ?>
                                         <div class="text-muted">Няма приключили задания.</div>
                                     <?php else: ?>
