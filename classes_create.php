@@ -439,6 +439,68 @@ if ($editing) {
             </div>
         </div>
     </div>
+    <div class="row g-3 mt-1">
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white"><strong>Текущи задания за този клас</strong></div>
+                <div class="card-body">
+                    <?php if (empty($classAssignmentsCurrent)): ?>
+                        <div class="text-muted">Няма активни или предстоящи задания за този клас.</div>
+                    <?php else: ?>
+                        <div class="list-group list-elevated">
+                            <?php foreach ($classAssignmentsCurrent as $assignment): ?>
+                                <?php
+                                $overviewLink = 'assignment_overview.php?id=' . (int) $assignment['id'] . '&class_id=' . (int) $class_id;
+                                $submittedCount = (int) ($assignment['submitted_count'] ?? 0);
+                                $gradedCount = (int) ($assignment['graded_count'] ?? 0);
+                                $needsGrade = (int) ($assignment['needs_grade'] ?? 0);
+                                ?>
+                                <div class="list-group-item">
+                                    <div class="fw-semibold"><a class="text-decoration-none" href="<?= htmlspecialchars($overviewLink) ?>"><?= htmlspecialchars($assignment['title']) ?></a></div>
+                                    <div class="text-muted small">
+                                        <?php if (!empty($assignment['open_at'])): ?>От: <?= htmlspecialchars($assignment['open_at']) ?><?php endif; ?>
+                                        <?php if (!empty($assignment['due_at'])): ?><span class="ms-2">До: <?= htmlspecialchars($assignment['due_at']) ?></span>
+                                        <?php elseif (!empty($assignment['close_at'])): ?><span class="ms-2">Затваря се: <?= htmlspecialchars($assignment['close_at']) ?></span><?php endif; ?>
+                                    </div>
+                                    <div class="text-muted small">Подадени: <?= $submittedCount ?> / Оценени: <?= $gradedCount ?></div>
+                                    <?php if ($needsGrade > 0): ?><span class="badge bg-warning text-dark mt-2">За оценяване: <?= $needsGrade ?></span><?php endif; ?>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white"><strong>Минали задания за този клас</strong></div>
+                <div class="card-body">
+                    <?php if (empty($classAssignmentsPast)): ?>
+                        <div class="text-muted">Няма приключили задания за този клас.</div>
+                    <?php else: ?>
+                        <div class="list-group list-elevated">
+                            <?php foreach ($classAssignmentsPast as $assignment): ?>
+                                <?php
+                                $overviewLink = 'assignment_overview.php?id=' . (int) $assignment['id'] . '&class_id=' . (int) $class_id;
+                                $submittedCount = (int) ($assignment['submitted_count'] ?? 0);
+                                $gradedCount = (int) ($assignment['graded_count'] ?? 0);
+                                ?>
+                                <div class="list-group-item">
+                                    <div class="fw-semibold"><a class="text-decoration-none" href="<?= htmlspecialchars($overviewLink) ?>"><?= htmlspecialchars($assignment['title']) ?></a></div>
+                                    <div class="text-muted small">
+                                        <?php if (!empty($assignment['due_at'])): ?>Завършено на: <?= htmlspecialchars($assignment['due_at']) ?>
+                                        <?php elseif (!empty($assignment['close_at'])): ?>Затворено на: <?= htmlspecialchars($assignment['close_at']) ?>
+                                        <?php else: ?>Последна активност: <?= htmlspecialchars($assignment['last_activity_at'] ?? $assignment['created_at']) ?><?php endif; ?>
+                                    </div>
+                                    <div class="text-muted small">Подадени: <?= $submittedCount ?> / Оценени: <?= $gradedCount ?></div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
     <?php endif; ?>
 </main>
 
