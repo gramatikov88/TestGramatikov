@@ -261,7 +261,7 @@ if ($editing) {
 
     <?php
     $classJoinLink = ($class && !empty($class['join_token'])) ? app_url('join_class.php?code=' . urlencode($class['join_token'])) : null;
-    $classJoinCode = $class['join_token'] ?? null;
+    $classJoinCode = isset($class['join_token']) ? strtoupper((string)$class['join_token']) : null;
     ?>
     <?php if ($classJoinLink): ?>
         <div class="card shadow-sm mb-4" id="share">

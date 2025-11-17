@@ -3,9 +3,13 @@ session_start();
 require_once __DIR__ . '/config.php';
 header('Content-Type: text/html; charset=utf-8');
 
-$code = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string)($_GET['code'] ?? '')));
-if ($code === '' && !empty($_SESSION['pending_class_code'])) {
-    $code = strtoupper((string)$_SESSION['pending_class_code']);
+$rawCode = trim((string)($_GET['code'] ?? ''));
+if ($rawCode === '' && !empty($_SESSION['pending_class_code'])) {
+    $rawCode = (string)$_SESSION['pending_class_code'];
+}
+$code = $rawCode;
+if ($rawCode !== '' && preg_match('/^[A-Za-z0-9]{6}$/', $rawCode)) {
+    $code = strtoupper($rawCode);
 }
 
 $pdo = null;

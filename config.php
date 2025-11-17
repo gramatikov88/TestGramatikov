@@ -100,7 +100,7 @@ function class_ensure_join_token(PDO $pdo, int $classId): string {
     $stmt = $pdo->prepare('SELECT join_token FROM classes WHERE id = :id');
     $stmt->execute([':id' => $classId]);
     $token = $stmt->fetchColumn();
-    if ($token === false || $token === null || $token === '') {
+    if ($token === false || $token === null || $token === '' || !preg_match('/^[A-Z0-9]{6}$/', (string)$token)) {
         $token = class_generate_join_token($pdo, $classId);
         $upd = $pdo->prepare('UPDATE classes SET join_token = :token WHERE id = :id');
         $upd->execute([':token' => $token, ':id' => $classId]);
