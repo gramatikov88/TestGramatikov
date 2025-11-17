@@ -1566,7 +1566,7 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                         <div
                                             class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center mt-3 gap-2">
                                             <?php if ($pastTotal > 0): ?>
-                                                <small class="text-muted">???????? <?= $pastFrom ?>-<?= $pastTo ?> ??
+                                                <small class="text-muted">Предишна <?= $pastFrom ?>-<?= $pastTo ?> Следваща
                                                     <?= $pastTotal ?></small>
                                             <?php else: ?>
                                                 <span></span>
