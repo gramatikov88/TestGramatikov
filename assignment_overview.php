@@ -73,7 +73,7 @@ if (!$selectedClassId && $classes) {
 }
 
 $attemptsSql = 'SELECT atp.id, atp.student_id, atp.started_at, atp.submitted_at, atp.status,
-                       atp.score_obtained, atp.max_score, atp.teacher_grade,
+                       atp.score_obtained, atp.max_score, atp.teacher_grade, atp.strict_violation,
                        u.first_name, u.last_name, u.email
                 FROM attempts atp
                 JOIN users u ON u.id = atp.student_id

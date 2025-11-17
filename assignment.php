@@ -88,20 +88,6 @@ if (!$activeAttempt && $can_attempt) {
     } catch (Throwable $e) {
         // ignore logging errors
     }
-    try {
-        foreach ($questions as $q) {
-            log_test_event($pdo, [
-                'attempt_id' => $activeAttemptId,
-                'assignment_id' => $assignment_id,
-                'test_id' => (int)$assignment['test_id'],
-                'student_id' => (int)$student['id'],
-                'question_id' => (int)$q['id'],
-                'action' => 'question_show',
-            ]);
-        }
-    } catch (Throwable $e) {
-        // ignore
-    }
 } elseif ($activeAttempt) {
     try {
         log_test_event($pdo, [
@@ -142,6 +128,24 @@ if (!empty($assignment['shuffle_questions'])) {
     // Reindex and shuffle to avoid duplicate rendering with lingering references
     $questions = array_values($questions);
     shuffle($questions);
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $activeAttemptId && !empty($questions)) {
+    try {
+        foreach ($questions as $q) {
+            log_test_event($pdo, [
+                'attempt_id' => $activeAttemptId,
+                'assignment_id' => $assignment_id,
+                'test_id' => (int)$assignment['test_id'],
+                'student_id' => (int)$student['id'],
+                'question_id' => (int)$q['id'],
+                'action' => 'question_show',
+                'meta' => ['source' => 'page_render'],
+            ]);
+        }
+    } catch (Throwable $e) {
+        // ignore logging failures to avoid breaking the attempt
+    }
 }
 
 $result = null; $error_msg = null;
@@ -223,7 +227,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $getAcc->execute([':qid'=>$qid]);
                             $accepted = $getAcc->fetchAll(PDO::FETCH_COLUMN);
                             $norm = mb_strtolower(trim($ft));
-                            $is_correct = in_array($norm, [mb_strtolower(trim(a)) for a in $accepted], true) ? 1 : 0;
+                            $normalizedAccepted = array_map(static function($answer) {
+                                return mb_strtolower(trim((string)$answer));
+                            }, $accepted ?: []);
+
+                            $is_correct = in_array($norm, $normalizedAccepted, true) ? 1 : 0;
                             $award = $is_correct ? $points : 0.0;
                         } else { $is_correct = 0; }
                     } elseif ($q['qtype'] === 'numeric') {
@@ -366,13 +374,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="alert alert-danger"><?= htmlspecialchars($error_msg) ?></div>
     <?php endif; ?>
 
-    <form method="post">
+    <form method="post" id="assignmentForm">
+        <input type="hidden" name="attempt_id" id="attemptIdInput" value="<?= $activeAttemptId ? (int)$activeAttemptId : 0 ?>" />
         <input type="hidden" name="strict_flag" id="strictFlag" value="0" />
         <?php if ($strict_mode_active): ?>
             <div id="strictModeNotice" class="alert alert-danger d-none">Нарушихте строгия режим. Опитът ще бъде анулиран и оценката се фиксира на 2.</div>
         <?php endif; ?>
         <?php foreach ($questions as $idx => $q): ?>
-            <div class="card shadow-sm mb-3 q-card">
+            <div class="card shadow-sm mb-3 q-card" data-question-id="<?= (int)$q['id'] ?>" data-question-type="<?= htmlspecialchars($q['qtype']) ?>">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div><strong>Въпрос <?= $idx+1 ?>.</strong> <?= nl2br(htmlspecialchars($q['body'])) ?></div>
@@ -403,6 +412,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php elseif ($q['qtype'] === 'numeric'): ?>
                             <input type="number" step="any" name="q_<?= (int)$q['id'] ?>" class="form-control" placeholder="Число" />
                         <?php endif; ?>
+                        <input type="hidden" name="qs_time[<?= (int)$q['id'] ?>]" class="question-time-input" data-question-id="<?= (int)$q['id'] ?>" value="0" />
                     </div>
                 </div>
             </div>
@@ -424,19 +434,240 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        window.testAttemptContext = {
+            attemptId: <?= $activeAttemptId ? (int)$activeAttemptId : 'null' ?>,
+            assignmentId: <?= (int)$assignment_id ?>,
+            testId: <?= (int)$assignment['test_id'] ?>,
+            strictMode: <?= $strict_mode_active ? 'true' : 'false' ?>,
+            logEndpoint: 'test_log_event.php'
+        };
+    </script>
+    <script>
+    (function(){
+        const ctx = window.testAttemptContext || {};
+        if (!ctx.attemptId) {
+            window.testLogClient = null;
+            return;
+        }
+        const endpoint = ctx.logEndpoint || 'test_log_event.php';
+        const basePayload = {
+            attempt_id: ctx.attemptId,
+            assignment_id: ctx.assignmentId,
+            test_id: ctx.testId
+        };
+        function sendLog(action, meta, questionId, options) {
+            if (!action) {
+                return;
+            }
+            const payload = {
+                ...basePayload,
+                action: action,
+                meta: meta || null
+            };
+            if (questionId) {
+                payload.question_id = Number(questionId);
+            }
+            const body = JSON.stringify(payload);
+            const useBeacon = options && options.beacon && typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function';
+            if (useBeacon) {
+                try {
+                    const blob = new Blob([body], { type: 'application/json' });
+                    if (navigator.sendBeacon(endpoint, blob)) {
+                        return;
+                    }
+                } catch (err) {
+                    // swallow and fall back to fetch
+                }
+            }
+            fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body
+            }).catch(function(){});
+        }
+        const logger = { send: sendLog };
+        window.testLogClient = logger;
+
+        const nowFn = (window.performance && typeof window.performance.now === 'function')
+            ? function(){ return window.performance.now(); }
+            : function(){ return Date.now(); };
+        const raf = (typeof window.requestAnimationFrame === 'function')
+            ? window.requestAnimationFrame.bind(window)
+            : function(cb){ return setTimeout(function(){ cb(nowFn()); }, 250); };
+
+        const questionTimers = {};
+        const timeInputs = {};
+        document.querySelectorAll('input.question-time-input').forEach(function(input){
+            const qid = input.dataset.questionId;
+            if (!qid) {
+                return;
+            }
+            timeInputs[qid] = input;
+            if (!input.value) {
+                input.value = '0';
+            }
+        });
+        function updateTimeInput(qid) {
+            const total = questionTimers[qid] || 0;
+            if (timeInputs[qid]) {
+                timeInputs[qid].value = total.toFixed(3);
+            }
+        }
+
+        let activeQuestionId = null;
+        let lastTick = nowFn();
+        function appendTime(timestamp) {
+            if (!activeQuestionId) {
+                lastTick = timestamp;
+                return;
+            }
+            const delta = Math.max(0, (timestamp - lastTick) / 1000);
+            if (delta > 0) {
+                questionTimers[activeQuestionId] = (questionTimers[activeQuestionId] || 0) + delta;
+                updateTimeInput(activeQuestionId);
+            }
+            lastTick = timestamp;
+        }
+        function setActiveQuestion(qid) {
+            if (!qid || qid === activeQuestionId) {
+                return;
+            }
+            appendTime(nowFn());
+            activeQuestionId = qid;
+        }
+        function flushTimers() {
+            appendTime(nowFn());
+        }
+
+        const questionCards = Array.from(document.querySelectorAll('.q-card[data-question-id]'));
+        if (questionCards.length > 0) {
+            const first = questionCards[0].dataset.questionId;
+            if (first) {
+                activeQuestionId = first;
+                lastTick = nowFn();
+            }
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver(function(entries){
+                    entries.forEach(function(entry){
+                        if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
+                            setActiveQuestion(entry.target.dataset.questionId);
+                        }
+                    });
+                }, { threshold: [0.6] });
+                questionCards.forEach(function(card){ observer.observe(card); });
+            }
+            questionCards.forEach(function(card){
+                card.addEventListener('focusin', function(){
+                    setActiveQuestion(card.dataset.questionId);
+                });
+                card.addEventListener('mouseenter', function(){
+                    setActiveQuestion(card.dataset.questionId);
+                });
+            });
+        }
+
+        const form = document.getElementById('assignmentForm');
+        if (form) {
+            form.addEventListener('submit', function(){
+                flushTimers();
+            });
+        }
+
+        const answeredState = {};
+        questionCards.forEach(function(card){
+            const qid = card.dataset.questionId;
+            const qtype = card.dataset.questionType || '';
+            const inputs = card.querySelectorAll('input, textarea');
+            inputs.forEach(function(el){
+                el.addEventListener('change', function(){
+                    if (!qid) {
+                        return;
+                    }
+                    const meta = buildAnswerMeta(card, qtype);
+                    if (!meta) {
+                        return;
+                    }
+                    const action = answeredState[qid] ? 'question_change_answer' : 'question_answer';
+                    answeredState[qid] = true;
+                    logger.send(action, meta, qid);
+                });
+            });
+        });
+
+        function buildAnswerMeta(card, type) {
+            const meta = { qtype: type, timestamp: Date.now() };
+            if (type === 'single_choice' || type === 'true_false') {
+                const checked = card.querySelector('input[type="radio"]:checked');
+                meta.selected_option_id = checked ? parseInt(checked.value, 10) : null;
+            } else if (type === 'multiple_choice') {
+                const selected = [];
+                card.querySelectorAll('input[type="checkbox"]:checked').forEach(function(box){
+                    const val = parseInt(box.value, 10);
+                    if (!isNaN(val)) {
+                        selected.push(val);
+                    }
+                });
+                meta.selected_option_ids = selected;
+            } else if (type === 'short_answer') {
+                const input = card.querySelector('input[type="text"]');
+                meta.free_text_length = input ? input.value.length : 0;
+            } else if (type === 'numeric') {
+                const input = card.querySelector('input[type="number"]');
+                meta.numeric_value = (input && input.value !== '') ? Number(input.value) : null;
+            }
+            return meta;
+        }
+
+        function handleVisibility(state) {
+            logger.send(state === 'hidden' ? 'tab_hidden' : 'tab_visible', { visibility: state });
+        }
+        if (typeof document.visibilityState !== 'undefined') {
+            let lastState = document.visibilityState;
+            handleVisibility(lastState);
+            document.addEventListener('visibilitychange', function(){
+                if (document.visibilityState === lastState) {
+                    return;
+                }
+                lastState = document.visibilityState;
+                handleVisibility(lastState);
+            });
+        }
+
+        window.addEventListener('blur', function(){
+            logger.send('tab_hidden', { reason: 'window_blur' });
+        });
+        window.addEventListener('focus', function(){
+            logger.send('tab_visible', { reason: 'window_focus' });
+        });
+
+        document.addEventListener('fullscreenchange', function(){
+            logger.send(document.fullscreenElement ? 'fullscreen_enter' : 'fullscreen_exit', {});
+        });
+
+        window.addEventListener('beforeunload', function(){
+            logger.send('page_reload', { visibility: document.visibilityState || 'unknown' }, null, { beacon: true });
+        });
+    })();
+    </script>
 <?php if ($strict_mode_active): ?>
 <script>
 (function(){
-    const form = document.querySelector("form");
+    const form = document.getElementById("assignmentForm");
     if (!form) return;
     const flagInput = document.getElementById("strictFlag");
     const notice = document.getElementById("strictModeNotice");
+    const logger = window.testLogClient || null;
     let triggered = false;
-    function triggerViolation(){
+    function triggerViolation(reason){
         if (triggered) return;
         triggered = true;
         if (flagInput) { flagInput.value = "1"; }
         if (notice) { notice.classList.remove("d-none"); }
+        if (logger) {
+            logger.send('forced_finish', { reason: reason || 'strict_mode_violation' });
+        }
         const controls = form.querySelectorAll("input, select, textarea, button");
         controls.forEach(function(el){
             if (el === flagInput) return;
@@ -447,10 +678,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }, 100);
     }
     document.addEventListener("visibilitychange", function(){
-        if (document.hidden) { triggerViolation(); }
+        if (document.hidden) { triggerViolation('tab_hidden'); }
     });
     window.addEventListener("blur", function(){
-        triggerViolation();
+        triggerViolation('window_blur');
     });
 })();
 </script>

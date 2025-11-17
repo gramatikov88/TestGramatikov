@@ -213,11 +213,108 @@ function ensure_test_theme_and_q_media(PDO $pdo): void {
     } catch (Throwable $e) { /* ignore */ }
 }
 
+function ensure_test_logs_table(PDO $pdo): void {
+    static $done = false;
+    if ($done) {
+        return;
+    }
+    try {
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = :db AND TABLE_NAME = "test_logs"');
+        $stmt->execute([':db' => DB_NAME]);
+        if ((int) $stmt->fetchColumn() === 0) {
+            $pdo->exec(
+                "CREATE TABLE test_logs (
+                    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    attempt_id BIGINT(20) UNSIGNED NOT NULL,
+                    assignment_id BIGINT(20) UNSIGNED NOT NULL,
+                    test_id BIGINT(20) UNSIGNED NOT NULL,
+                    student_id BIGINT(20) UNSIGNED NOT NULL,
+                    question_id BIGINT(20) UNSIGNED NULL,
+                    action ENUM(
+                        'test_start',
+                        'test_resume',
+                        'test_submit',
+                        'question_show',
+                        'question_answer',
+                        'question_change_answer',
+                        'navigate_next',
+                        'navigate_prev',
+                        'tab_hidden',
+                        'tab_visible',
+                        'fullscreen_enter',
+                        'fullscreen_exit',
+                        'page_reload',
+                        'timeout',
+                        'forced_finish',
+                        'suspicious_pattern'
+                    ) NOT NULL,
+                    ip VARCHAR(45) DEFAULT NULL,
+                    user_agent VARCHAR(255) DEFAULT NULL,
+                    meta JSON DEFAULT NULL,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    KEY idx_logs_attempt (attempt_id),
+                    KEY idx_logs_assignment (assignment_id),
+                    KEY idx_logs_student (student_id),
+                    KEY idx_logs_action (action),
+                    CONSTRAINT fk_logs_attempt FOREIGN KEY (attempt_id) REFERENCES attempts(id) ON DELETE CASCADE,
+                    CONSTRAINT fk_logs_student FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+            );
+        } else {
+            // ensure we have the meta column (older dumps may not)
+            $stmt = $pdo->prepare('SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = :db AND TABLE_NAME = "test_logs" AND COLUMN_NAME = "meta"');
+            $stmt->execute([':db' => DB_NAME]);
+            if ((int) $stmt->fetchColumn() === 0) {
+                try {
+                    $pdo->exec('ALTER TABLE test_logs ADD COLUMN meta JSON DEFAULT NULL AFTER user_agent');
+                } catch (Throwable $e) {
+                    // ignore
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        // ignore
+    }
+    $done = true;
+}
+
+function test_log_allowed_actions(): array {
+    static $allowed = [
+        'test_start',
+        'test_resume',
+        'test_submit',
+        'question_show',
+        'question_answer',
+        'question_change_answer',
+        'navigate_next',
+        'navigate_prev',
+        'tab_hidden',
+        'tab_visible',
+        'fullscreen_enter',
+        'fullscreen_exit',
+        'page_reload',
+        'timeout',
+        'forced_finish',
+        'suspicious_pattern',
+    ];
+    return $allowed;
+}
+
 function log_test_event(PDO $pdo, array $data): void
 {
+    ensure_test_logs_table($pdo);
+    $action = isset($data['action']) ? (string) $data['action'] : '';
+    if ($action === '' || !in_array($action, test_log_allowed_actions(), true)) {
+        return;
+    }
     $meta = $data['meta'] ?? null;
     if (is_array($meta)) {
         $meta = json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    } elseif (is_scalar($meta)) {
+        $meta = (string) $meta;
+    } else {
+        $meta = null;
     }
     $stmt = $pdo->prepare('INSERT INTO test_logs (attempt_id, assignment_id, test_id, student_id, question_id, action, ip, user_agent, meta)
                            VALUES (:attempt_id, :assignment_id, :test_id, :student_id, :question_id, :action, :ip, :user_agent, :meta)');
@@ -227,7 +324,7 @@ function log_test_event(PDO $pdo, array $data): void
         ':test_id' => (int) $data['test_id'],
         ':student_id' => (int) $data['student_id'],
         ':question_id' => isset($data['question_id']) ? (int) $data['question_id'] : null,
-        ':action' => (string) $data['action'],
+        ':action' => $action,
         ':ip' => $data['ip'] ?? ($_SERVER['REMOTE_ADDR'] ?? null),
         ':user_agent' => $data['user_agent'] ?? ($_SERVER['HTTP_USER_AGENT'] ?? null),
         ':meta' => $meta,
