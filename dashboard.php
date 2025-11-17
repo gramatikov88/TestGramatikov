@@ -1012,6 +1012,24 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                     class="bi bi-play-fill me-2"></i>Стартирай тест</a>
                         <?php endif; ?>
                     </div>
+                    <?php if ($user['role'] === 'student'): ?>
+                        <div class="card shadow-sm mt-3 join-code-entry">
+                            <div class="card-body">
+                                <form class="row g-2 align-items-center" method="get" action="join_class.php">
+                                    <div class="col-sm-7 col-md-8">
+                                        <label class="form-label text-muted small mb-1">Въведи шестсимволен код за клас</label>
+                                        <input type="text" name="code" class="form-control text-uppercase" maxlength="24" pattern="[A-Za-z0-9]{6,24}" placeholder="напр. ABC123" required>
+                                    </div>
+                                    <div class="col-sm-5 col-md-4 d-flex align-items-end">
+                                        <button class="btn btn-primary w-100" type="submit"><i class="bi bi-link-45deg me-1"></i>Присъедини се</button>
+                                    </div>
+                                    <div class="col-12">
+                                        <small class="text-muted">Получаваш кода от учителя. Можеш да го използваш и за присъединяване към зададен тест.</small>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
                 <div class="col-lg-5">
                     <div class="row g-3">

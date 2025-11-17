@@ -259,18 +259,28 @@ if ($editing) {
     <?php endif; ?>
     <?php if ($errors): ?><div class="alert alert-danger"><ul class="m-0 ps-3"><?php foreach ($errors as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?></ul></div><?php endif; ?>
 
-    <?php $classJoinLink = ($class && !empty($class['join_token'])) ? app_url('join_class.php?code=' . urlencode($class['join_token'])) : null; ?>
+    <?php
+    $classJoinLink = ($class && !empty($class['join_token'])) ? app_url('join_class.php?code=' . urlencode($class['join_token'])) : null;
+    $classJoinCode = $class['join_token'] ?? null;
+    ?>
     <?php if ($classJoinLink): ?>
         <div class="card shadow-sm mb-4" id="share">
             <div class="card-body">
                 <div class="d-flex flex-column flex-lg-row gap-4 align-items-start">
                     <div>
                         <div id="classJoinQr" data-url="<?= htmlspecialchars($classJoinLink) ?>" class="p-2 border rounded bg-white"></div>
-                        <div class="small text-muted mt-2">Scan or tap to join the class.</div>
+                        <div class="small text-muted mt-2">Сканирайте или докоснете, за да отворите поканата.</div>
                     </div>
                     <div class="flex-grow-1 w-100">
                         <h2 class="h5 mb-2">Покана с QR</h2>
-                        <p class="text-muted small mb-3">Споделете този QR код или линк с учениците, за да се запишат незабавно.</p>
+                        <p class="text-muted small mb-3">Споделете този QR код или линк с учениците. Те могат и да въведат шестсимволния код по-долу в своето табло, за да се присъединят мигновено.</p>
+                        <?php if (!empty($classJoinCode)): ?>
+                            <div class="bg-light border rounded p-3 mb-3">
+                                <div class="text-muted text-uppercase small mb-1">Шестсимволен код</div>
+                                <div class="display-6 fw-bold mb-2"><?= htmlspecialchars($classJoinCode) ?></div>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" data-copy-text="<?= htmlspecialchars($classJoinCode) ?>"><i class="bi bi-clipboard"></i> Копирай кода</button>
+                            </div>
+                        <?php endif; ?>
                         <div class="input-group mb-3">
                             <input type="text" class="form-control" id="classJoinLinkInput" value="<?= htmlspecialchars($classJoinLink) ?>" readonly />
                             <button type="button" class="btn btn-outline-secondary" data-copy-target="#classJoinLinkInput"><i class="bi bi-clipboard"></i> Копирай</button>
@@ -439,6 +449,23 @@ if ($editing) {
                       if (window.getSelection) { window.getSelection().removeAllRanges(); }
                       target.blur && target.blur();
                   }
+              }
+          });
+      });
+      document.querySelectorAll('[data-copy-text]').forEach(function(btn){
+          btn.addEventListener('click', function(){
+              var value = btn.getAttribute('data-copy-text') || '';
+              if (!value) return;
+              var notify = function(){
+                  btn.classList.remove('btn-outline-secondary');
+                  btn.classList.add('btn-success');
+                  setTimeout(function(){
+                      btn.classList.add('btn-outline-secondary');
+                      btn.classList.remove('btn-success');
+                  }, 1500);
+              };
+              if (navigator.clipboard && window.isSecureContext) {
+                  navigator.clipboard.writeText(value).then(function(){ notify(); }).catch(function(){});
               }
           });
       });

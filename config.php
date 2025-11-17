@@ -74,8 +74,13 @@ function sanitize_redirect_path(string $path): string {
 }
 
 function class_generate_join_token(PDO $pdo, ?int $excludeId = null): string {
+    $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    $length = 6;
     for ($i = 0; $i < 10; $i++) {
-        $token = substr(generate_token(12), 0, 24);
+        $token = '';
+        for ($j = 0; $j < $length; $j++) {
+            $token .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+        }
         $sql = 'SELECT COUNT(*) FROM classes WHERE join_token = :token';
         $params = [':token' => $token];
         if ($excludeId !== null) {
