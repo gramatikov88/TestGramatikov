@@ -1278,59 +1278,6 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                     </div>
                 </div>
 
-                <div class="row g-3 g-md-4">
-                    <div class="col-12">
-                        <div class="card section-card h-100" id="student-assignments" data-card-key="student-open-assignments">
-                            <div class="card-header">
-                                <div class="section-title"><i class="bi bi-clipboard-check"></i><strong>Активни задания</strong></div>
-                            </div>
-                            <div class="card-body">
-                                <?php if (empty($student['open_assignments'])): ?>
-                                    <div class="text-muted">Няма активни задания в момента.</div>
-                                <?php else: ?>
-                                    <div class="list-group list-elevated">
-                                        <?php foreach ($student['open_assignments'] as $assignment):
-                                            $assignmentId = (int) $assignment['id'];
-                                            $lastAttemptId = $student['open_attempts_map'][$assignmentId] ?? null;
-                                            $windowLabel = null;
-                                            if (!empty($assignment['due_at'])) {
-                                                $windowLabel = 'До: ' . $assignment['due_at'];
-                                            } elseif (!empty($assignment['close_at'])) {
-                                                $windowLabel = 'Затваря се: ' . $assignment['close_at'];
-                                            }
-                                            ?>
-                                            <div class="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                                                <div class="flex-grow-1">
-                                                    <div class="fw-semibold"><?= htmlspecialchars($assignment['title']) ?></div>
-                                                    <div class="text-muted small">
-                                                        <?= htmlspecialchars($assignment['test_title']) ?>
-                                                        <?php if ($windowLabel): ?>
-                                                            <span class="ms-2"><?= htmlspecialchars($windowLabel) ?></span>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <?php if (!empty($assignment['description'])): ?>
-                                                        <div class="text-muted small mt-1"><?= nl2br(htmlspecialchars(mb_strimwidth($assignment['description'], 0, 160, '…'))) ?></div>
-                                                    <?php endif; ?>
-                                                </div>
-                                                <div class="d-flex flex-wrap gap-2 align-items-center">
-                                                    <a class="btn btn-sm btn-primary" href="assignment.php?id=<?= $assignmentId ?>">
-                                                        <i class="bi bi-play-fill"></i> Започни
-                                                    </a>
-                                                    <?php if ($lastAttemptId): ?>
-                                                        <a class="btn btn-sm btn-outline-secondary" href="student_attempt.php?id=<?= (int) $lastAttemptId ?>">
-                                                            <i class="bi bi-clock-history"></i> Последен опит
-                                                        </a>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="row g-3 g-md-4 mt-1 mt-md-2">
                     <div class="col-lg-6">
                         <div class="card section-card h-100" data-card-key="teacher-recent-attempts">
@@ -1823,6 +1770,63 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                 <?php else: ?>
                     <!-- Student Dashboard -->
                     <div class="dashboard-columns student-panel">
+                        <div class="row g-3 g-md-4">
+                            <div class="col-12">
+                                <div class="card section-card h-100" id="student-assignments" data-card-key="student-open-assignments">
+                                    <div class="card-header">
+                                        <div class="section-title"><i class="bi bi-clipboard-check"></i><strong>Активни задания</strong></div>
+                                    </div>
+                                    <div class="card-body">
+                                        <?php if (empty($student['open_assignments'])): ?>
+                                            <div class="text-muted">Няма активни задания в момента.</div>
+                                        <?php else: ?>
+                                            <div class="list-group list-elevated">
+                                                <?php foreach ($student['open_assignments'] as $assignment):
+                                                    $assignmentId = (int) $assignment['id'];
+                                                    $lastAttemptId = $student['open_attempts_map'][$assignmentId] ?? null;
+                                                    $windowLabel = null;
+                                                    if (!empty($assignment['due_at'])) {
+                                                        $windowLabel = 'До: ' . $assignment['due_at'];
+                                                    } elseif (!empty($assignment['close_at'])) {
+                                                        $windowLabel = 'Затваря се: ' . $assignment['close_at'];
+                                                    }
+                                                    ?>
+                                                    <div class="list-group-item position-relative d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                                                        <div class="flex-grow-1">
+                                                            <div class="fw-semibold">
+                                                                <a class="text-decoration-none" href="assignment.php?id=<?= $assignmentId ?>">
+                                                                    <?= htmlspecialchars($assignment['title']) ?>
+                                                                </a>
+                                                            </div>
+                                                            <div class="text-muted small">
+                                                                <?= htmlspecialchars($assignment['test_title']) ?>
+                                                                <?php if ($windowLabel): ?>
+                                                                    <span class="ms-2"><?= htmlspecialchars($windowLabel) ?></span>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                            <?php if (!empty($assignment['description'])): ?>
+                                                                <div class="text-muted small mt-1"><?= nl2br(htmlspecialchars(mb_strimwidth($assignment['description'], 0, 160, '…'))) ?></div>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                                                            <a class="btn btn-sm btn-primary" href="assignment.php?id=<?= $assignmentId ?>">
+                                                                <i class="bi bi-play-fill"></i> Започни
+                                                            </a>
+                                                            <?php if ($lastAttemptId): ?>
+                                                                <a class="btn btn-sm btn-outline-secondary" href="student_attempt.php?id=<?= (int) $lastAttemptId ?>">
+                                                                    <i class="bi bi-clock-history"></i> Последен опит
+                                                                </a>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                    </div>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="row g-3 g-md-4 mt-1 mt-md-2">
                             <div class="col-lg-6">
                                 <div class="card section-card h-100" data-card-key="student-recent-attempts">
