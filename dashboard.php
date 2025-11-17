@@ -1566,7 +1566,7 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                         <div
                                             class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center mt-3 gap-2">
                                             <?php if ($pastTotal > 0): ?>
-                                                <small class="text-muted">Предишна <?= $pastFrom ?>-<?= $pastTo ?> Следваща
+                                                <small class="text-muted">От <?= $pastFrom ?>-<?= $pastTo ?> До
                                                     <?= $pastTotal ?></small>
                                             <?php else: ?>
                                                 <span></span>
@@ -1594,10 +1594,10 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                                         <?php endfor; ?>
                                                         <li class="page-item <?= $pastPage >= $pastPages ? 'disabled' : '' ?>">
                                                             <?php if ($pastPage >= $pastPages): ?>
-                                                                <span class="page-link">????</span>
+                                                                <span class="page-link">Предишна</span>
                                                             <?php else: ?>
                                                                 <a class="page-link"
-                                                                    href="<?= htmlspecialchars($buildPastPageUrl($pastPage + 1)) ?>">????</a>
+                                                                    href="<?= htmlspecialchars($buildPastPageUrl($pastPage + 1)) ?>">Следваща</a>
                                                             <?php endif; ?>
                                                         </li>
                                                     </ul>
