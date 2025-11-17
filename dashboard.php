@@ -1576,7 +1576,7 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                                     <ul class="pagination pagination-sm mb-0">
                                                         <li class="page-item <?= $pastPage <= 1 ? 'disabled' : '' ?>">
                                                             <?php if ($pastPage <= 1): ?>
-                                                                <span class="page-link">????</span>
+                                                                <span class="page-link">Предишна</span>
                                                             <?php else: ?>
                                                                 <a class="page-link"
                                                                     href="<?= htmlspecialchars($buildPastPageUrl($pastPage - 1)) ?>">Предишна</a>
