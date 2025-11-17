@@ -1579,7 +1579,7 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                                                 <span class="page-link">????</span>
                                                             <?php else: ?>
                                                                 <a class="page-link"
-                                                                    href="<?= htmlspecialchars($buildPastPageUrl($pastPage - 1)) ?>">????</a>
+                                                                    href="<?= htmlspecialchars($buildPastPageUrl($pastPage - 1)) ?>">Предишна</a>
                                                             <?php endif; ?>
                                                         </li>
                                                         <?php for ($p = $pastStartPage; $p <= $pastEndPage; $p++): ?>
