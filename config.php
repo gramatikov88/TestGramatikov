@@ -213,6 +213,27 @@ function ensure_test_theme_and_q_media(PDO $pdo): void {
     } catch (Throwable $e) { /* ignore */ }
 }
 
+function log_test_event(PDO $pdo, array $data): void
+{
+    $meta = $data['meta'] ?? null;
+    if (is_array($meta)) {
+        $meta = json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+    $stmt = $pdo->prepare('INSERT INTO test_logs (attempt_id, assignment_id, test_id, student_id, question_id, action, ip, user_agent, meta)
+                           VALUES (:attempt_id, :assignment_id, :test_id, :student_id, :question_id, :action, :ip, :user_agent, :meta)');
+    $stmt->execute([
+        ':attempt_id' => (int) $data['attempt_id'],
+        ':assignment_id' => (int) $data['assignment_id'],
+        ':test_id' => (int) $data['test_id'],
+        ':student_id' => (int) $data['student_id'],
+        ':question_id' => isset($data['question_id']) ? (int) $data['question_id'] : null,
+        ':action' => (string) $data['action'],
+        ':ip' => $data['ip'] ?? ($_SERVER['REMOTE_ADDR'] ?? null),
+        ':user_agent' => $data['user_agent'] ?? ($_SERVER['HTTP_USER_AGENT'] ?? null),
+        ':meta' => $meta,
+    ]);
+}
+
 function ensure_password_resets_table(PDO $pdo): void {
     static $done = false;
     if ($done) {

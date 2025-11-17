@@ -46,11 +46,77 @@ if (!$ok) {
 if (!$ok) { http_response_code(403); die('Нямате достъп до това задание.'); }
 
 // Attempts info
-$stmt = $pdo->prepare('SELECT COALESCE(MAX(attempt_no),0) FROM attempts WHERE assignment_id = :aid AND student_id = :sid');
+$stmt = $pdo->prepare('SELECT COUNT(*) FROM attempts WHERE assignment_id = :aid AND student_id = :sid AND status <> "in_progress"');
 $stmt->execute([':aid'=>$assignment_id, ':sid'=>$student['id']]);
-$prev_attempts = (int)$stmt->fetchColumn();
+$completed_attempts = (int)$stmt->fetchColumn();
 $attempt_limit = (int)$assignment['attempt_limit'];
-$can_attempt = ($attempt_limit === 0) || ($prev_attempts < $attempt_limit);
+$can_attempt = ($attempt_limit === 0) || ($completed_attempts < $attempt_limit);
+$activeAttemptStmt = $pdo->prepare('SELECT * FROM attempts WHERE assignment_id = :aid AND student_id = :sid AND status = "in_progress" ORDER BY started_at DESC LIMIT 1');
+$activeAttemptStmt->execute([':aid'=>$assignment_id, ':sid'=>$student['id']]);
+$activeAttempt = $activeAttemptStmt->fetch();
+$activeAttemptId = $activeAttempt ? (int)$activeAttempt['id'] : null;
+$activeAttemptNo = $activeAttempt ? (int)$activeAttempt['attempt_no'] : ($completed_attempts + 1);
+$attempt_context = [
+    'attempt_id' => $activeAttemptId,
+    'attempt_no' => $activeAttemptNo,
+];
+$justCreatedAttempt = false;
+if (!$activeAttempt && $can_attempt) {
+    $attempt_no = $completed_attempts + 1;
+    $ins = $pdo->prepare('INSERT INTO attempts (assignment_id, test_id, student_id, attempt_no, status, started_at) VALUES (:aid,:tid,:sid,:no,"in_progress", NOW())');
+    $ins->execute([':aid'=>$assignment_id, ':tid'=>$assignment['test_id'], ':sid'=>$student['id'], ':no'=>$attempt_no]);
+    $activeAttemptId = (int)$pdo->lastInsertId();
+    $activeAttempt = [
+        'id' => $activeAttemptId,
+        'assignment_id' => $assignment_id,
+        'test_id' => $assignment['test_id'],
+        'student_id' => $student['id'],
+        'attempt_no' => $attempt_no,
+    ];
+    $attempt_context['attempt_id'] = $activeAttemptId;
+    $attempt_context['attempt_no'] = $attempt_no;
+    $justCreatedAttempt = true;
+    try {
+        log_test_event($pdo, [
+            'attempt_id' => $activeAttemptId,
+            'assignment_id' => $assignment_id,
+            'test_id' => (int)$assignment['test_id'],
+            'student_id' => (int)$student['id'],
+            'action' => 'test_start',
+            'meta' => ['attempt_no' => $attempt_no],
+        ]);
+    } catch (Throwable $e) {
+        // ignore logging errors
+    }
+    try {
+        foreach ($questions as $q) {
+            log_test_event($pdo, [
+                'attempt_id' => $activeAttemptId,
+                'assignment_id' => $assignment_id,
+                'test_id' => (int)$assignment['test_id'],
+                'student_id' => (int)$student['id'],
+                'question_id' => (int)$q['id'],
+                'action' => 'question_show',
+            ]);
+        }
+    } catch (Throwable $e) {
+        // ignore
+    }
+} elseif ($activeAttempt) {
+    try {
+        log_test_event($pdo, [
+            'attempt_id' => $activeAttemptId,
+            'assignment_id' => $assignment_id,
+            'test_id' => (int)$assignment['test_id'],
+            'student_id' => (int)$student['id'],
+            'action' => 'test_resume',
+            'meta' => ['attempt_no' => (int)$activeAttempt['attempt_no']],
+        ]);
+    } catch (Throwable $e) {
+        // ignore
+    }
+}
+$prev_attempts = $activeAttempt ? (int)$activeAttempt['attempt_no'] : ($can_attempt ? ($completed_attempts + 1) : $completed_attempts);
 
 // Load test questions and answers
 $stmt = $pdo->prepare('SELECT qb.*, tq.points, tq.order_index
@@ -80,105 +146,162 @@ if (!empty($assignment['shuffle_questions'])) {
 
 $result = null; $error_msg = null;
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!$can_attempt) {
-        $error_msg = 'Достигнат е лимитът на опитите.';
-    } else {
-        $strict_violation = $strict_mode_active && (($_POST['strict_flag'] ?? '') === '1');
-        try {
-            $pdo->beginTransaction();
-            $attempt_no = $prev_attempts + 1;
-            $ins = $pdo->prepare('INSERT INTO attempts (assignment_id, test_id, student_id, attempt_no, status, started_at) VALUES (:aid,:tid,:sid,:no, "in_progress", NOW())');
-            $ins->execute([':aid'=>$assignment_id, ':tid'=>$assignment['test_id'], ':sid'=>$student['id'], ':no'=>$attempt_no]);
-            $attempt_id = (int)$pdo->lastInsertId();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $formAttemptId = isset($_POST['attempt_id']) ? (int) $_POST['attempt_id'] : 0;
+    $attemptRow = null;
+    if ($formAttemptId > 0) {
+        $check = $pdo->prepare('SELECT * FROM attempts WHERE id = :id AND assignment_id = :aid AND student_id = :sid AND status = "in_progress" LIMIT 1');
+        $check->execute([':id' => $formAttemptId, ':aid' => $assignment_id, ':sid' => $student['id']]);
+        $attemptRow = $check->fetch();
+    }
+    if (!$attemptRow) {
+        $error_msg = 'Опитът е невалиден или вече е приключен.';
+    } else {
+        $strict_violation = $strict_mode_active && (($_POST['strict_flag'] ?? '') === '1');
+        try {
+            $pdo->beginTransaction();
+            $attempt_id = (int)$attemptRow['id'];
+            if ($strict_violation) {
+                $max = 0.0;
+                foreach ($questions as $q) {
+                    $max += (float)$q['points'];
+                }
+                $pdo->prepare('UPDATE attempts SET status = "submitted", submitted_at = NOW(), duration_sec = NULL, score_obtained = 0, max_score = :m, teacher_grade = 2, strict_violation = 1 WHERE id = :id')
+                    ->execute([':m'=>$max, ':id'=>$attempt_id]);
+                $pdo->commit();
+                $completed_attempts++;
+                $prev_attempts = $completed_attempts;
+                $can_attempt = ($attempt_limit === 0) || ($completed_attempts < $attempt_limit);
+                $activeAttempt = null;
+                $activeAttemptId = null;
+                $error_msg = 'Работата беше анулирана, защото напуснахте прозореца при строг режим. По правилата оценката е 2.';
+                try {
+                    log_test_event($pdo, [
+                        'attempt_id' => $attempt_id,
+                        'assignment_id' => $assignment_id,
+                        'test_id' => (int)$assignment['test_id'],
+                        'student_id' => (int)$student['id'],
+                        'action' => 'test_submit',
+                        'meta' => ['strict_violation' => true, 'score' => 0, 'max' => $max],
+                    ]);
+                } catch (Throwable $e) {
+                    // ignore
+                }
+            } else {
+                $score = 0.0; $max = 0.0;
+                foreach ($questions as $q) {
+                    $qid = (int)$q['id'];
+                    $points = (float)$q['points'];
+                    $max += $points;
+                    $ansSel = $_POST['q_'.$qid] ?? null;
+                    $is_correct = null; $award = 0.0; $ft = null; $num = null; $selIds = null;
+                    $timeSpent = isset($_POST['qs_time'][$qid]) ? max(0, (float) $_POST['qs_time'][$qid]) : 0;
+                    if (in_array($q['qtype'], ['single_choice','true_false'], true)) {
+                        $selected = (int)($ansSel ?? 0);
+                        if ($selected > 0) {
+                            $selIds = (string)$selected;
+                            $chk = $pdo->prepare('SELECT is_correct FROM answers WHERE id = :id AND question_id = :qid');
+                            $chk->execute([':id'=>$selected, ':qid'=>$qid]);
+                            $c = $chk->fetchColumn();
+                            $is_correct = ($c !== false && (int)$c === 1) ? 1 : 0;
+                            $award = $is_correct ? $points : 0.0;
+                        } else { $is_correct = 0; }
+                    } elseif ($q['qtype'] === 'multiple_choice') {
+                        $selected = isset($_POST['q_'.$qid]) && is_array($_POST['q_'.$qid]) ? array_map('intval', $_POST['q_'.$qid]) : [];
+                        sort($selected);
+                        $selIds = implode(',', $selected);
+                        $getCorr = $pdo->prepare('SELECT id FROM answers WHERE question_id = :qid AND is_correct = 1');
+                        $getCorr->execute([':qid'=>$qid]);
+                        $correct = array_map('intval', $getCorr->fetchAll(PDO::FETCH_COLUMN));
+                        sort($correct);
+                        $is_correct = ($selected === $correct) ? 1 : 0;
+                        $award = $is_correct ? $points : 0.0;
+                    } elseif ($q['qtype'] === 'short_answer') {
+                        $ft = trim((string)($ansSel ?? ''));
+                        if ($ft !== '') {
+                            $getAcc = $pdo->prepare('SELECT content FROM answers WHERE question_id = :qid');
+                            $getAcc->execute([':qid'=>$qid]);
+                            $accepted = $getAcc->fetchAll(PDO::FETCH_COLUMN);
+                            $norm = mb_strtolower(trim($ft));
+                            $is_correct = in_array($norm, [mb_strtolower(trim(a)) for a in $accepted], true) ? 1 : 0;
+                            $award = $is_correct ? $points : 0.0;
+                        } else { $is_correct = 0; }
+                    } elseif ($q['qtype'] === 'numeric') {
+                        $num = ($ansSel !== null && $ansSel !== '') ? (float)$ansSel : null;
+                        if ($num !== null) {
+                            $getNum = $pdo->prepare('SELECT content FROM answers WHERE question_id = :qid LIMIT 1');
+                            $getNum->execute([':qid'=>$qid]);
+                            $corr = $getNum->fetchColumn();
+                            $is_correct = ((float)$corr == (float)$num) ? 1 : 0;
+                            $award = $is_correct ? $points : 0.0;
+                        } else { $is_correct = 0; }
+                    }
+                    $score += $award;
+                    $pdo->prepare('INSERT INTO attempt_answers (attempt_id, question_id, selected_option_ids, free_text, numeric_value, is_correct, score_awarded, time_spent_sec) VALUES (:att,:qid,:sel,:ft,:num,:ok,:aw,:time_spent)')
+                        ->execute([
+                            ':att'=>$attempt_id,
+                            ':qid'=>$qid,
+                            ':sel'=>$selIds,
+                            ':ft'=>$ft,
+                            ':num'=>$num,
+                            ':ok'=>$is_correct,
+                            ':aw'=>$award,
+                            ':time_spent' => $timeSpent > 0 ? (int) round($timeSpent) : null,
+                        ]);
+                    try {
+                        log_test_event($pdo, [
+                            'attempt_id' => $attempt_id,
+                            'assignment_id' => $assignment_id,
+                            'test_id' => (int)$assignment['test_id'],
+                            'student_id' => (int)$student['id'],
+                            'question_id' => $qid,
+                            'action' => 'question_answer',
+                            'meta' => [
+                                'is_correct' => $is_correct,
+                                'score_awarded' => $award,
+                                'time_spent_sec' => $timeSpent,
+                            ],
+                        ]);
+                    } catch (Throwable $e) {
+                        // ignore
+                    }
+                }
+                $pdo->prepare('UPDATE attempts SET status = "submitted", submitted_at = NOW(), duration_sec = TIMESTAMPDIFF(SECOND, started_at, NOW()), score_obtained = :s, max_score = :m, strict_violation = :sv WHERE id = :id')
+                    ->execute([':s'=>$score, ':m'=>$max, ':sv'=>$strict_violation ? 1 : 0, ':id'=>$attempt_id]);
+                $pdo->commit();
+                $result = ['score'=>$score, 'max'=>$max, 'percent' => $max>0? round($score/$max*100,2):0];
+                $completed_attempts++;
+                $prev_attempts = $completed_attempts;
+                $can_attempt = ($attempt_limit === 0) || ($completed_attempts < $attempt_limit);
+                $activeAttempt = null;
+                $activeAttemptId = null;
+                try {
+                    log_test_event($pdo, [
+                        'attempt_id' => $attempt_id,
+                        'assignment_id' => $assignment_id,
+                        'test_id' => (int)$assignment['test_id'],
+                        'student_id' => (int)$student['id'],
+                        'action' => 'test_submit',
+                        'meta' => [
+                            'score' => $score,
+                            'max' => $max,
+                            'percent' => $result['percent'],
+                            'strict_violation' => false,
+                        ],
+                    ]);
+                } catch (Throwable $e) {
+                    // ignore
+                }
+            }
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            $error_msg = 'Възникна грешка: ' . $e->getMessage();
+        }
+    }
+}
 
-            if ($strict_violation) {
-                $max = 0.0;
-                foreach ($questions as $q) {
-                    $max += (float)$q['points'];
-                }
-                $pdo->prepare('UPDATE attempts SET status = "submitted", submitted_at = NOW(), duration_sec = NULL, score_obtained = 0, max_score = :m, teacher_grade = 2, strict_violation = 1 WHERE id = :id')
-                    ->execute([':m'=>$max, ':id'=>$attempt_id]);
-                $pdo->commit();
-                $prev_attempts++;
-                $can_attempt = ($attempt_limit === 0) || ($prev_attempts < $attempt_limit);
-                $error_msg = 'Работата беше анулирана, защото напуснахте прозореца при строг режим. По правилата оценката е 2.';
-            } else {
-                $score = 0.0; $max = 0.0;
-                foreach ($questions as $q) {
-                    $qid = (int)$q['id'];
-                    $points = (float)$q['points'];
-                    $max += $points;
-                    $ansSel = $_POST['q_'.$qid] ?? null;
-                    $is_correct = null; $award = 0.0; $ft = null; $num = null; $selIds = null;
 
-                    if (in_array($q['qtype'], ['single_choice','true_false'], true)) {
-                        $selected = (int)($ansSel ?? 0);
-                        if ($selected > 0) {
-                            $selIds = (string)$selected;
-                            $chk = $pdo->prepare('SELECT is_correct FROM answers WHERE id = :id AND question_id = :qid');
-                            $chk->execute([':id'=>$selected, ':qid'=>$qid]);
-                            $c = $chk->fetchColumn();
-                            $is_correct = ($c !== false && (int)$c === 1) ? 1 : 0;
-                            $award = $is_correct ? $points : 0.0;
-                        } else { $is_correct = 0; }
-                    } elseif ($q['qtype'] === 'multiple_choice') {
-                        $selected = isset($_POST['q_'.$qid]) && is_array($_POST['q_'.$qid]) ? array_map('intval', $_POST['q_'.$qid]) : [];
-                        sort($selected);
-                        $selIds = implode(',', $selected);
-                        $getCorr = $pdo->prepare('SELECT id FROM answers WHERE question_id = :qid AND is_correct = 1');
-                        $getCorr->execute([':qid'=>$qid]);
-                        $correct = array_map('intval', $getCorr->fetchAll(PDO::FETCH_COLUMN));
-                        sort($correct);
-                        $is_correct = ($selected === $correct) ? 1 : 0;
-                        $award = $is_correct ? $points : 0.0;
-                    } elseif ($q['qtype'] === 'short_answer') {
-                        $ft = trim((string)($ansSel ?? ''));
-                        if ($ft !== '') {
-                            $getAcc = $pdo->prepare('SELECT content FROM answers WHERE question_id = :qid');
-                            $getAcc->execute([':qid'=>$qid]);
-                            $accepted = $getAcc->fetchAll(PDO::FETCH_COLUMN);
-                            $norm = mb_strtolower(trim($ft));
-                            $is_correct = in_array($norm, array_map(fn($a)=> mb_strtolower(trim($a)), $accepted), true) ? 1 : 0;
-                            $award = $is_correct ? $points : 0.0;
-                        } else { $is_correct = 0; }
-                    } elseif ($q['qtype'] === 'numeric') {
-                        $num = ($ansSel !== null && $ansSel !== '') ? (float)$ansSel : null;
-                        if ($num !== null) {
-                            $getNum = $pdo->prepare('SELECT content FROM answers WHERE question_id = :qid LIMIT 1');
-                            $getNum->execute([':qid'=>$qid]);
-                            $corr = $getNum->fetchColumn();
-                            $is_correct = ((float)$corr == (float)$num) ? 1 : 0;
-                            $award = $is_correct ? $points : 0.0;
-                        } else { $is_correct = 0; }
-                    }
 
-                    $score += $award;
-                    $pdo->prepare('INSERT INTO attempt_answers (attempt_id, question_id, selected_option_ids, free_text, numeric_value, is_correct, score_awarded) VALUES (:att,:qid,:sel,:ft,:num,:ok,:aw)')
-                        ->execute([
-                            ':att'=>$attempt_id,
-                            ':qid'=>$qid,
-                            ':sel'=>$selIds,
-                            ':ft'=>$ft,
-                            ':num'=>$num,
-                            ':ok'=>$is_correct,
-                            ':aw'=>$award,
-                        ]);
-                }
-
-                $pdo->prepare('UPDATE attempts SET status = "submitted", submitted_at = NOW(), duration_sec = NULL, score_obtained = :s, max_score = :m, strict_violation = 0 WHERE id = :id')
-                    ->execute([':s'=>$score, ':m'=>$max, ':id'=>$attempt_id]);
-                $pdo->commit();
-                $result = ['score'=>$score, 'max'=>$max, 'percent' => $max>0? round($score/$max*100,2):0];
-                $prev_attempts++;
-                $can_attempt = ($attempt_limit === 0) || ($prev_attempts < $attempt_limit);
-            }
-        } catch (Throwable $e) {
-            if ($pdo->inTransaction()) $pdo->rollBack();
-            $error_msg = 'Грешка при предаване: ' . $e->getMessage();
-        }
-    }
-}
 ?>
 <!DOCTYPE html>
 <html lang="bg">
