@@ -277,7 +277,7 @@ if ($editing) {
                         <?php if (!empty($classJoinCode)): ?>
                             <div class="bg-light border rounded p-3 mb-3">
                                 <div class="text-muted text-uppercase small mb-1">Шестсимволен код</div>
-                                <div class="display-6 fw-bold mb-2"><?= htmlspecialchars($classJoinCode) ?></div>
+                                <div class="display-6 fw-bold mb-2 text-dark"><?= htmlspecialchars($classJoinCode) ?></div>
                                 <button type="button" class="btn btn-outline-secondary btn-sm" data-copy-text="<?= htmlspecialchars($classJoinCode) ?>"><i class="bi bi-clipboard"></i> Копирай кода</button>
                             </div>
                         <?php endif; ?>
