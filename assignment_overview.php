@@ -382,8 +382,11 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                     <td><?= htmlspecialchars($statusLabel) ?></td>
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a class="btn btn-outline-secondary" href="attempt_review.php?id=<?= (int)$attempt['id'] ?>"><i class="bi bi-eye"></i></a>
-                                            <a class="btn btn-outline-primary" href="student_attempt.php?id=<?= (int)$attempt['id'] ?>"><i class="bi bi-box-arrow-up-right"></i></a>
+                                            <a class="btn btn-outline-secondary" href="attempt_review.php?id=<?= (int)$attempt['id'] ?>" title="Преглед"><i class="bi bi-eye"></i></a>
+                                            <a class="btn btn-outline-primary" href="student_attempt.php?id=<?= (int)$attempt['id'] ?>" title="Преглед като ученик"><i class="bi bi-box-arrow-up-right"></i></a>
+                                            <?php if (!empty($attempt['submitted_at'])): ?>
+                                                <a class="btn btn-outline-warning" href="test_log_event.php?attempt_id=<?= (int)$attempt['id'] ?>" title="Журнал дейности"><i class="bi bi-activity"></i></a>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>
