@@ -114,11 +114,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['__action'] ?? '') === 'sav
         try {
             $pdo->beginTransaction();
             if ($editing) {
-                $stmt = $pdo->prepare('UPDATE classes SET name=:name, grade=:grade, section=:section, school_year=:sy, description=:desc WHERE id=:id AND teacher_id=:tid' . (isset($_POST['orig_created_at']) && $_POST['orig_created_at'] !== '' ? ' AND created_at = :orig_ca' : ''));
+                $hasOrigCreatedAt = isset($_POST['orig_created_at']) && $_POST['orig_created_at'] !== '';
+                $stmt = $pdo->prepare('UPDATE classes SET name=:name, grade=:grade, section=:section, school_year=:sy, description=:desc WHERE id=:id AND teacher_id=:tid' . ($hasOrigCreatedAt ? ' AND created_at = :orig_ca' : ''));
                 $paramsUpd = [
                     ':name'=>$name, ':grade'=>$grade, ':section'=>$section, ':sy'=>$school_year, ':desc'=>$description,
                     ':id'=>$class_id, ':tid'=>(int)$user['id']
                 ];
+                if ($hasOrigCreatedAt) {
+                    $paramsUpd[':orig_ca'] = $_POST['orig_created_at'];
+                }
                 $stmt->execute($paramsUpd);
             } else {
                 // Базата няма AUTO_INCREMENT. Изчисляваме следващото id ръчно.
@@ -130,6 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['__action'] ?? '') === 'sav
                 $stmt->execute([
                     ':id'=>$nextId, ':tid'=>(int)$user['id'], ':name'=>$name, ':grade'=>$grade, ':section'=>$section, ':sy'=>$school_year, ':desc'=>$description, ':token'=>$newToken
                 ]);
+                $class_id = $nextId;
                 $editing = true;
                 $stmt = $pdo->prepare('SELECT * FROM classes WHERE id = :id AND teacher_id = :tid');
                 $stmt->execute([':id' => $class_id, ':tid' => (int)$user['id']]);
