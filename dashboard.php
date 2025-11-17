@@ -578,8 +578,13 @@ if ($user['role'] === 'teacher') {
     if (!empty($student['overview']['avg_percent'])) {
         $avgPercent = round((float) $student['overview']['avg_percent'], 1) . '%';
     }
+    $studentClassLabels = [];
+    foreach ($student['classes'] as $cls) {
+        $studentClassLabels[] = format_class_label($cls);
+    }
+    $classDetail = $studentClassLabels ? implode(', ', $studentClassLabels) : null;
     $heroStats = [
-        ['label' => 'Класове', 'value' => count($student['classes'])],
+        ['label' => 'Класове', 'value' => count($student['classes']), 'detail' => $classDetail],
         ['label' => 'Активни задания', 'value' => count($student['open_assignments'])],
         ['label' => 'Среден резултат', 'value' => $avgPercent ?? '—'],
     ];
@@ -1001,7 +1006,7 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                             <a class="btn btn-outline-light btn-lg" href="subjects_create.php"><i
                                     class="bi bi-journal-text me-2"></i>Тема</a>
                         <?php else: ?>
-                            <a class="btn btn-light btn-lg" href="#student-assignments"><i
+                            <a class="btn btn-primary btn-lg" href="#student-assignments"><i
                                     class="bi bi-clipboard-check me-2"></i>Активни задания</a>
                             <a class="btn btn-outline-light btn-lg" href="tests.php"><i
                                     class="bi bi-play-fill me-2"></i>Стартирай тест</a>
@@ -1015,6 +1020,9 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                 <div class="stat-pill">
                                     <div class="h2 fw-bold mb-1"><?= htmlspecialchars((string) $stat['value']) ?></div>
                                     <small><?= htmlspecialchars($stat['label']) ?></small>
+                                    <?php if (!empty($stat['detail'])): ?>
+                                        <div class="text-muted small mt-1"><?= htmlspecialchars($stat['detail']) ?></div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         <?php endforeach; ?>
