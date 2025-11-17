@@ -1254,14 +1254,14 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                             <span></span>
                                         <?php endif; ?>
                                         <?php if ($attemptPages > 1): ?>
-                                            <nav aria-label="Пагинация последни опити">
+                                            <nav aria-label="Странициране на последните опити">
                                                 <ul class="pagination pagination-sm mb-0">
                                                     <li class="page-item <?= $attemptPage <= 1 ? 'disabled' : '' ?>">
                                                         <?php if ($attemptPage <= 1): ?>
-                                                            <span class="page-link">Пред</span>
+                                                            <span class="page-link">Предишна</span>
                                                         <?php else: ?>
                                                             <a class="page-link"
-                                                                href="<?= htmlspecialchars($buildAttemptPageUrl($attemptPage - 1)) ?>">Пред</a>
+                                                                href="<?= htmlspecialchars($buildAttemptPageUrl($attemptPage - 1)) ?>">Предишна</a>
                                                         <?php endif; ?>
                                                     </li>
                                                     <?php for ($p = $startPage; $p <= $endPage; $p++): ?>
@@ -1276,10 +1276,10 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                                     <?php endfor; ?>
                                                     <li class="page-item <?= $attemptPage >= $attemptPages ? 'disabled' : '' ?>">
                                                         <?php if ($attemptPage >= $attemptPages): ?>
-                                                            <span class="page-link">След</span>
+                                                            <span class="page-link">Следваща</span>
                                                         <?php else: ?>
                                                             <a class="page-link"
-                                                                href="<?= htmlspecialchars($buildAttemptPageUrl($attemptPage + 1)) ?>">След</a>
+                                                                href="<?= htmlspecialchars($buildAttemptPageUrl($attemptPage + 1)) ?>">Следваща</a>
                                                         <?php endif; ?>
                                                     </li>
                                                 </ul>
@@ -1572,15 +1572,15 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                                 <span></span>
                                             <?php endif; ?>
                                             <?php if ($pastPages > 1): ?>
-                                                <nav aria-label="????????? ??????? ?????">
+                                                <nav aria-label="Странициране на миналите задания">
                                                     <ul class="pagination pagination-sm mb-0">
-                                                        <li class="page-item <?= $pastPage <= 1 ? 'disabled' : '' ?>">
-                                                            <?php if ($pastPage <= 1): ?>
-                                                                <span class="page-link">Предишна</span>
-                                                            <?php else: ?>
-                                                                <a class="page-link"
-                                                                    href="<?= htmlspecialchars($buildPastPageUrl($pastPage - 1)) ?>">Следваща</a>
-                                                            <?php endif; ?>
+                                                    <li class="page-item <?= $pastPage <= 1 ? 'disabled' : '' ?>">
+                                                        <?php if ($pastPage <= 1): ?>
+                                                            <span class="page-link">Предишна</span>
+                                                        <?php else: ?>
+                                                            <a class="page-link"
+                                                                href="<?= htmlspecialchars($buildPastPageUrl($pastPage - 1)) ?>">Предишна</a>
+                                                        <?php endif; ?>
                                                         </li>
                                                         <?php for ($p = $pastStartPage; $p <= $pastEndPage; $p++): ?>
                                                             <li class="page-item <?= $p === $pastPage ? 'active' : '' ?>">
@@ -1594,7 +1594,7 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                                         <?php endfor; ?>
                                                         <li class="page-item <?= $pastPage >= $pastPages ? 'disabled' : '' ?>">
                                                             <?php if ($pastPage >= $pastPages): ?>
-                                                                <span class="page-link">Предишна</span>
+                                                                <span class="page-link">Следваща</span>
                                                             <?php else: ?>
                                                                 <a class="page-link"
                                                                     href="<?= htmlspecialchars($buildPastPageUrl($pastPage + 1)) ?>">Следваща</a>
