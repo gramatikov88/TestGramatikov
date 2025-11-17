@@ -77,7 +77,7 @@ $student = [
 
 // Persist teacher dashboard filters in session
 if ($user['role'] === 'teacher') {
-    $filter_keys = ['c_q', 'c_sort', 't_q', 't_subject', 't_visibility', 't_status', 't_sort', 'a_q', 'a_from', 'a_to', 'a_sort', 'a_page', 'ca_class_id', 'ca_sort'];
+    $filter_keys = ['c_q', 'c_sort', 't_q', 't_subject', 't_visibility', 't_status', 't_sort', 'a_q', 'a_from', 'a_to', 'a_sort', 'a_page', 'ap_page', 'ca_class_id', 'ca_sort'];
     if (isset($_GET['reset'])) {
         unset($_SESSION['dash_filters']);
         header('Location: dashboard.php');
@@ -164,6 +164,7 @@ if ($pdo) {
         $a_to = $a_to_raw !== '' ? normalize_filter_datetime($a_to_raw) : '';
         $a_sort = $_GET['a_sort'] ?? '';
         $a_page = max(1, (int) ($_GET['a_page'] ?? 1));
+        $ap_page = max(1, (int) ($_GET['ap_page'] ?? 1));
 
         $ca_class_id = (isset($_GET['ca_class_id']) && $_GET['ca_class_id'] !== '') ? (int) $_GET['ca_class_id'] : null;
         $ca_sort = $_GET['ca_sort'] ?? '';
@@ -368,7 +369,23 @@ if ($pdo) {
             }
         }
         $teacher['assignments_current'] = array_slice($currentAssignments, 0, 8);
-        $teacher['assignments_past'] = array_slice($pastAssignments, 0, 8);
+
+        $pastPerPage = 5;
+        $pastTotal = count($pastAssignments);
+        $pastPages = max(1, (int) ceil($pastTotal / $pastPerPage));
+        if ($pastTotal === 0) {
+            $ap_page = 1;
+        } elseif ($ap_page > $pastPages) {
+            $ap_page = $pastPages;
+        }
+        $pastOffset = ($ap_page - 1) * $pastPerPage;
+        $teacher['assignments_past'] = array_slice($pastAssignments, $pastOffset, $pastPerPage);
+        $teacher['assignments_past_meta'] = [
+            'page' => $ap_page,
+            'per_page' => $pastPerPage,
+            'pages' => $pastPages,
+            'total' => $pastTotal,
+        ];
 
         // Re-query class analytics with filters
         try {
@@ -1516,8 +1533,76 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                                             </form>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            <?php endforeach; ?>
+                                            </div>
+                    <?php endforeach; ?>
+                                    </div>
+                                        <?php
+                                        $pastMeta = $teacher['assignments_past_meta'] ?? ['page' => 1, 'pages' => 1, 'total' => 0, 'per_page' => max(1, count($teacher['assignments_past']))];
+                                        $pastPage = max(1, (int) ($pastMeta['page'] ?? 1));
+                                        $pastPages = max(1, (int) ($pastMeta['pages'] ?? 1));
+                                        $pastTotal = max(0, (int) ($pastMeta['total'] ?? 0));
+                                        $pastPerPage = max(1, (int) ($pastMeta['per_page'] ?? 5));
+                                        $pastCountOnPage = count($teacher['assignments_past']);
+                                        $pastFrom = $pastCountOnPage ? (($pastPage - 1) * $pastPerPage + 1) : 0;
+                                        $pastTo = $pastCountOnPage ? ($pastFrom + $pastCountOnPage - 1) : 0;
+                                        $pastPaginationWindow = 5;
+                                        $pastHalfWindow = (int) floor($pastPaginationWindow / 2);
+                                        $pastStartPage = max(1, $pastPage - $pastHalfWindow);
+                                        $pastEndPage = min($pastPages, $pastStartPage + $pastPaginationWindow - 1);
+                                        $pastStartPage = max(1, $pastEndPage - $pastPaginationWindow + 1);
+                                        $queryWithoutPastPage = $_GET;
+                                        unset($queryWithoutPastPage['ap_page']);
+                                        $buildPastPageUrl = function (int $page) use ($queryWithoutPastPage) {
+                                            $params = $queryWithoutPastPage;
+                                            if ($page > 1) {
+                                                $params['ap_page'] = $page;
+                                            } else {
+                                                unset($params['ap_page']);
+                                            }
+                                            $qs = http_build_query($params);
+                                            return 'dashboard.php' . ($qs ? '?' . $qs : '');
+                                        };
+                                        ?>
+                                        <div
+                                            class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center mt-3 gap-2">
+                                            <?php if ($pastTotal > 0): ?>
+                                                <small class="text-muted">???????? <?= $pastFrom ?>-<?= $pastTo ?> ??
+                                                    <?= $pastTotal ?></small>
+                                            <?php else: ?>
+                                                <span></span>
+                                            <?php endif; ?>
+                                            <?php if ($pastPages > 1): ?>
+                                                <nav aria-label="????????? ??????? ?????">
+                                                    <ul class="pagination pagination-sm mb-0">
+                                                        <li class="page-item <?= $pastPage <= 1 ? 'disabled' : '' ?>">
+                                                            <?php if ($pastPage <= 1): ?>
+                                                                <span class="page-link">????</span>
+                                                            <?php else: ?>
+                                                                <a class="page-link"
+                                                                    href="<?= htmlspecialchars($buildPastPageUrl($pastPage - 1)) ?>">????</a>
+                                                            <?php endif; ?>
+                                                        </li>
+                                                        <?php for ($p = $pastStartPage; $p <= $pastEndPage; $p++): ?>
+                                                            <li class="page-item <?= $p === $pastPage ? 'active' : '' ?>">
+                                                                <?php if ($p === $pastPage): ?>
+                                                                    <span class="page-link"><?= $p ?></span>
+                                                                <?php else: ?>
+                                                                    <a class="page-link"
+                                                                        href="<?= htmlspecialchars($buildPastPageUrl($p)) ?>"><?= $p ?></a>
+                                                                <?php endif; ?>
+                                                            </li>
+                                                        <?php endfor; ?>
+                                                        <li class="page-item <?= $pastPage >= $pastPages ? 'disabled' : '' ?>">
+                                                            <?php if ($pastPage >= $pastPages): ?>
+                                                                <span class="page-link">????</span>
+                                                            <?php else: ?>
+                                                                <a class="page-link"
+                                                                    href="<?= htmlspecialchars($buildPastPageUrl($pastPage + 1)) ?>">????</a>
+                                                            <?php endif; ?>
+                                                        </li>
+                                                    </ul>
+                                                </nav>
+                                            <?php endif; ?>
                                         </div>
                                     <?php endif; ?>
                                 </div>
@@ -1689,4 +1774,3 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
 </body>
 
 </html>
-
