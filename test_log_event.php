@@ -159,6 +159,162 @@ $assignmentUrl = 'assignment_overview.php?id=' . (int)$attempt['assignment_id'];
 $studentLabel = trim($attempt['first_name'] . ' ' . $attempt['last_name']);
 $hasLogs = !empty($logs);
 
+function format_log_meta(array $meta): array {
+    $lines = [];
+    $copy = $meta;
+    $boolLabel = static function ($value): string {
+        if (is_string($value)) {
+            $value = strtolower($value);
+            if (in_array($value, ['1', 'true', 'yes'], true)) {
+                return 'Да';
+            }
+            if (in_array($value, ['0', 'false', 'no'], true)) {
+                return 'Не';
+            }
+        }
+        return $value ? 'Да' : 'Не';
+    };
+
+    if (array_key_exists('reason', $copy)) {
+        $reasonMap = [
+            'window_blur' => 'Причина: Прозорецът изгуби фокус',
+            'tab_hidden' => 'Причина: Скрит таб',
+            'strict_mode_violation' => 'Причина: Нарушение на строг режим',
+            'tab_visible' => 'Причина: Табът отново е видим',
+            'too_many_tab_switches' => 'Причина: Прекалено много смени на таб',
+            'page_reload' => 'Причина: Презареждане на страницата',
+        ];
+        $reasonKey = (string)$copy['reason'];
+        $lines[] = $reasonMap[$reasonKey] ?? ('Причина: ' . $reasonKey);
+        unset($copy['reason']);
+    }
+
+    if (array_key_exists('visibility', $copy)) {
+        $visibilityMap = [
+            'hidden' => 'Екранът е скрит',
+            'visible' => 'Екранът е видим',
+        ];
+        $visibilityKey = (string)$copy['visibility'];
+        $lines[] = $visibilityMap[$visibilityKey] ?? ('Видимост: ' . $visibilityKey);
+        unset($copy['visibility']);
+    }
+
+    if (array_key_exists('qtype', $copy)) {
+        $qtypeMap = [
+            'single_choice' => 'Тип въпрос: Единичен избор',
+            'multiple_choice' => 'Тип въпрос: Множествен избор',
+            'true_false' => 'Тип въпрос: Вярно/Невярно',
+            'short_answer' => 'Тип въпрос: Кратък отговор',
+            'numeric' => 'Тип въпрос: Числов отговор',
+        ];
+        $qtypeKey = (string)$copy['qtype'];
+        $lines[] = $qtypeMap[$qtypeKey] ?? ('Тип въпрос: ' . $qtypeKey);
+        unset($copy['qtype']);
+    }
+
+    if (array_key_exists('timestamp', $copy)) {
+        $ts = (float)$copy['timestamp'];
+        $lines[] = 'Локален таймер: ' . number_format($ts / 1000, 2, '.', ' ') . ' сек.';
+        unset($copy['timestamp']);
+    }
+
+    if (array_key_exists('time_spent_sec', $copy)) {
+        $timeSpent = (float)$copy['time_spent_sec'];
+        $lines[] = 'Време за въпроса: ' . number_format($timeSpent, 2, '.', ' ') . ' сек.';
+        unset($copy['time_spent_sec']);
+    }
+
+    if (array_key_exists('selected_option_id', $copy)) {
+        $lines[] = 'Избран отговор: #' . (int)$copy['selected_option_id'];
+        unset($copy['selected_option_id']);
+    }
+
+    if (array_key_exists('selected_option_ids', $copy)) {
+        $value = $copy['selected_option_ids'];
+        if (is_array($value)) {
+            $value = implode(', ', array_map('intval', $value));
+        }
+        $lines[] = 'Избрани отговори: ' . (string)$value;
+        unset($copy['selected_option_ids']);
+    }
+
+    if (array_key_exists('old_answer_id', $copy) || array_key_exists('new_answer_id', $copy)) {
+        $old = isset($copy['old_answer_id']) ? (int)$copy['old_answer_id'] : null;
+        $new = isset($copy['new_answer_id']) ? (int)$copy['new_answer_id'] : null;
+        $lines[] = 'Промяна на отговор: ' . ($old ? '#' . $old : 'няма') . ' → ' . ($new ? '#' . $new : 'няма');
+        unset($copy['old_answer_id'], $copy['new_answer_id']);
+    }
+
+    if (array_key_exists('free_text_length', $copy)) {
+        $lines[] = 'Брой символи: ' . (int)$copy['free_text_length'];
+        unset($copy['free_text_length']);
+    }
+
+    if (array_key_exists('numeric_value', $copy)) {
+        $lines[] = 'Въведено число: ' . (is_numeric($copy['numeric_value']) ? $copy['numeric_value'] : (string)$copy['numeric_value']);
+        unset($copy['numeric_value']);
+    }
+
+    if (array_key_exists('is_correct', $copy)) {
+        $lines[] = 'Отговорът е верен: ' . $boolLabel($copy['is_correct']);
+        unset($copy['is_correct']);
+    }
+
+    if (array_key_exists('score_awarded', $copy)) {
+        $lines[] = 'Получени точки: ' . (float)$copy['score_awarded'];
+        unset($copy['score_awarded']);
+    }
+
+    if (array_key_exists('score', $copy) || array_key_exists('max', $copy)) {
+        $score = array_key_exists('score', $copy) ? (float)$copy['score'] : null;
+        $max = array_key_exists('max', $copy) ? (float)$copy['max'] : null;
+        $lines[] = 'Резултат: ' . ($score !== null ? $score : '-') . ' / ' . ($max !== null ? $max : '-');
+        unset($copy['score'], $copy['max']);
+    }
+
+    if (array_key_exists('percent', $copy)) {
+        $lines[] = 'Процент: ' . number_format((float)$copy['percent'], 2) . '%';
+        unset($copy['percent']);
+    }
+
+    if (array_key_exists('strict_violation', $copy)) {
+        $lines[] = 'Строго нарушение: ' . $boolLabel($copy['strict_violation']);
+        unset($copy['strict_violation']);
+    }
+
+    if (array_key_exists('attempt_no', $copy)) {
+        $lines[] = 'Номер опит: ' . (int)$copy['attempt_no'];
+        unset($copy['attempt_no']);
+    }
+
+    if (array_key_exists('source', $copy)) {
+        $sourceMap = [
+            'page_render' => 'Източник: Зареждане на страницата',
+            'frontend' => 'Източник: Фронтенд',
+        ];
+        $sourceKey = (string)$copy['source'];
+        $lines[] = $sourceMap[$sourceKey] ?? ('Източник: ' . $sourceKey);
+        unset($copy['source']);
+    }
+
+    foreach ($copy as $key => $value) {
+        if ($value === null || $value === '') {
+            continue;
+        }
+        if (is_bool($value)) {
+            $valueText = $boolLabel($value);
+        } elseif (is_scalar($value)) {
+            $valueText = (string)$value;
+        } else {
+            $valueText = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+        $label = ucfirst(str_replace('_', ' ', (string)$key));
+        $lines[] = $label . ': ' . $valueText;
+    }
+
+    return $lines;
+}
+
 ?><!DOCTYPE html>
 <html lang="bg">
 <head>
@@ -228,11 +384,12 @@ $hasLogs = !empty($logs);
                                     $metaDecoded = $metaRaw;
                                 }
                             }
-                            $metaDisplay = '';
+                            $metaLines = [];
+                            $metaFallback = '';
                             if (is_array($metaDecoded)) {
-                                $metaDisplay = json_encode($metaDecoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+                                $metaLines = format_log_meta($metaDecoded);
                             } elseif ($metaDecoded !== null && $metaDecoded !== '') {
-                                $metaDisplay = (string)$metaDecoded;
+                                $metaFallback = (string)$metaDecoded;
                             }
                         ?>
                         <tr>
@@ -245,8 +402,14 @@ $hasLogs = !empty($logs);
                                 <div class="small text-muted">UA: <?= htmlspecialchars($row['user_agent'] ?? '-') ?></div>
                             </td>
                             <td style="max-width: 260px;">
-                                <?php if ($metaDisplay): ?>
-                                    <pre class="small bg-light p-2 rounded text-break mb-0"><?= htmlspecialchars($metaDisplay) ?></pre>
+                                <?php if ($metaLines): ?>
+                                    <ul class="list-unstyled small mb-0">
+                                        <?php foreach ($metaLines as $line): ?>
+                                            <li><?= htmlspecialchars($line) ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                <?php elseif ($metaFallback !== ''): ?>
+                                    <pre class="small bg-light p-2 rounded text-break mb-0"><?= htmlspecialchars($metaFallback) ?></pre>
                                 <?php else: ?>
                                     <span class="text-muted small">—</span>
                                 <?php endif; ?>
