@@ -210,6 +210,24 @@ function is_negative_log(string $action, ?array $meta): bool {
     return false;
 }
 
+function format_duration(float $seconds): string {
+    $seconds = max(0, $seconds);
+    $days = floor($seconds / 86400);
+    $seconds -= $days * 86400;
+    $hours = floor($seconds / 3600);
+    $seconds -= $hours * 3600;
+    $minutes = floor($seconds / 60);
+    $seconds -= $minutes * 60;
+    $parts = [];
+    if ($days > 0) { $parts[] = $days . 'д'; }
+    if ($hours > 0) { $parts[] = $hours . 'ч'; }
+    if ($minutes > 0) { $parts[] = $minutes . 'м'; }
+    if ($seconds > 0 || empty($parts)) {
+        $parts[] = rtrim(rtrim(number_format($seconds, $seconds > 9 ? 0 : 2, '.', ''), '0'), '.') . 'с';
+    }
+    return implode(' ', $parts);
+}
+
 function format_log_meta(array $meta): array {
     $lines = [];
     $copy = $meta;
@@ -265,13 +283,14 @@ function format_log_meta(array $meta): array {
 
     if (array_key_exists('timestamp', $copy)) {
         $ts = (float)$copy['timestamp'];
-        $lines[] = 'Локален таймер: ' . number_format($ts / 1000, 2, '.', ' ') . ' сек.';
+        $seconds = $ts / 1000;
+        $lines[] = 'Локален таймер: ' . format_duration($seconds) . ' (' . number_format($seconds, 2, '.', ' ') . ' сек.)';
         unset($copy['timestamp']);
     }
 
     if (array_key_exists('time_spent_sec', $copy)) {
         $timeSpent = (float)$copy['time_spent_sec'];
-        $lines[] = 'Време за въпроса: ' . number_format($timeSpent, 2, '.', ' ') . ' сек.';
+        $lines[] = 'Време за въпроса: ' . format_duration($timeSpent);
         unset($copy['time_spent_sec']);
     }
 
