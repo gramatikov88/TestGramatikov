@@ -159,6 +159,57 @@ $assignmentUrl = 'assignment_overview.php?id=' . (int)$attempt['assignment_id'];
 $studentLabel = trim($attempt['first_name'] . ' ' . $attempt['last_name']);
 $hasLogs = !empty($logs);
 
+function action_label(string $action): string {
+    static $map = [
+        'test_start' => 'Старт на теста',
+        'test_resume' => 'Възобновяване на теста',
+        'test_submit' => 'Предаване на теста',
+        'question_show' => 'Показване на въпрос',
+        'question_answer' => 'Попълнен отговор',
+        'question_change_answer' => 'Коригиран отговор',
+        'navigate_next' => 'Следващ въпрос',
+        'navigate_prev' => 'Предишен въпрос',
+        'tab_hidden' => 'Табът е скрит',
+        'tab_visible' => 'Табът е видим',
+        'fullscreen_enter' => 'Влизане в цял екран',
+        'fullscreen_exit' => 'Излизане от цял екран',
+        'page_reload' => 'Презареждане на страницата',
+        'timeout' => 'Изтекло време',
+        'forced_finish' => 'Принудително приключване',
+        'suspicious_pattern' => 'Подозрително поведение',
+        'navigate_focus' => 'Фокус на навигация',
+    ];
+    return $map[$action] ?? $action;
+}
+
+function is_negative_log(string $action, ?array $meta): bool {
+    static $negativeActions = [
+        'tab_hidden',
+        'fullscreen_exit',
+        'page_reload',
+        'timeout',
+        'forced_finish',
+        'suspicious_pattern',
+    ];
+    if (in_array($action, $negativeActions, true)) {
+        return true;
+    }
+    if (!$meta) {
+        return false;
+    }
+    $reason = $meta['reason'] ?? null;
+    if (is_string($reason) && in_array($reason, ['window_blur', 'strict_mode_violation', 'too_many_tab_switches', 'page_reload'], true)) {
+        return true;
+    }
+    if (!empty($meta['strict_violation'])) {
+        return true;
+    }
+    if (($meta['visibility'] ?? null) === 'hidden') {
+        return true;
+    }
+    return false;
+}
+
 function format_log_meta(array $meta): array {
     $lines = [];
     $copy = $meta;
@@ -323,6 +374,19 @@ function format_log_meta(array $meta): array {
     <title>Логове за опит #<?= (int)$attempt['id'] ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <style>
+        .log-negative {
+            color: #b02a37;
+        }
+        .log-negative td, .log-negative td * {
+            color: inherit;
+        }
+        .log-negative .badge {
+            background-color: rgba(176, 42, 55, 0.15);
+            color: #b02a37;
+            border-color: rgba(176, 42, 55, 0.3);
+        }
+    </style>
 </head>
 <body class="bg-light">
 <main class="container py-4">
@@ -391,11 +455,13 @@ function format_log_meta(array $meta): array {
                             } elseif ($metaDecoded !== null && $metaDecoded !== '') {
                                 $metaFallback = (string)$metaDecoded;
                             }
+                            $isNegative = is_negative_log($row['action'], is_array($metaDecoded) ? $metaDecoded : null);
+                            $actionLabel = action_label($row['action']);
                         ?>
-                        <tr>
+                        <tr class="<?= $isNegative ? 'log-negative table-danger' : '' ?>">
                             <td><?= (int)$row['id'] ?></td>
                             <td><small class="text-muted"><?= htmlspecialchars($row['created_at']) ?></small></td>
-                            <td><span class="badge bg-secondary-subtle text-dark border border-secondary-subtle"><?= htmlspecialchars($row['action']) ?></span></td>
+                            <td><span class="badge bg-secondary-subtle text-dark border border-secondary-subtle"><?= htmlspecialchars($actionLabel) ?></span></td>
                             <td><?= $row['question_id'] !== null ? (int)$row['question_id'] : '—' ?></td>
                             <td>
                                 <div class="small text-muted">IP: <?= htmlspecialchars($row['ip'] ?? '-') ?></div>
