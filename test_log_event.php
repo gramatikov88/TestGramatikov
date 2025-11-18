@@ -158,6 +158,8 @@ if ($format === 'json') {
 $assignmentUrl = 'assignment_overview.php?id=' . (int)$attempt['assignment_id'];
 $studentLabel = trim($attempt['first_name'] . ' ' . $attempt['last_name']);
 $hasLogs = !empty($logs);
+$firstTimestamp = null;
+$prevTimestamp = null;
 
 function action_label(string $action): string {
     static $map = [
@@ -228,7 +230,7 @@ function format_duration(float $seconds): string {
     return implode(' ', $parts);
 }
 
-function format_log_meta(array $meta): array {
+function format_log_meta(array $meta, array $context = []): array {
     $lines = [];
     $copy = $meta;
     $boolLabel = static function ($value): string {
@@ -284,7 +286,17 @@ function format_log_meta(array $meta): array {
     if (array_key_exists('timestamp', $copy)) {
         $ts = (float)$copy['timestamp'];
         $seconds = $ts / 1000;
-        $lines[] = 'Локален таймер: ' . format_duration($seconds) . ' (' . number_format($seconds, 2, '.', ' ') . ' сек.)';
+        $firstTs = isset($context['first_timestamp']) ? (float)$context['first_timestamp'] : $ts;
+        $fromStartSeconds = max(0, ($ts - $firstTs) / 1000);
+        $prevSeconds = null;
+        if (isset($context['prev_timestamp'])) {
+            $prevSeconds = max(0, ($ts - (float)$context['prev_timestamp']) / 1000);
+        }
+        $lines[] = 'Отварянето на теста (браузър) е било преди: ' . format_duration($fromStartSeconds);
+        if ($prevSeconds !== null) {
+            $lines[] = 'Интервал от предходното действие (браузър): ' . format_duration($prevSeconds);
+        }
+        $lines[] = 'Суров браузърен таймер: ' . number_format($seconds, 2, '.', ' ') . ' сек.';
         unset($copy['timestamp']);
     }
 
@@ -470,7 +482,17 @@ function format_log_meta(array $meta): array {
                             $metaLines = [];
                             $metaFallback = '';
                             if (is_array($metaDecoded)) {
-                                $metaLines = format_log_meta($metaDecoded);
+                                $metaLines = format_log_meta($metaDecoded, [
+                                    'first_timestamp' => $firstTimestamp,
+                                    'prev_timestamp' => $prevTimestamp,
+                                ]);
+                                if (isset($metaDecoded['timestamp'])) {
+                                    $tsValue = (float)$metaDecoded['timestamp'];
+                                    if ($firstTimestamp === null) {
+                                        $firstTimestamp = $tsValue;
+                                    }
+                                    $prevTimestamp = $tsValue;
+                                }
                             } elseif ($metaDecoded !== null && $metaDecoded !== '') {
                                 $metaFallback = (string)$metaDecoded;
                             }
