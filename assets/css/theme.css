@@ -342,11 +342,11 @@ body {
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
-/* Stat Pill Modernization */
-.stat-pill-modern {
+/* Stat Card Modernization (Grid Layout) */
+.stat-card-modern {
     background: rgba(255, 255, 255, 0.9);
-    border-radius: 1rem;
-    padding: 1.25rem;
+    border-radius: 1.25rem;
+    padding: 1.5rem;
     height: 100%;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     border: 1px solid rgba(15, 23, 42, 0.05);
@@ -355,30 +355,48 @@ body {
     justify-content: center;
     align-items: center;
     text-align: center;
+    aspect-ratio: 1/1;
+    /* Make them square-ish for better grid look */
 }
 
-[data-bs-theme="dark"] .stat-pill-modern {
+[data-bs-theme="dark"] .stat-card-modern {
     background: rgba(30, 41, 59, 0.8);
     border-color: rgba(255, 255, 255, 0.1);
     color: #f1f5f9;
 }
 
-.stat-pill-modern:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+.stat-card-modern:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
 }
 
 .stat-icon {
-    font-size: 1.75rem;
-    margin-bottom: 0.5rem;
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
     color: var(--tg-accent);
     background: var(--tg-accent-soft);
-    width: 3.5rem;
-    height: 3.5rem;
+    width: 4rem;
+    height: 4rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .stat-card-modern {
+        padding: 1rem;
+        aspect-ratio: auto;
+        /* Allow auto height on very small screens if needed, but grid usually handles it */
+        min-height: 140px;
+    }
+
+    .stat-icon {
+        width: 3rem;
+        height: 3rem;
+        font-size: 1.5rem;
+    }
 }
 
 /* Animations */
