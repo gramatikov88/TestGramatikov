@@ -981,7 +981,7 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                     <h1 class="display-5 fw-bold mb-3">Здравей, <?= htmlspecialchars($user['first_name']) ?>!</h1>
                     <p class="lead mb-4 text-white-50"><?= htmlspecialchars($heroSubtitle) ?></p>
                     
-                    <div class="hero-actions d-flex flex-wrap gap-3 mb-4 mb-lg-0">
+                    <div class="hero-actions d-grid gap-3 d-sm-flex mb-4 mb-lg-0">
                         <?php if ($user['role'] === 'teacher'): ?>
                             <a class="btn btn-primary btn-lg hover-lift shadow-sm" href="createTest.php">
                                 <i class="bi bi-magic me-2"></i>Нов тест
@@ -1043,7 +1043,7 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                 <div class="stat-card-modern">
                                     <div class="stat-icon shadow-sm"><i class="bi <?= $icon ?>"></i></div>
                                     <div class="h2 fw-bold mb-1"><?= htmlspecialchars((string) $stat['value']) ?></div>
-                                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.1em;"><?= htmlspecialchars($stat['label']) ?></small>
+                                    <small class="text-muted text-uppercase fw-bold stat-label"><?= htmlspecialchars($stat['label']) ?></small>
                                 </div>
                             </div>
                         <?php 
