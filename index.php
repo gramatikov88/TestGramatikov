@@ -71,8 +71,6 @@ try {
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
-
 </head>
 
 <body class="d-flex flex-column min-vh-100">
@@ -81,21 +79,22 @@ try {
 
     <main class="container my-4 my-md-5 flex-grow-1">
         <!-- Hero -->
-        <section class="tg-hero p-4 p-md-5 mb-4 mb-md-5">
-            <div class="row align-items-center g-4 g-md-5">
+        <section class="tg-hero p-4 p-md-5 mb-4 mb-md-5 animate-fade-up">
+            <div class="hero-pattern"></div>
+            <div class="row align-items-center g-4 g-md-5 position-relative">
                 <div class="col-lg-7">
                     <span class="badge bg-light text-dark mb-3">Интерактивни тестове • Статистика • Напредък</span>
                     <h1 class="display-5 fw-bold mb-3">Учи и тествай уменията си по интелигентен начин</h1>
                     <p class="lead mb-4">Платформа за бързи и адаптивни тестове – подходяща за ученици, учители и самоподготовка. Избирай от готови тестове или създай свои.</p>
                     <div class="d-flex flex-wrap gap-2">
-                        <a href="tests.php?mode=quick" class="btn btn-light btn-lg"><i
+                        <a href="tests.php?mode=quick" class="btn btn-light btn-lg hover-lift"><i
                                 class="bi bi-play-fill me-1"></i>Започни бърз тест</a>
-                        <a href="tests.php" class="btn btn-outline-light btn-lg"><i
+                        <a href="tests.php" class="btn btn-outline-light btn-lg hover-lift"><i
                                 class="bi bi-collection me-1"></i>Разгледай тестовете</a>
                     </div>
                 </div>
                 <div class="col-lg-5">
-                    <div class="glass rounded-4 p-3 p-md-4 bg-white text-dark">
+                    <div class="glass-panel rounded-4 p-3 p-md-4 text-dark">
                         <h5 class="mb-3"><i class="bi bi-search me-2 text-primary"></i>Търси тест</h5>
                         <form action="tests.php" method="get" class="input-group input-group-lg">
                             <input type="text" class="form-control" name="q"
@@ -111,10 +110,10 @@ try {
         </section>
 
         <!-- Features -->
-        <section class="mb-5">
+        <section class="mb-5 animate-fade-up delay-100">
             <div class="row g-3 g-md-4">
                 <div class="col-md-4">
-                    <div class="card h-100 shadow-sm">
+                    <div class="card h-100 shadow-sm hover-lift border-0">
                         <div class="card-body">
                             <div class="text-primary mb-2"><i class="bi bi-emoji-sunglasses fs-3"></i></div>
                             <h5 class="card-title">Адаптивни тестове</h5>
@@ -124,7 +123,7 @@ try {
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="card h-100 shadow-sm">
+                    <div class="card h-100 shadow-sm hover-lift border-0">
                         <div class="card-body">
                             <div class="text-primary mb-2"><i class="bi bi-graph-up-arrow fs-3"></i></div>
                             <h5 class="card-title">Статистика и напредък</h5>
@@ -133,7 +132,7 @@ try {
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="card h-100 shadow-sm">
+                    <div class="card h-100 shadow-sm hover-lift border-0">
                         <div class="card-body">
                             <div class="text-primary mb-2"><i class="bi bi-magic fs-3"></i></div>
                             <h5 class="card-title">Създаване на тестове</h5>
@@ -145,19 +144,19 @@ try {
         </section>
 
         <!-- Categories -->
-        <section class="mb-5">
+        <section class="mb-5 animate-fade-up delay-200">
             <div class="d-flex align-items-center justify-content-between mb-3">
                 <h4 class="m-0">Категории</h4>
-                <a href="categories.php" class="btn btn-sm btn-outline-secondary">Всички категории</a>
+                <a href="categories.php" class="btn btn-sm btn-outline-secondary hover-lift">Всички категории</a>
             </div>
             <div class="row g-3 g-md-4">
                 <?php if ($homeCategories): ?>
                     <?php foreach ($homeCategories as $c): ?>
                         <div class="col-6 col-md-3">
                             <a class="text-decoration-none" href="tests.php?subject_id=<?= (int) $c['id'] ?>">
-                                <div class="card category-card h-100 shadow-sm">
+                                <div class="card category-card h-100 shadow-sm hover-lift">
                                     <div class="card-body text-center">
-                                        <i class="bi bi-journal-bookmark text-primary"></i>
+                                        <i class="bi bi-journal-bookmark text-primary fs-4"></i>
                                         <div class="fw-semibold mt-2 text-dark"><?= htmlspecialchars($c['name']) ?></div>
                                         <div class="text-muted small">Тестове: <?= (int) $c['tests_count'] ?></div>
                                     </div>
@@ -174,16 +173,16 @@ try {
         </section>
 
         <!-- Recent tests (from DB) -->
-        <section class="mb-5">
+        <section class="mb-5 animate-fade-up delay-300">
             <div class="d-flex align-items-center justify-content-between mb-3">
                 <h4 class="m-0">Последни тестове</h4>
-                <a href="tests.php?sort=updated_desc" class="btn btn-sm btn-outline-secondary">Виж всички</a>
+                <a href="tests.php?sort=updated_desc" class="btn btn-sm btn-outline-secondary hover-lift">Виж всички</a>
             </div>
             <div class="list-group shadow-sm">
                 <?php if ($recentTests): ?>
                     <?php foreach ($recentTests as $rt): ?>
                         <a href="test_view.php?test_id=<?= (int) $rt['id'] ?>"
-                            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center hover-lift">
                             <?= htmlspecialchars($rt['title']) ?>
                             <span class="badge bg-primary rounded-pill"><?= (int) ($rt['qcount'] ?? 0) ?> въпроса</span>
                         </a>
@@ -195,31 +194,31 @@ try {
         </section>
 
         <!-- How it works -->
-        <section class="mb-5">
+        <section class="mb-5 animate-fade-up delay-300">
             <h4 class="mb-3">Как работи?</h4>
             <div class="row g-3 g-md-4">
                 <div class="col-md-4">
-                    <div class="card h-100 text-center border-0">
+                    <div class="card h-100 text-center border-0 shadow-sm hover-lift">
                         <div class="card-body">
-                            <div class="display-6 text-primary">1</div>
+                            <div class="display-6 text-primary mb-2">1</div>
                             <div class="fw-semibold mt-2">Избери категория или тема</div>
                             <div class="text-muted">Намери подходящ тест според нивото ти.</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="card h-100 text-center border-0">
+                    <div class="card h-100 text-center border-0 shadow-sm hover-lift">
                         <div class="card-body">
-                            <div class="display-6 text-primary">2</div>
+                            <div class="display-6 text-primary mb-2">2</div>
                             <div class="fw-semibold mt-2">Отговори на въпросите</div>
                             <div class="text-muted">Получаваш мигновена обратна връзка и подсказки.</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="card h-100 text-center border-0">
+                    <div class="card h-100 text-center border-0 shadow-sm hover-lift">
                         <div class="card-body">
-                            <div class="display-6 text-primary">3</div>
+                            <div class="display-6 text-primary mb-2">3</div>
                             <div class="fw-semibold mt-2">Проследявай напредъка</div>
                             <div class="text-muted">Виж статистика и препоръки за следващи стъпки.</div>
                         </div>
