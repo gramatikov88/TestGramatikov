@@ -665,22 +665,6 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
             border-color: rgba(255, 255, 255, .4);
             color: #fff;
         }
-
-        .hero-actions .btn:hover {
-            background: rgba(255, 255, 255, .15);
-        }
-
-        .stat-pill {
-            background: #fff;
-            border-radius: 1rem;
-            box-shadow: 0 12px 26px rgba(13, 110, 253, .15);
-            padding: 1rem 1.25rem;
-            height: 100%;
-        }
-
-        html[data-bs-theme="dark"] .stat-pill {
-            background: rgba(15, 23, 42, .75);
-            color: #f8fafc;
         }
 
         .stat-pill small {
