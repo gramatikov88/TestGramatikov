@@ -119,7 +119,7 @@ body {
 .btn-primary:focus-visible {
     background-color: var(--tg-accent-strong);
     border-color: var(--tg-accent-strong);
-    color: #1e40af;
+    color: #ffffff;
 }
 
 .btn-outline-primary {
@@ -130,7 +130,15 @@ body {
 .btn-outline-primary:hover,
 .btn-outline-primary:focus-visible {
     background-color: var(--tg-accent);
-    color: #1e40af;
+    color: #ffffff;
+}
+
+/* Fix for outline-light buttons in hero sections */
+.btn-outline-light:hover,
+.btn-outline-light:focus-visible {
+    color: #0f172a !important;
+    background-color: #ffffff;
+    border-color: #ffffff;
 }
 
 .badge-soft {
