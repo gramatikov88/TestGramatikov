@@ -75,11 +75,11 @@ try {
 
 </head>
 
-<body>
+<body class="d-flex flex-column min-vh-100">
 
     <?php include __DIR__ . '/components/header.php'; ?>
 
-    <main class="container my-4 my-md-5">
+    <main class="container my-4 my-md-5 flex-grow-1">
         <!-- Hero -->
         <section class="tg-hero p-4 p-md-5 mb-4 mb-md-5">
             <div class="row align-items-center g-4 g-md-5">
