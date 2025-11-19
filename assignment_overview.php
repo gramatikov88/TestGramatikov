@@ -173,12 +173,211 @@ $pageTitle = 'Задание: ' . $assignment['title'];
     <title><?= htmlspecialchars($pageTitle) ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+    <style>
+        :root {
+            --page-bg: #f5f7fb;
+            --surface-1: #ffffff;
+            --surface-2: #eef2ff;
+            --surface-card-border: rgba(15, 23, 42, 0.08);
+            --surface-border-strong: rgba(15, 23, 42, 0.15);
+            --text-main: #0f172a;
+            --text-muted: #5d6685;
+            --accent-strong: #2563eb;
+            --accent-strong-border: #1d4ed8;
+            --accent-soft: rgba(37, 99, 235, 0.2);
+            --accent-contrast: #ffffff;
+            --success-strong: #15803d;
+            --success-soft: rgba(34, 197, 94, 0.18);
+            --danger-strong: #b42318;
+            --danger-soft: rgba(252, 129, 129, 0.22);
+            --warning-strong: #a15c07;
+            --warning-soft: rgba(251, 191, 36, 0.25);
+            --neutral-soft: rgba(148, 163, 184, 0.23);
+            --focus-ring: rgba(37, 99, 235, 0.38);
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --page-bg: #050a18;
+                --surface-1: #0c1424;
+                --surface-2: #131f36;
+                --surface-card-border: rgba(148, 163, 184, 0.25);
+                --surface-border-strong: rgba(148, 163, 184, 0.35);
+                --text-main: #f8fafc;
+                --text-muted: #9da8c2;
+                --accent-strong: #60a5fa;
+                --accent-strong-border: #3b82f6;
+                --accent-soft: rgba(96, 165, 250, 0.35);
+                --accent-contrast: #02101f;
+                --success-strong: #4ade80;
+                --success-soft: rgba(74, 222, 128, 0.25);
+                --danger-strong: #fb7185;
+                --danger-soft: rgba(248, 113, 113, 0.3);
+                --warning-strong: #fbbf24;
+                --warning-soft: rgba(251, 191, 36, 0.4);
+                --neutral-soft: rgba(148, 163, 184, 0.25);
+                --focus-ring: rgba(96, 165, 250, 0.45);
+            }
+        }
+        body {
+            font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans", sans-serif;
+            background: radial-gradient(circle at top, rgba(37, 99, 235, 0.14), transparent 42%) var(--page-bg);
+            color: var(--text-main);
+        }
+        body.app-surface {
+            min-height: 100vh;
+        }
+        main.container {
+            max-width: 1200px;
+        }
+        .card {
+            background-color: var(--surface-1);
+            border-color: var(--surface-card-border);
+            border-radius: 1.1rem;
+            box-shadow: 0 25px 40px rgba(15, 23, 42, 0.08);
+        }
+        .card-header {
+            background: var(--surface-2) !important;
+            border-bottom-color: var(--surface-border-strong) !important;
+            font-weight: 600;
+        }
+        .shadow-soft {
+            box-shadow: 0 20px 35px rgba(15, 23, 42, 0.12);
+        }
+        .text-muted, .small.text-muted {
+            color: var(--text-muted) !important;
+        }
+        .btn {
+            border-radius: 0.65rem;
+            font-weight: 600;
+        }
+        .btn-primary {
+            background-color: var(--accent-strong);
+            border-color: var(--accent-strong-border);
+            color: var(--accent-contrast);
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
+        }
+        .btn-primary:hover, .btn-primary:focus-visible {
+            background-color: #1f4fd8;
+            border-color: #1f4fd8;
+        }
+        .btn-outline-primary {
+            color: var(--accent-strong);
+            border-color: var(--accent-strong);
+        }
+        .btn-outline-primary:hover, .btn-outline-primary:focus-visible {
+            background-color: var(--accent-strong);
+            color: var(--accent-contrast);
+        }
+        .btn-outline-secondary {
+            color: var(--text-muted);
+            border-color: var(--surface-border-strong);
+        }
+        .btn-outline-secondary:hover, .btn-outline-secondary:focus-visible {
+            color: var(--text-main);
+            border-color: var(--text-muted);
+            background: rgba(148, 163, 184, 0.12);
+        }
+        .form-control, .form-select {
+            border-radius: 0.75rem;
+            border-color: var(--surface-card-border);
+            background-color: var(--surface-1);
+            color: var(--text-main);
+            box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--accent-strong);
+            box-shadow: 0 0 0 0.2rem var(--focus-ring);
+        }
+        :focus-visible {
+            outline: 3px solid transparent;
+            box-shadow: 0 0 0 0.25rem var(--focus-ring);
+        }
+        .badge-soft {
+            border-radius: 999px;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border: 1px solid transparent;
+            letter-spacing: 0.02em;
+        }
+        .badge-soft-success {
+            background: var(--success-soft);
+            color: var(--success-strong);
+            border-color: rgba(21, 128, 61, 0.35);
+        }
+        .badge-soft-primary {
+            background: var(--accent-soft);
+            color: var(--accent-strong);
+            border-color: rgba(37, 99, 235, 0.35);
+        }
+        .badge-soft-danger {
+            background: var(--danger-soft);
+            color: var(--danger-strong);
+            border-color: rgba(180, 35, 24, 0.35);
+        }
+        .badge-soft-warning {
+            background: var(--warning-soft);
+            color: var(--warning-strong);
+            border-color: rgba(161, 92, 7, 0.35);
+        }
+        .badge-soft-neutral {
+            background: var(--neutral-soft);
+            color: var(--text-main);
+            border-color: rgba(148, 163, 184, 0.35);
+        }
+        #assignmentShareQr {
+            background: var(--surface-2);
+            border-color: var(--surface-card-border) !important;
+        }
+        .table {
+            color: var(--text-main);
+        }
+        .table thead,
+        .table-light {
+            background-color: var(--surface-2) !important;
+        }
+        .table-striped > tbody > tr:nth-of-type(odd) {
+            background-color: rgba(15, 23, 42, 0.02);
+        }
+        @media (prefers-color-scheme: dark) {
+            .table-striped > tbody > tr:nth-of-type(odd) {
+                background-color: rgba(255, 255, 255, 0.04);
+            }
+        }
+        .table-hover > tbody > tr:hover {
+            background-color: rgba(37, 99, 235, 0.08);
+        }
+        .table-danger {
+            background-color: var(--danger-soft) !important;
+            color: var(--danger-strong) !important;
+        }
+        .table-responsive {
+            border-radius: 1.1rem;
+            border: 1px solid var(--surface-card-border);
+        }
+        .alert {
+            border: none;
+            border-radius: 1rem;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        }
+        .stat-card .card-body {
+            padding: 1.5rem;
+        }
+        .stat-card .h4 {
+            font-size: 1.75rem;
+        }
+        .qr-helper {
+            background: rgba(37, 99, 235, 0.08);
+            border-radius: 0.75rem;
+            padding: 0.65rem 1rem;
+            color: var(--text-muted);
+        }
+    </style>
 </head>
-<body class="bg-light">
+<body class="app-surface">
 <main class="container py-4">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
         <div>
-            <h1 class="h3 mb-1"><?= htmlspecialchars($assignment['title']) ?><?php if ($strict_mode_active): ?><span class="badge bg-danger ms-2">Стриктен режим</span><?php endif; ?></h1>
+            <h1 class="h3 mb-1"><?= htmlspecialchars($assignment['title']) ?><?php if ($strict_mode_active): ?><span class="badge badge-soft badge-soft-danger ms-2 text-uppercase small">Стриктен режим</span><?php endif; ?></h1>
             <div class="text-muted small">
                 Тест: <?= htmlspecialchars($assignment['test_title']) ?>
                 <?php if ($selectedClassLabel): ?>
@@ -220,7 +419,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
         <div class="card-body d-flex flex-column flex-lg-row gap-4 align-items-start">
             <div>
                 <div id="assignmentShareQr" data-url="<?= htmlspecialchars($assignmentShareLink) ?>" class="p-2 border rounded bg-white"></div>
-                <div class="small text-muted mt-2">Students scan the QR code to open this assignment after logging in.</div>
+                <div class="small text-muted mt-2 qr-helper">Students scan the QR code to open this assignment after logging in.</div>
             </div>
             <div class="flex-grow-1 w-100">
                 <h2 class="h5 mb-2">Assignment QR Link</h2>
@@ -235,7 +434,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
     </div>
     <div class="row g-3 g-md-4 mb-4">
         <div class="col-sm-6 col-lg-3">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100 stat-card">
                 <div class="card-body">
                     <div class="text-muted small text-uppercase mb-1">Общо опити</div>
                     <div class="h4 mb-0"><?= $attemptsCount ?></div>
@@ -243,7 +442,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
             </div>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100 stat-card">
                 <div class="card-body">
                     <div class="text-muted small text-uppercase mb-1">Предадени</div>
                     <div class="h4 mb-0"><?= $submittedCount ?></div>
@@ -251,7 +450,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
             </div>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100 stat-card">
                 <div class="card-body">
                     <div class="text-muted small text-uppercase mb-1">Среден резултат</div>
                     <div class="h4 mb-0"><?= $averagePercent !== null ? $averagePercent . '%' : '-' ?></div>
@@ -259,7 +458,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
             </div>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100 stat-card">
                 <div class="card-body">
                     <div class="text-muted small text-uppercase mb-1">Чакат оценка</div>
                     <div class="h4 mb-0"><?= $needsGrade ?></div>
@@ -267,7 +466,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
             </div>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100 stat-card">
                 <div class="card-body">
                     <div class="text-muted small text-uppercase mb-1">Строги нарушения</div>
                     <div class="h4 mb-0 text-danger"><?= $strictViolations ?></div>
@@ -281,7 +480,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <strong>Резултати по опити</strong>
                     <?php if ($bestPercent !== null): ?>
-                        <span class="badge bg-success-subtle border border-success text-success-emphasis">Най-добър: <?= $bestPercent ?>%</span>
+                        <span class="badge badge-soft badge-soft-success">Най-добър: <?= $bestPercent ?>%</span>
                     <?php endif; ?>
                 </div>
                 <div class="card-body">
@@ -304,7 +503,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                             <?php foreach ([6,5,4,3,2] as $grade): ?>
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <span>Оценка <?= $grade ?></span>
-                                    <span class="badge bg-primary rounded-pill"><?= (int)($gradeDistribution[$grade] ?? 0) ?></span>
+                                    <span class="badge badge-soft badge-soft-primary"><?= (int)($gradeDistribution[$grade] ?? 0) ?></span>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
@@ -372,7 +571,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                     <td><?= htmlspecialchars($attempt['submitted_at'] ?: '-') ?></td>
                                     <td>
                                         <?php if ($percentValue !== null): ?>
-                                            <span class="badge <?= $percentValue >= 50 ? 'bg-success' : 'bg-danger' ?>"><?= $percentValue ?>%</span>
+                                            <span class="badge badge-soft <?= $percentValue >= 50 ? 'badge-soft-success' : 'badge-soft-danger' ?>"><?= $percentValue ?>%</span>
                                         <?php else: ?>
                                             -
                                         <?php endif; ?>
@@ -444,6 +643,11 @@ $pageTitle = 'Задание: ' . $assignment['title'];
     const dataValues = <?= $chartPercentsJson ?>;
     const ctx = document.getElementById('attemptScoresChart');
     if (!ctx) return;
+    const rootStyles = getComputedStyle(document.documentElement);
+    const barBorder = (rootStyles.getPropertyValue('--accent-strong') || '#2563eb').trim() || '#2563eb';
+    const barFill = (rootStyles.getPropertyValue('--accent-soft') || 'rgba(37, 99, 235, 0.25)').trim() || 'rgba(37, 99, 235, 0.25)';
+    const axisColor = (rootStyles.getPropertyValue('--text-muted') || '#475467').trim() || '#475467';
+    const gridColor = (rootStyles.getPropertyValue('--surface-card-border') || 'rgba(15, 23, 42, 0.15)').trim() || 'rgba(15, 23, 42, 0.15)';
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -451,10 +655,10 @@ $pageTitle = 'Задание: ' . $assignment['title'];
             datasets: [{
                 label: 'Резултат (%)',
                 data: dataValues,
-                backgroundColor: 'rgba(13, 110, 253, 0.6)',
-                borderColor: 'rgba(13, 110, 253, 1)',
-                borderWidth: 1,
-                borderRadius: 4,
+                backgroundColor: barFill,
+                borderColor: barBorder,
+                borderWidth: 2,
+                borderRadius: 6,
                 maxBarThickness: 28,
             }]
         },
@@ -465,7 +669,24 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                 y: {
                     beginAtZero: true,
                     suggestedMax: 100,
-                    ticks: { callback: value => value + '%' }
+                    ticks: {
+                        color: axisColor,
+                        callback: value => value + '%'
+                    },
+                    grid: {
+                        color: gridColor,
+                        drawBorder: false
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: axisColor,
+                        autoSkip: true,
+                        maxRotation: 30
+                    },
+                    grid: {
+                        display: false
+                    }
                 }
             },
             plugins: {
