@@ -16,7 +16,7 @@
 [data-bs-theme="light"] {
     --tg-body-bg: #f4f7fb;
     --tg-body-color: #0f172a;
-    --tg-muted: #5f6b85;
+    --tg-muted: #475569;
     --tg-surface: #ffffff;
     --tg-surface-2: #e6ebf5;
     --tg-border: rgba(15, 23, 42, 0.08);
@@ -25,7 +25,7 @@
 [data-bs-theme="dark"] {
     --tg-body-bg: #040b18;
     --tg-body-color: #f4f6fb;
-    --tg-muted: #a0abc1;
+    --tg-muted: #cbd5e1;
     --tg-surface: #0d1627;
     --tg-surface-2: #162440;
     --tg-border: rgba(148, 163, 184, 0.25);
@@ -142,7 +142,7 @@ body {
 
 .badge-soft-success {
     background: var(--tg-success-soft);
-    color: var(--tg-success);
+    color: #16a34a;
     border-color: rgba(34, 197, 94, 0.35);
 }
 
