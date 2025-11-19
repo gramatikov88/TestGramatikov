@@ -975,49 +975,60 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
         <?php endif; ?>
         <section class="dashboard-hero p-4 p-md-5 mb-4 mb-md-5 animate-fade-up">
             <div class="hero-pattern"></div>
-            <div class="row align-items-center g-4">
+            <div class="row align-items-center g-4 g-lg-5">
                 <div class="col-lg-7 position-relative">
-                    <span class="hero-label mb-2">Твоят профил · <?= htmlspecialchars($user['role']) ?></span>
+                    <span class="hero-label mb-2 d-block">Твоят профил · <?= htmlspecialchars($user['role']) ?></span>
                     <h1 class="display-5 fw-bold mb-3">Здравей, <?= htmlspecialchars($user['first_name']) ?>!</h1>
-                    <p class="lead mb-4"><?= htmlspecialchars($heroSubtitle) ?></p>
-                    <div class="hero-actions d-flex flex-wrap gap-2">
+                    <p class="lead mb-4 text-white-50"><?= htmlspecialchars($heroSubtitle) ?></p>
+                    
+                    <div class="hero-actions d-flex flex-wrap gap-3 mb-4 mb-lg-0">
                         <?php if ($user['role'] === 'teacher'): ?>
-                            <a class="btn btn-primary btn-lg hover-lift" href="createTest.php"><i class="bi bi-magic me-2"></i>Нов
-                                тест</a>
-                            <a class="btn btn-outline-light btn-lg hover-lift" href="classes_create.php"><i
-                                    class="bi bi-people me-2"></i>Нов клас</a>
-                            <a class="btn btn-outline-light btn-lg hover-lift" href="assignments_create.php"><i
-                                    class="bi bi-megaphone me-2"></i>Задание</a>
-                            <a class="btn btn-outline-light btn-lg hover-lift" href="subjects_create.php"><i
-                                    class="bi bi-journal-text me-2"></i>Тема</a>
+                            <a class="btn btn-primary btn-lg hover-lift shadow-sm" href="createTest.php">
+                                <i class="bi bi-magic me-2"></i>Нов тест
+                            </a>
+                            <a class="btn btn-outline-light btn-lg hover-lift" href="classes_create.php">
+                                <i class="bi bi-people me-2"></i>Нов клас
+                            </a>
+                            <a class="btn btn-outline-light btn-lg hover-lift" href="assignments_create.php">
+                                <i class="bi bi-megaphone me-2"></i>Задание
+                            </a>
+                            <a class="btn btn-outline-light btn-lg hover-lift" href="subjects_create.php">
+                                <i class="bi bi-journal-text me-2"></i>Тема
+                            </a>
                         <?php else: ?>
-                            <a class="btn btn-primary btn-lg hover-lift" href="#student-assignments"><i
-                                    class="bi bi-clipboard-check me-2"></i>Активни задания</a>
-                            <a class="btn btn-outline-light btn-lg hover-lift" href="tests.php"><i
-                                    class="bi bi-play-fill me-2"></i>Стартирай тест</a>
+                            <a class="btn btn-primary btn-lg hover-lift shadow-sm" href="#student-assignments">
+                                <i class="bi bi-clipboard-check me-2"></i>Активни задания
+                            </a>
+                            <a class="btn btn-outline-light btn-lg hover-lift" href="tests.php">
+                                <i class="bi bi-play-fill me-2"></i>Стартирай тест
+                            </a>
                         <?php endif; ?>
                     </div>
+
                     <?php if ($user['role'] === 'student'): ?>
-                        <div class="card shadow-sm mt-3 join-code-entry glass-panel border-0">
-                            <div class="card-body">
+                        <div class="card shadow-sm mt-4 join-code-entry glass-panel border-0" style="max-width: 500px;">
+                            <div class="card-body p-3 p-md-4">
                                 <form class="row g-2 align-items-center" method="get" action="join_class.php">
                                     <div class="col-sm-7 col-md-8">
-                                        <label class="form-label text-muted small mb-1">Въведи шестсимволен код за клас</label>
-                                        <input type="text" name="code" class="form-control text-uppercase" maxlength="6" pattern="[A-Z0-9]{6}" placeholder="напр. ABC123" oninput="this.value = this.value.toUpperCase()" required>
+                                        <label class="form-label text-muted small mb-1 fw-semibold">КОД ЗА КЛАС</label>
+                                        <input type="text" name="code" class="form-control form-control-lg text-uppercase" maxlength="6" pattern="[A-Z0-9]{6}" placeholder="напр. ABC123" oninput="this.value = this.value.toUpperCase()" required>
                                     </div>
                                     <div class="col-sm-5 col-md-4 d-flex align-items-end">
-                                        <button class="btn btn-primary w-100 hover-lift" type="submit"><i class="bi bi-link-45deg me-1"></i>Присъедини се</button>
+                                        <button class="btn btn-primary btn-lg w-100 hover-lift" type="submit">
+                                            <i class="bi bi-arrow-right-circle me-2"></i>Влез
+                                        </button>
                                     </div>
                                     <div class="col-12">
-                                        <small class="text-muted">Получаваш кода от учителя. Можеш да го използваш и за присъединяване към зададен тест.</small>
+                                        <small class="text-muted opacity-75">Въведи 6-символния код, предоставен от твоя учител.</small>
                                     </div>
                                 </form>
                             </div>
                         </div>
                     <?php endif; ?>
                 </div>
+                
                 <div class="col-lg-5">
-                    <div class="row g-3">
+                    <div class="row row-cols-2 g-3 g-md-4">
                         <?php 
                         $delay = 100;
                         foreach ($heroStats as $stat): 
@@ -1028,14 +1039,11 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                             elseif (strpos($stat['label'], 'задания') !== false) $icon = 'bi-clipboard-check';
                             elseif (strpos($stat['label'], 'резултат') !== false) $icon = 'bi-trophy';
                         ?>
-                            <div class="col-6 col-lg-12 animate-fade-up delay-<?= $delay ?>">
-                                <div class="stat-pill-modern">
-                                    <div class="stat-icon"><i class="bi <?= $icon ?>"></i></div>
+                            <div class="col animate-fade-up delay-<?= $delay ?>">
+                                <div class="stat-card-modern">
+                                    <div class="stat-icon shadow-sm"><i class="bi <?= $icon ?>"></i></div>
                                     <div class="h2 fw-bold mb-1"><?= htmlspecialchars((string) $stat['value']) ?></div>
                                     <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.1em;"><?= htmlspecialchars($stat['label']) ?></small>
-                                    <?php if (!empty($stat['detail'])): ?>
-                                        <div class="text-muted small mt-1"><?= htmlspecialchars($stat['detail']) ?></div>
-                                    <?php endif; ?>
                                 </div>
                             </div>
                         <?php 
