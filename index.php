@@ -84,7 +84,7 @@ try {
             <div class="row align-items-center g-4 g-md-5 position-relative">
                 <div class="col-lg-7">
                     <span class="badge bg-light text-dark mb-3">Интерактивни тестове • Статистика • Напредък</span>
-                    <h1 class="display-5 fw-bold mb-3">Учи и тествай уменията си по интелигентен начин</h1>
+                    <h1 class="display-5 fw-bold mb-3">Учи и тествай уменията си по интелигентен начин!!!</h1>
                     <p class="lead mb-4">Платформа за бързи и адаптивни тестове – подходяща за ученици, учители и самоподготовка. Избирай от готови тестове или създай свои.</p>
                     <div class="d-grid gap-3 d-sm-flex">
                         <a href="tests.php?mode=quick" class="btn btn-light btn-lg hover-lift"><i

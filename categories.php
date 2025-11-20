@@ -74,7 +74,7 @@ try {
 
     <div class="row g-3 g-md-4">
         <?php if (!$rows): ?>
-            <div class="col-12"><div class="text-muted">Няма намерени категории.</div></div>
+            <div class="col-12"><div class="text-muted">Няма намерени категории...</div></div>
         <?php endif; ?>
         <?php foreach ($rows as $r): ?>
             <div class="col-6 col-md-3">
