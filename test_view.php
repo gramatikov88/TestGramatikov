@@ -206,6 +206,36 @@ if ($mode === 'take' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <?php if ($mode==='take' && $_SERVER['REQUEST_METHOD'] !== 'POST'): ?>
         <div class="alert alert-info">Задание: <?= htmlspecialchars($assignment['title'] ?? '') ?><?php if (!empty($assignment['due_at'])): ?> • Срок: <?= htmlspecialchars($assignment['due_at']) ?><?php endif; ?></div>
+        
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h6 class="m-0"><i class="bi bi-info-circle me-2"></i>Скала за оценяване</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered m-0 text-center small">
+                        <thead>
+                            <tr class="table-light">
+                                <th>Отличен (6)</th>
+                                <th>Мн. добър (5)</th>
+                                <th>Добър (4)</th>
+                                <th>Среден (3)</th>
+                                <th>Слаб (2)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-success fw-bold">90% - 100%</td>
+                                <td class="text-primary fw-bold">80% - 89%</td>
+                                <td class="text-info fw-bold">65% - 79%</td>
+                                <td class="text-warning fw-bold">50% - 64%</td>
+                                <td class="text-danger fw-bold">0% - 49%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     <?php endif; ?>
 
     <form method="post">

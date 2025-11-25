@@ -1115,7 +1115,7 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
-                                <div class="d-flex gap-2 mb-2">
+                                <div class="d-flex flex-wrap gap-2 mb-2">
                                     <select name="t_visibility" class="form-select form-select-sm">
                                         <option value="">Видимост</option>
                                         <option value="private" <?= (($_GET['t_visibility'] ?? '') === 'private') ? 'selected' : '' ?>>Частен</option>
@@ -1146,7 +1146,7 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                                 <label class="form-label text-uppercase small fw-semibold mb-2 d-block">Задания</label>
                                 <input type="text" name="a_q" value="<?= htmlspecialchars($_GET['a_q'] ?? '') ?>"
                                     class="form-control form-control-sm mb-2" placeholder="Търсене (зад./име)..." />
-                                <div class="d-flex gap-2 mb-2">
+                                <div class="d-flex flex-column gap-2 mb-2">
                                     <input type="datetime-local" name="a_from"
                                         value="<?= htmlspecialchars($_GET['a_from'] ?? '') ?>"
                                         class="form-control form-control-sm" />
