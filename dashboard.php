@@ -956,6 +956,7 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
             opacity: .92;
         }
     </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
 </head>
 
 <body>
@@ -978,7 +979,13 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
             <div class="row align-items-center g-4 g-lg-5">
                 <div class="col-lg-7 position-relative">
                     <span class="hero-label mb-2 d-block">Твоят профил · <?= htmlspecialchars($user['role']) ?></span>
-                    <h1 class="display-5 fw-bold mb-3">Здравей, <?= htmlspecialchars($user['first_name']) ?>!</h1>
+                    <div class="d-flex align-items-center mb-3">
+                        <h1 class="display-5 fw-bold m-0 me-3">Здравей, <?= htmlspecialchars($user['first_name']) ?>!</h1>
+                        <div class="form-check form-switch d-flex align-items-center gap-2 m-0" title="Включи интерактивен помощник">
+                            <input class="form-check-input" type="checkbox" role="switch" id="helpToggle" style="width: 3em; height: 1.5em; cursor: pointer;">
+                            <label class="form-check-label fw-bold text-white-50" for="helpToggle" style="cursor: pointer;">ПОМОЩ</label>
+                        </div>
+                    </div>
                     <p class="lead mb-4 text-white-50"><?= htmlspecialchars($heroSubtitle) ?></p>
                     
                     <div class="hero-actions d-grid gap-3 d-sm-flex mb-4 mb-lg-0">
@@ -2005,11 +2012,130 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                         } catch (err) {
                             // ignore storage issues
                         }
+    <footer class="border-top py-4">
+        <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+            <div class="text-muted">&copy; <?= date('Y'); ?> TestGramatikov</div>
+            <div class="d-flex gap-3 small">
+                <a class="text-decoration-none" href="terms.php">Условия</a>
+                <a class="text-decoration-none" href="privacy.php">Поверителност</a>
+                <a class="text-decoration-none" href="contact.php">Контакт</a>
+            </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            (() => {
+                const cards = document.querySelectorAll('.section-card');
+                cards.forEach((card, index) => {
+                    const header = card.querySelector('.card-header');
+                    const bodies = card.querySelectorAll('.card-body, .card-footer');
+                    if (!header || bodies.length === 0) {
+                        return;
+                    }
+
+                    let toggle = header.querySelector('.card-toggle');
+                    const lockedOpen = card.dataset.lockedOpen === 'true';
+                    const defaultOpen = card.dataset.defaultOpen === 'true';
+
+                    if (!toggle && !lockedOpen) {
+                        toggle = document.createElement('button');
+                        toggle.type = 'button';
+                        toggle.className = 'card-toggle';
+                        toggle.setAttribute('aria-label', 'Свий или разгъни секцията');
+                        toggle.innerHTML = '<i class="bi bi-chevron-up"></i>';
+                        header.appendChild(toggle);
+                    }
+
+                    const keyBase = card.id || card.getAttribute('data-card-key') || `card-${index}`;
+                    const storageKey = `tg-dashboard-card-${keyBase}`;
+
+                    const setCollapsed = (collapsed) => {
+                        card.classList.toggle('is-collapsed', collapsed);
+                        bodies.forEach(el => {
+                            el.hidden = collapsed;
+                        });
+                        if (toggle) {
+                            toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                        }
+                    };
+
+                    let initialCollapsed = lockedOpen ? false : !defaultOpen;
+                    if (!lockedOpen) {
+                        try {
+                            const stored = localStorage.getItem(storageKey);
+                            if (stored !== null) {
+                                initialCollapsed = stored === '1';
+                            }
+                        } catch (err) {
+                            // ignore storage issues
+                        }
+                    }
+
+                    setCollapsed(initialCollapsed);
+
+                    if (lockedOpen) {
+                        if (toggle) {
+                            toggle.remove();
+                        }
+                        bodies.forEach(el => {
+                            el.hidden = false;
+                        });
+                        return;
+                    }
+
+                    toggle.addEventListener('click', () => {
+                        const nextCollapsed = !card.classList.contains('is-collapsed');
+                        setCollapsed(nextCollapsed);
+                        try {
+                            localStorage.setItem(storageKey, nextCollapsed ? '1' : '0');
+                        } catch (err) {
+                            // ignore storage issues
+                        }
                     });
                 });
             })();
         </script>
     </footer>
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const driver = window.driver.js.driver;
+            const userRole = '<?= $user['role'] ?>';
+            const toggle = document.getElementById('helpToggle');
+            
+            const teacherSteps = [
+                { popover: { title: 'Добре дошли!', description: 'Това е вашето табло за управление. Тук можете да управлявате класове, тестове и задания.' } },
+                { element: '.hero-actions', popover: { title: 'Бързи действия', description: 'От тук можете бързо да създавате нови тестове, класове и задания.', side: 'bottom' } },
+                { element: '.col-lg-5 .row', popover: { title: 'Статистика', description: 'Бърз преглед на вашите класове, тестове и активност.', side: 'left' } },
+                { element: '.filter-card', popover: { title: 'Филтри', description: 'Използвайте тези филтри, за да намерите конкретни класове, тестове или задания.', side: 'top' } },
+                { element: '[data-card-key="teacher-classes"]', popover: { title: 'Вашите класове', description: 'Списък с всички ваши класове. Можете да ги редактирате или да добавяте ученици.', side: 'top' } },
+                { element: '[data-card-key="teacher-tests"]', popover: { title: 'Вашите тестове', description: 'Всички създадени от вас тестове. Можете да ги редактирате, споделяте или изтривате.', side: 'top' } },
+                { element: '[data-card-key="teacher-recent-attempts"]', popover: { title: 'Последни опити', description: 'Тук ще видите последните предадени тестове от ученици. Можете да ги оценявате директно.', side: 'top' } },
+                { element: '[data-card-key="teacher-assignments-current"]', popover: { title: 'Активни задания', description: 'Списък с текущите задания, които сте възложили.', side: 'top' } }
+            ];
 
+            const studentSteps = [
+                { popover: { title: 'Добре дошли!', description: 'Това е вашето табло. Тук ще намерите вашите задания и резултати.' } },
+                { element: '.join-code-entry', popover: { title: 'Влез в клас', description: 'Въведете кода, предоставен от вашия учител, за да се присъедините към клас.', side: 'right' } },
+                { element: '.hero-actions', popover: { title: 'Бързи връзки', description: 'Бърз достъп до вашите активни задания и тестове.', side: 'bottom' } },
+                { element: '#student-assignments', popover: { title: 'Вашите задания', description: 'Тук са всички тестове, които трябва да направите. Следете сроковете!', side: 'top' } }
+            ];
+
+            const driverObj = driver({
+                showProgress: true,
+                steps: userRole === 'teacher' ? teacherSteps : studentSteps,
+                onDestroyed: () => {
+                    toggle.checked = false;
+                }
+            });
+
+            toggle.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    driverObj.drive();
+                } else {
+                    driverObj.destroy();
+                }
+            });
+        });
+    </script>
+</body>
 </html>
