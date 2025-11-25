@@ -199,19 +199,6 @@ if ($mode === 'take' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php if ($mode==='take' && $result): ?>
         <?php if (!empty($result['error'])): ?>
             <div class="alert alert-danger"><?= htmlspecialchars($result['error']) ?></div>
-        <?php else: ?>
-            <div class="alert alert-success">Резултат: <strong><?= (float)$result['score'] ?>/<?= (float)$result['max'] ?></strong> (<?= $result['max']>0? round($result['score']/$result['max']*100,2):0 ?>%)</div>
-        <?php endif; ?>
-    <?php endif; ?>
-
-    <?php if ($mode==='take' && $_SERVER['REQUEST_METHOD'] !== 'POST'): ?>
-        <div class="alert alert-info">Задание: <?= htmlspecialchars($assignment['title'] ?? '') ?><?php if (!empty($assignment['due_at'])): ?> • Срок: <?= htmlspecialchars($assignment['due_at']) ?><?php endif; ?></div>
-    <?php endif; ?>
-
-    <form method="post">
-        <?php foreach ($questions as $idx => $q): ?>
-            <div class="card shadow-sm mb-3 q-card">
-                <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div><strong>Въпрос <?= $idx+1 ?>.</strong> <?= nl2br(htmlspecialchars($q['body'])) ?></div>
                         <span class="badge bg-light text-dark"><?= (float)$q['points'] ?> т.</span>
