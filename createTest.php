@@ -1056,7 +1056,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php endif; ?>
                 </div>
 
-                <button type="button" class="btn btn-outline-primary" onclick="addQuestion()">Добави въпрос</button>
+                <button type="button" class="btn btn-outline-primary" id="addQuestionBtn" onclick="addQuestion()">Добави въпрос</button>
             </div>
 
             <div class="card-footer bg-white d-flex justify-content-end gap-2">

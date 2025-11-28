@@ -347,7 +347,7 @@ if ($editing) {
         </div>
     <?php endif; ?>
 
-    <form method="post" class="card shadow-sm mb-4">
+    <form method="post" class="card shadow-sm mb-4" id="classForm">
         <div class="card-header bg-white"><strong>Данни за класа</strong></div>
         <div class="card-body row g-3">
             <div class="col-md-4">
@@ -410,7 +410,7 @@ if ($editing) {
     <a id="students"></a>
     <div class="row g-3">
         <div class="col-lg-6">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100" id="studentsCard">
                 <div class="card-header bg-white"><strong>Записани ученици</strong></div>
                 <div class="list-group list-group-flush scroll-area">
                     <?php if (!$students): ?><div class="list-group-item text-muted">Няма записани ученици.</div><?php endif; ?>

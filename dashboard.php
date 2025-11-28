@@ -2088,68 +2088,6 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                         }
                     });
                 });
-            })();
-        </script>
-    </footer>
-    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const driver = window.driver.js.driver;
-            const userRole = '<?= $user['role'] ?>';
-            const toggle = document.getElementById('navHelpToggle');
-            const STORAGE_KEY = 'tg_tutorial_enabled';
-            
-            const teacherSteps = [
-                { popover: { title: 'Добре дошли!', description: 'Това е вашето табло за управление. Тук можете да управлявате класове, тестове и задания.' } },
-                { element: '.hero-actions', popover: { title: 'Бързи действия', description: 'От тук можете бързо да създавате нови тестове, класове и задания.', side: 'bottom' } },
-                { element: '.col-lg-5 .row', popover: { title: 'Статистика', description: 'Бърз преглед на вашите класове, тестове и активност.', side: 'left' } },
-                { element: '.filter-card', popover: { title: 'Филтри', description: 'Използвайте тези филтри, за да намерите конкретни класове, тестове или задания.', side: 'top' } },
-                { element: '[data-card-key="teacher-classes"]', popover: { title: 'Вашите класове', description: 'Списък с всички ваши класове. Можете да ги редактирате или да добавяте ученици.', side: 'top' } },
-                { element: '[data-card-key="teacher-tests"]', popover: { title: 'Вашите тестове', description: 'Всички създадени от вас тестове. Можете да ги редактирате, споделяте или изтривате.', side: 'top' } },
-                { element: '[data-card-key="teacher-recent-attempts"]', popover: { title: 'Последни опити', description: 'Тук ще видите последните предадени тестове от ученици. Можете да ги оценявате директно.', side: 'top' } },
-                { element: '[data-card-key="teacher-assignments-current"]', popover: { title: 'Активни задания', description: 'Списък с текущите задания, които сте възложили.', side: 'top' } }
-            ];
-
-            const studentSteps = [
-                { popover: { title: 'Добре дошли!', description: 'Това е вашето табло. Тук ще намерите вашите задания и резултати.' } },
-                { element: '.join-code-entry', popover: { title: 'Влез в клас', description: 'Въведете кода, предоставен от вашия учител, за да се присъедините към клас.', side: 'right' } },
-                { element: '.hero-actions', popover: { title: 'Бързи връзки', description: 'Бърз достъп до вашите активни задания и тестове.', side: 'bottom' } },
-                { element: '#student-assignments', popover: { title: 'Вашите задания', description: 'Тук са всички тестове, които трябва да направите. Следете сроковете!', side: 'top' } }
-            ];
-
-            const driverObj = driver({
-                showProgress: true,
-                steps: userRole === 'teacher' ? teacherSteps : studentSteps,
-                onDestroyed: () => {
-                    // When user closes the tutorial manually via 'X' or finishes it, we turn off the toggle
-                    // But we don't necessarily save 'false' to storage unless we want it to never show again automatically.
-                    // Let's keep the toggle in sync.
-                    if (toggle) toggle.checked = false;
-                }
-            });
-
-            if (toggle) {
-                // Check storage or default to true
-                const savedState = localStorage.getItem(STORAGE_KEY);
-                const isEnabled = savedState === null ? true : (savedState === '1');
-                
-                toggle.checked = isEnabled;
-
-                if (isEnabled) {
-                    // Small delay to ensure UI is ready
-                    setTimeout(() => {
-                        driverObj.drive();
-                    }, 1000);
-                }
-
-                toggle.addEventListener('change', (e) => {
-                    const checked = e.target.checked;
-                    localStorage.setItem(STORAGE_KEY, checked ? '1' : '0');
-                    
-                    if (checked) {
-                        driverObj.drive();
-                    } else {
-                        driverObj.destroy();
                     }
                 });
             }
