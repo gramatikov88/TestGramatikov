@@ -61,6 +61,23 @@ require_once __DIR__ . '/../config.php';
                         <li class="nav-item"><a class="btn btn-primary" href="dashboard.php"><i class="bi bi-speedometer2 me-1"></i>Табло</a></li>
                         <li class="nav-item d-flex align-items-center">
                             <span class="text-muted small me-2">Здравей,</span>
+                            <span class="fw-semibold"><?= htmlspecialchars($_SESSION['user']['first_name']) ?></span>
+                        </li>
+                        <li class="nav-item"><a class="btn btn-outline-danger btn-sm" href="logout.php"><i class="bi bi-box-arrow-right"></i></a></li>
+                    <?php else: ?>
+                        <li class="nav-item"><a class="btn btn-outline-primary" href="login.php">Вход</a></li>
+                        <li class="nav-item"><a class="btn btn-primary" href="register.php">Регистрация</a></li>
+                    <?php endif; ?>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<!-- Back to Top -->
+<button type="button" id="backToTopBtn" class="back-to-top shadow" aria-label="Върни се в началото">
+    <i class="bi bi-arrow-up"></i>
+</button>
 
 <script>
     (function() {
@@ -78,3 +95,10 @@ require_once __DIR__ . '/../config.php';
     })();
 </script>
 <script src="backToTop.js" defer></script>
+
+<script>
+    window.currentUserRole = '<?= $_SESSION['user']['role'] ?? 'student' ?>';
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
+<script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+<script src="assets/js/tutorial.js" defer></script>
