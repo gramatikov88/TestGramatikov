@@ -47,6 +47,14 @@ require_once __DIR__ . '/../config.php';
                         </ul>
                     </li>
 
+                    <!-- Help Toggle -->
+                    <li class="nav-item d-flex align-items-center ms-2">
+                        <div class="form-check form-switch m-0" title="Включи/Изключи помощник">
+                            <input class="form-check-input" type="checkbox" role="switch" id="navHelpToggle" style="cursor: pointer;">
+                            <label class="form-check-label small text-muted ms-1" for="navHelpToggle" style="cursor: pointer;"><i class="bi bi-question-circle-fill"></i></label>
+                        </div>
+                    </li>
+
                     <li class="nav-item border-start mx-2 d-none d-lg-block"></li>
 
                     <?php if (!empty($_SESSION['user'])): ?>

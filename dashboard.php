@@ -981,10 +981,6 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                     <span class="hero-label mb-2 d-block">Твоят профил · <?= htmlspecialchars($user['role']) ?></span>
                     <div class="d-flex align-items-center mb-3">
                         <h1 class="display-5 fw-bold m-0 me-3">Здравей, <?= htmlspecialchars($user['first_name']) ?>!</h1>
-                        <div class="form-check form-switch d-flex align-items-center gap-2 m-0" title="Включи интерактивен помощник">
-                            <input class="form-check-input" type="checkbox" role="switch" id="helpToggle" style="width: 3em; height: 1.5em; cursor: pointer;">
-                            <label class="form-check-label fw-bold text-white-50" for="helpToggle" style="cursor: pointer;">ПОМОЩ</label>
-                        </div>
                     </div>
                     <p class="lead mb-4 text-white-50"><?= htmlspecialchars($heroSubtitle) ?></p>
                     
@@ -2100,7 +2096,8 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
         document.addEventListener('DOMContentLoaded', function() {
             const driver = window.driver.js.driver;
             const userRole = '<?= $user['role'] ?>';
-            const toggle = document.getElementById('helpToggle');
+            const toggle = document.getElementById('navHelpToggle');
+            const STORAGE_KEY = 'tg_tutorial_enabled';
             
             const teacherSteps = [
                 { popover: { title: 'Добре дошли!', description: 'Това е вашето табло за управление. Тук можете да управлявате класове, тестове и задания.' } },
@@ -2124,17 +2121,38 @@ $currentUrlSafe = htmlspecialchars($currentUrl, ENT_QUOTES);
                 showProgress: true,
                 steps: userRole === 'teacher' ? teacherSteps : studentSteps,
                 onDestroyed: () => {
-                    toggle.checked = false;
+                    // When user closes the tutorial manually via 'X' or finishes it, we turn off the toggle
+                    // But we don't necessarily save 'false' to storage unless we want it to never show again automatically.
+                    // Let's keep the toggle in sync.
+                    if (toggle) toggle.checked = false;
                 }
             });
 
-            toggle.addEventListener('change', (e) => {
-                if (e.target.checked) {
-                    driverObj.drive();
-                } else {
-                    driverObj.destroy();
+            if (toggle) {
+                // Check storage or default to true
+                const savedState = localStorage.getItem(STORAGE_KEY);
+                const isEnabled = savedState === null ? true : (savedState === '1');
+                
+                toggle.checked = isEnabled;
+
+                if (isEnabled) {
+                    // Small delay to ensure UI is ready
+                    setTimeout(() => {
+                        driverObj.drive();
+                    }, 1000);
                 }
-            });
+
+                toggle.addEventListener('change', (e) => {
+                    const checked = e.target.checked;
+                    localStorage.setItem(STORAGE_KEY, checked ? '1' : '0');
+                    
+                    if (checked) {
+                        driverObj.drive();
+                    } else {
+                        driverObj.destroy();
+                    }
+                });
+            }
         });
     </script>
 </body>
