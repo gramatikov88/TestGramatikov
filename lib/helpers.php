@@ -24,10 +24,14 @@ function grade_from_percent(?float $percent): ?int
     if ($percent === null) {
         return null;
     }
-    if ($percent >= 90) return 6;
-    if ($percent >= 80) return 5;
-    if ($percent >= 65) return 4;
-    if ($percent >= 50) return 3;
+    if ($percent >= 90)
+        return 6;
+    if ($percent >= 80)
+        return 5;
+    if ($percent >= 65)
+        return 4;
+    if ($percent >= 50)
+        return 3;
     return 2;
 }
 
@@ -36,7 +40,8 @@ function grade_from_percent(?float $percent): ?int
  */
 function get_grade_color_class(?int $grade): string
 {
-    if ($grade === null) return 'secondary';
+    if ($grade === null)
+        return 'secondary';
     return match ($grade) {
         6 => 'success',
         5 => 'primary',
@@ -52,7 +57,8 @@ function get_grade_color_class(?int $grade): string
  */
 function format_date($date, $format = 'd.m.Y H:i')
 {
-    if (!$date) return '—';
+    if (!$date)
+        return '—';
     return date($format, strtotime($date));
 }
 
@@ -97,16 +103,4 @@ function normalize_filter_datetime(string $value): string
     return $value;
 }
 
-/**
- * Initialize or fix attempts_grade view/table logic if needed (placeholder).
- */
-function ensure_attempts_grade($pdo) {
-    // Logic from original dashboard.php can go here if it needs to run globally
-}
-
-/**
- * Ensure subjects scope logic if needed (placeholder).
- */
-function ensure_subjects_scope($pdo) {
-    // Logic from original dashboard.php can go here
-}
+// Functions ensure_attempts_grade and ensure_subjects_scope are in config.php
