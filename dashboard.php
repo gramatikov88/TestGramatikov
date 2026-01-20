@@ -245,274 +245,220 @@ $heroSubtitle = $user['role'] === 'teacher'
     <title>Табло – TestGramatikov</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="<?= htmlspecialchars(app_url('assets/css/theme.css')) ?>?v=<?= time() ?>">
 </head>
 
-<body>
+<body class="bg-body">
     <?php include __DIR__ . '/components/header.php'; ?>
 
-    <main class="container my-4 my-md-5">
-        <!-- Dashboard Hero -->
-        <div class="p-4 p-md-5 mb-4 rounded-4 shadow-lg text-white position-relative overflow-hidden"
-            style="background: linear-gradient(135deg, var(--tg-primary), var(--tg-secondary));">
-            <div class="position-relative z-2">
-                <h1 class="display-5 fw-bold mb-3">Здравей, <?= htmlspecialchars($user['first_name']) ?>!</h1>
-                <p class="lead mb-4 opacity-75"><?= htmlspecialchars($heroSubtitle) ?></p>
-                <div class="d-flex flex-wrap gap-4">
-                    <?php foreach ($heroStats as $stat): ?>
-                        <div class="d-flex align-items-center bg-white bg-opacity-25 rounded-3 px-3 py-2 backdrop-blur-sm">
-                            <div class="fs-3 me-3 opacity-75"><i class="bi <?= $stat['icon'] ?>"></i></div>
-                            <div>
-                                <div class="h4 mb-0 fw-bold"><?= $stat['value'] ?></div>
-                                <div class="small opacity-75 text-uppercase tracking-wider"><?= $stat['label'] ?></div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <!-- Decorative circle -->
-            <div class="position-absolute top-0 end-0 translate-middle-y me-n5 mt-n5 opacity-25"
-                style="width: 300px; height: 300px; background: radial-gradient(circle, #fff 0%, transparent 70%); border-radius: 50%;">
-            </div>
+    <main class="container my-5">
+        <!-- Hero Greetings -->
+        <div class="mb-5 animate-fade-up">
+            <h1 class="display-6 fw-bold mb-1">Здравей, <?= htmlspecialchars($user['first_name']) ?>.</h1>
+            <p class="text-muted lead">
+                <?= $user['role'] === 'teacher' ? 'Ето какво изисква внимание днес.' : 'Твоят прогрес и задачи.' ?></p>
         </div>
 
         <?php if ($user['role'] === 'teacher'): ?>
-            <div class="row g-4">
-                <!-- Left Column: Classes & Tests -->
-                <div class="col-lg-8">
-                    <!-- Tests Section -->
-                    <div class="glass-card p-4 mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h4 class="mb-0"><i class="bi bi-file-earmark-text text-primary me-2"></i>Вашите тестове</h4>
-                            <div class="d-flex gap-2">
-                                <form class="d-flex" role="search" method="get">
-                                    <input type="hidden" name="active_tab" value="tests">
-                                    <input class="form-control form-control-sm me-2" type="search" name="t_q"
-                                        placeholder="Търсене..." value="<?= htmlspecialchars($_GET['t_q'] ?? '') ?>">
-                                </form>
-                                <a href="createTest.php" class="btn btn-sm btn-primary"><i
-                                        class="bi bi-plus-lg me-1"></i>Нов тест</a>
-                            </div>
-                        </div>
-
-                        <?php if (empty($teacher['tests'])): ?>
-                            <div class="text-center py-5 text-muted">
-                                <i class="bi bi-inbox fs-1 d-block mb-3 opacity-50"></i>
-                                <p>Няма намерени тестове.</p>
-                            </div>
-                        <?php else: ?>
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Заглавие</th>
-                                            <th>Статус</th>
-                                            <th>Последна промяна</th>
-                                            <th class="text-end">Действия</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($teacher['tests'] as $row): ?>
-                                            <tr>
-                                                <td class="fw-medium text-primary">
-                                                    <a href="createTest.php?id=<?= $row['id'] ?>"
-                                                        class="text-decoration-none text-reset">
-                                                        <?= htmlspecialchars($row['title']) ?>
-                                                    </a>
-                                                </td>
-                                                <td>
-                                                    <?php
-                                                    $statusClass = match ($row['status']) {
-                                                        'published' => 'success',
-                                                        'draft' => 'secondary',
-                                                        'archived' => 'warning',
-                                                        default => 'light'
-                                                    };
-                                                    $statusLabel = match ($row['status']) {
-                                                        'published' => 'Публикуван',
-                                                        'draft' => 'Чернова',
-                                                        'archived' => 'Архивиран',
-                                                        default => $row['status']
-                                                    };
-                                                    ?>
-                                                    <span
-                                                        class="badge bg-<?= $statusClass ?>-subtle text-<?= $statusClass ?> rounded-pill">
-                                                        <?= $statusLabel ?>
-                                                    </span>
-                                                </td>
-                                                <td class="small text-muted"><?= format_date($row['updated_at']) ?></td>
-                                                <td class="text-end">
-                                                    <div class="btn-group btn-group-sm">
-                                                        <a href="test_view.php?test_id=<?= $row['id'] ?>&mode=preview"
-                                                            class="btn btn-outline-secondary" title="Преглед"><i
-                                                                class="bi bi-eye"></i></a>
-                                                        <a href="createTest.php?id=<?= $row['id'] ?>"
-                                                            class="btn btn-outline-primary" title="Редакция"><i
-                                                                class="bi bi-pencil"></i></a>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        <?php endif; ?>
+            <div class="row g-5">
+                <!-- THE NOW COLUMN (Immediate Action) -->
+                <div class="col-lg-7">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <h5 class="fw-bold text-uppercase tracking-wider text-muted m-0"><i
+                                class="bi bi-play-circle-fill text-primary me-2"></i>Сега</h5>
+                        <a href="createTest.php" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm hover-lift"><i
+                                class="bi bi-plus-lg me-1"></i> Нов Тест</a>
                     </div>
+
+                    <!-- Ungraded Assignments Stack -->
+                    <?php
+                    // Find assignments with ungraded answers
+                    // Logic derived from dashboard fetching but focused on "Actionable"
+                    $actionableStmt = $pdo->prepare("
+                            SELECT a.id, a.title, t.title as test_title, c.name as class_name, c.grade, c.section,
+                                   (SELECT COUNT(DISTINCT aa.attempt_id) 
+                                    FROM attempt_answers aa 
+                                    JOIN attempts atp ON atp.id = aa.attempt_id 
+                                    WHERE atp.assignment_id = a.id AND aa.score_awarded IS NULL) as needs_grading_count
+                            FROM assignments a 
+                            JOIN tests t ON t.id = a.test_id
+                            LEFT JOIN assignment_classes ac ON ac.assignment_id = a.id
+                            LEFT JOIN classes c ON c.id = ac.class_id
+                            WHERE a.assigned_by_teacher_id = :tid
+                            HAVING needs_grading_count > 0
+                            ORDER BY needs_grading_count DESC
+                            LIMIT 5
+                        ");
+                    $actionableStmt->execute([':tid' => $user['id']]);
+                    $gradingQueue = $actionableStmt->fetchAll();
+                    ?>
+
+                    <?php if ($gradingQueue): ?>
+                        <?php foreach ($gradingQueue as $qv): ?>
+                            <div class="glass-card p-4 mb-3 border-start border-4 border-warning hover-lift animate-fade-up">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="text-warning small fw-bold text-uppercase mb-1"><i
+                                                class="bi bi-hourglass-split me-1"></i> Чака оценка</div>
+                                        <h5 class="fw-bold mb-1"><?= htmlspecialchars($qv['title']) ?></h5>
+                                        <div class="text-muted small">
+                                            <?= htmlspecialchars($qv['class_name'] ?: ($qv['grade'] . $qv['section'])) ?> •
+                                            <?= htmlspecialchars($qv['test_title']) ?></div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="h2 fw-bold mb-0 text-primary"><?= $qv['needs_grading_count'] ?></div>
+                                        <div class="small text-muted mb-3">отговора</div>
+                                        <a href="grading_batch.php?assignment_id=<?= $qv['id'] ?>"
+                                            class="btn btn-outline-primary btn-sm rounded-pill px-3 stretched-link">Оцени всички</a>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <!-- Zero Inbox State -->
+                        <div class="glass-card p-5 text-center mb-4 border-success border-opacity-25 bg-success bg-opacity-10">
+                            <i class="bi bi-cup-hot display-4 text-success opacity-50 mb-3"></i>
+                            <h5 class="fw-bold text-success">Всичко е оценено!</h5>
+                            <p class="text-muted small">Няма спешни задачи за проверка. Наслади се на кафето.</p>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- Active Classes (Running Tests) -->
+                    <!-- Placeholder for "Live" monitoring if we had it, strictly "Now" context -->
                 </div>
 
-                <!-- Right Column: Classes and Quick Actions -->
-                <div class="col-lg-4">
-                    <!-- Classes List -->
-                    <div class="glass-card p-4 mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0"><i class="bi bi-people text-primary me-2"></i>Класове</h5>
-                            <a href="classes_create.php" class="btn btn-sm btn-outline-primary"><i
-                                    class="bi bi-plus-lg"></i></a>
+                <!-- THE HORIZON COLUMN (Planning / Archive) -->
+                <div class="col-lg-5">
+                    <h5 class="fw-bold text-uppercase tracking-wider text-muted mb-4"><i
+                            class="bi bi-calendar-event me-2"></i>Хоризонт</h5>
+
+                    <!-- Recent Tests List (Simplified Card Style) -->
+                    <div class="glass-card p-0 overflow-hidden mb-4">
+                        <div
+                            class="p-3 border-bottom bg-white bg-opacity-25 d-flex justify-content-between align-items-center">
+                            <span class="fw-bold small text-muted">ПОСЛЕДНИ ТЕСТОВЕ</span>
+                            <a href="tests.php" class="text-decoration-none small">Всички</a>
                         </div>
-                        <?php if (empty($teacher['classes'])): ?>
-                            <div class="text-muted small text-center py-3">Няма добавени класове.</div>
-                        <?php else: ?>
-                            <div class="list-group list-group-flush">
-                                <?php foreach ($teacher['classes'] as $cls): ?>
-                                    <div
-                                        class="list-group-item bg-transparent px-0 d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <div class="fw-semibold">
-                                                <?= htmlspecialchars($cls['grade'] . $cls['section']) ?>
-                                            </div>
-                                            <div class="small text-muted"><?= htmlspecialchars($cls['name'] ?: '—') ?></div>
-                                        </div>
-                                        <span class="badge bg-light text-dark border"><?= $cls['school_year'] ?></span>
+                        <div class="list-group list-group-flush">
+                            <?php foreach ($teacher['tests'] as $testRow): ?>
+                                <div
+                                    class="list-group-item bg-transparent p-3 border-light d-flex justify-content-between align-items-center">
+                                    <div class="text-truncate me-2">
+                                        <div class="fw-semibold text-dark"><?= htmlspecialchars($testRow['title']) ?></div>
+                                        <div class="small text-muted"><?= format_date($testRow['updated_at']) ?></div>
                                     </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
+                                    <a href="createTest.php?id=<?= $testRow['id'] ?>"
+                                        class="btn btn-sm btn-icon btn-light rounded-circle"><i class="bi bi-pencil"></i></a>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                    <!-- Classes Quick List -->
+                    <div class="glass-card p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold m-0 text-muted">МОИТЕ КЛАСОВЕ</h6>
+                            <a href="classes_create.php" class="text-primary"><i class="bi bi-plus-lg"></i></a>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <?php foreach ($teacher['classes'] as $cls): ?>
+                                <span class="badge bg-white text-dark border py-2 px-3 rounded-pill fw-normal shadow-sm">
+                                    <?= htmlspecialchars($cls['grade'] . $cls['section']) ?>
+                                </span>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
                 </div>
             </div>
 
-        <?php else: // Student View ?>
+        <?php else: // STUDENT FLOW ?>
 
-            <div class="row g-4">
-                <div class="col-lg-8">
-                    <!-- Active Assignments -->
-                    <div class="glass-card p-4 mb-4">
-                        <h4 class="mb-4"><i class="bi bi-lightning text-warning me-2"></i>Активни задания</h4>
-                        <?php if (empty($student['open_assignments'])): ?>
-                            <div class="alert alert-light border-0 shadow-sm text-center py-4">
-                                <i class="bi bi-check-circle fs-1 text-success mb-2 d-block"></i>
-                                Всичко е готово! Нямате активни задачи.
-                            </div>
-                        <?php else: ?>
-                            <div class="row g-3">
-                                <?php foreach ($student['open_assignments'] as $assign):
-                                    $hasAttempt = !empty($student['open_attempts_map'][$assign['id']]);
-                                    ?>
-                                    <div class="col-md-6">
-                                        <div class="card h-100 border-0 shadow-sm hover-lift transition-all">
-                                            <div class="card-body">
-                                                <h5 class="card-title text-truncate"><?= htmlspecialchars($assign['title']) ?></h5>
-                                                <h6 class="card-subtitle mb-2 text-muted small">
-                                                    <?= htmlspecialchars($assign['test_title'] ?? '') ?></h6>
+            <div class="row g-5">
+                <!-- THE NOW (Assignments Due) -->
+                <div class="col-lg-7">
+                    <h5 class="fw-bold text-uppercase tracking-wider text-muted mb-4"><i
+                            class="bi bi-lightning-charge-fill text-warning me-2"></i>Активни</h5>
 
-                                                <div class="mt-3 d-flex flex-column gap-2 small text-muted">
-                                                    <?php if ($assign['due_at']): ?>
-                                                        <div
-                                                            class="<?= strtotime($assign['due_at']) < time() + 86400 ? 'text-danger fw-bold' : '' ?>">
-                                                            <i class="bi bi-clock me-1"></i> Срок: <?= format_date($assign['due_at']) ?>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                    <?php if ($assign['open_at']): ?>
-                                                        <div><i class="bi bi-calendar-event me-1"></i> Отворено от:
-                                                            <?= format_date($assign['open_at']) ?></div>
-                                                    <?php endif; ?>
-                                                </div>
+                    <?php if (empty($student['open_assignments'])): ?>
+                        <div class="glass-card p-5 text-center mb-4">
+                            <div class="display-1 mb-3">🎉</div>
+                            <h4 class="fw-bold">Свободно време!</h4>
+                            <p class="text-muted">Нямаш активни задачи за решаване.</p>
+                            <a href="tests.php" class="btn btn-outline-primary rounded-pill mt-2">Реши нещо за упражнение</a>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($student['open_assignments'] as $assign):
+                            $hasAttempt = !empty($student['open_attempts_map'][$assign['id']]);
+                            // Calculate urgency
+                            $isUrgent = false;
+                            if ($assign['due_at'] && strtotime($assign['due_at']) < time() + 86400)
+                                $isUrgent = true;
+                            ?>
+                            <div
+                                class="glass-card p-4 mb-3 hover-lift border-start border-4 <?= $isUrgent ? 'border-danger' : 'border-info' ?> animate-fade-up">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <?php if ($isUrgent): ?>
+                                            <span class="badge bg-danger-subtle text-danger mb-2"><i
+                                                    class="bi bi-clock-history me-1"></i> Спешно</span>
+                                        <?php endif; ?>
+                                        <h5 class="fw-bold mb-1"><?= htmlspecialchars($assign['title']) ?></h5>
+                                        <div class="text-muted small mb-3"><?= htmlspecialchars($assign['test_title']) ?></div>
 
-                                                <div class="mt-4">
-                                                    <?php if ($hasAttempt): ?>
-                                                        <a href="student_attempt.php?id=<?= $student['open_attempts_map'][$assign['id']] ?>"
-                                                            class="btn btn-outline-primary w-100">
-                                                            <i class="bi bi-search me-1"></i> Преглед
-                                                        </a>
-                                                    <?php else: ?>
-                                                        <a href="test_view.php?assignment_id=<?= $assign['id'] ?>&mode=take"
-                                                            class="btn btn-primary w-100">
-                                                            <i class="bi bi-play-fill me-1"></i> Започни
-                                                        </a>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <?php if ($hasAttempt): ?>
+                                            <a href="student_attempt.php?id=<?= $student['open_attempts_map'][$assign['id']] ?>"
+                                                class="btn btn-outline-secondary btn-sm rounded-pill px-4">Преглед на резултат</a>
+                                        <?php else: ?>
+                                            <a href="test_view.php?assignment_id=<?= $assign['id'] ?>&mode=take"
+                                                class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm">Започни тест <i
+                                                    class="bi bi-arrow-right ms-1"></i></a>
+                                        <?php endif; ?>
                                     </div>
-                                <?php endforeach; ?>
+                                    <div class="text-end text-muted small">
+                                        <?php if ($assign['due_at']): ?>
+                                            <div>Краен срок</div>
+                                            <div class="fw-bold"><?= format_date($assign['due_at'], 'd M H:i') ?></div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
                             </div>
-                        <?php endif; ?>
-                    </div>
-
-                    <!-- Recent Attempts -->
-                    <div class="glass-card p-4">
-                        <h4 class="mb-3"><i class="bi bi-clock-history text-secondary me-2"></i>История</h4>
-                        <?php if (empty($student['recent_attempts'])): ?>
-                            <div class="text-muted">Няма скорошни опити.</div>
-                        <?php else: ?>
-                            <div class="table-responsive">
-                                <table class="table align-middle">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Задание</th>
-                                            <th>Дата</th>
-                                            <th>Резултат</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($student['recent_attempts'] as $atp):
-                                            $pct = percent($atp['score_obtained'], $atp['max_score']);
-                                            $grd = grade_from_percent($pct);
-                                            ?>
-                                            <tr>
-                                                <td><?= htmlspecialchars($atp['assignment_title']) ?></td>
-                                                <td class="small text-muted">
-                                                    <?= format_date($atp['submitted_at'] ?: $atp['started_at']) ?></td>
-                                                <td>
-                                                    <a href="student_attempt.php?id=<?= $atp['id'] ?>" class="text-decoration-none">
-                                                        <span
-                                                            class="badge bg-<?= get_grade_color_class($grd) ?>-subtle text-<?= get_grade_color_class($grd) ?> border border-<?= get_grade_color_class($grd) ?>-subtle">
-                                                            <?= $grd ?? '—' ?>
-                                                        </span>
-                                                        <small class="ms-1 text-muted"><?= $pct !== null ? "($pct%)" : '' ?></small>
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        <?php endif; ?>
-                    </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
 
-                <!-- Right Column: Student Classes/Profile -->
-                <div class="col-lg-4">
-                    <div class="glass-card p-4">
-                        <h5 class="mb-3">Моите класове</h5>
-                        <?php if (empty($student['classes'])): ?>
-                            <div class="text-muted small">Не сте добавени в класове.</div>
-                        <?php else: ?>
-                            <div class="list-group list-group-flush">
-                                <?php foreach ($student['classes'] as $cls): ?>
-                                    <div class="list-group-item bg-transparent px-0">
-                                        <div class="fw-semibold">
-                                            <?= htmlspecialchars($cls['name'] ?: "Клас {$cls['grade']}{$cls['section']}") ?></div>
-                                        <div class="small text-muted"><?= $cls['school_year'] ?></div>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
+                <!-- THE HORIZON (Stats & History) -->
+                <div class="col-lg-5">
+                    <h5 class="fw-bold text-uppercase tracking-wider text-muted mb-4"><i
+                            class="bi bi-journal-richtext me-2"></i>История</h5>
 
-                        <div class="mt-4 pt-4 border-top">
-                            <a href="join_class.php" class="btn btn-outline-primary w-100">
-                                <i class="bi bi-person-plus me-2"></i>Присъедини се към клас
-                            </a>
+                    <div class="glass-card p-4 mb-4">
+                        <div class="row text-center">
+                            <div class="col-6 border-end">
+                                <div class="small text-muted text-uppercase tracking-wider mb-1">Среден успех</div>
+                                <div class="display-6 fw-bold text-primary"><?= $avgPercent ?></div>
+                            </div>
+                            <div class="col-6">
+                                <div class="small text-muted text-uppercase tracking-wider mb-1">Решени тестове</div>
+                                <div class="display-6 fw-bold"><?= count($student['recent_attempts'] ?? []) ?></div>
+                            </div>
                         </div>
+                    </div>
+
+                    <div class="list-group list-group-flush glass-card overflow-hidden">
+                        <?php foreach ($student['recent_attempts'] as $atp):
+                            $pct = percent($atp['score_obtained'], $atp['max_score']);
+                            $grd = grade_from_percent($pct);
+                            ?>
+                            <a href="student_attempt.php?id=<?= $atp['id'] ?>"
+                                class="list-group-item list-group-item-action bg-transparent p-3 d-flex justify-content-between align-items-center">
+                                <div class="text-truncate me-2">
+                                    <div class="fw-semibold"><?= htmlspecialchars($atp['assignment_title']) ?></div>
+                                    <div class="small text-muted"><?= format_date($atp['submitted_at']) ?></div>
+                                </div>
+                                <span
+                                    class="badge bg-<?= get_grade_color_class($grd) ?>-subtle text-<?= get_grade_color_class($grd) ?> rounded-pill fs-6"><?= $grd ?></span>
+                            </a>
+                        <?php endforeach; ?>
                     </div>
                 </div>
             </div>
