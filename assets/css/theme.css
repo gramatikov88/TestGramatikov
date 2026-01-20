@@ -111,6 +111,14 @@ h6 {
 .btn-primary {
     background-color: var(--tg-primary);
     border-color: var(--tg-primary);
+    color: #fff;
+    /* Default to white for Slate Blue */
+}
+
+[data-bs-theme="dark"] .btn-primary {
+    color: #0F172A;
+    /* Dark text for Light Slate primary in dark mode */
+    font-weight: 600;
 }
 
 .btn-primary:hover,

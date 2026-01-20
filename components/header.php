@@ -69,7 +69,8 @@ require_once __DIR__ . '/../config.php';
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button"
                                 data-bs-toggle="dropdown" aria-expanded="false">
-                                <span class="avatar-initials rounded-circle bg-primary bg-opacity-10 text-primary fw-bold"
+                                <span
+                                    class="avatar-initials rounded-circle bg-primary bg-opacity-10 text-primary fw-bold d-flex align-items-center justify-content-center"
                                     style="width: 32px; height: 32px; font-size: 0.8rem;">
                                     <?= mb_substr($_SESSION['user']['first_name'] ?? 'U', 0, 1) ?>
                                 </span>
