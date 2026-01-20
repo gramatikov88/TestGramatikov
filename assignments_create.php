@@ -102,6 +102,11 @@ if ($editing) {
     $form['student_ids'] = array_map('intval', array_column($chkS->fetchAll(), 'student_id'));
 }
 
+require_once __DIR__ . '/lib/AssignmentFactory.php';
+
+// Ensure tokens schema
+ensure_assignment_tokens($pdo);
+
 /* ------------------------------- POST -------------------------------- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Sticky от POST
@@ -132,78 +137,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$errors) {
         try {
-            $pdo->beginTransaction();
+            $factory = new AssignmentFactory($pdo);
+            $assignment_id = $factory->publish(
+                $user['id'],
+                $form,
+                $form['class_ids'],
+                $form['student_ids'],
+                $editing ? $assignment_id : null
+            );
 
-            $open_at = dt_from_input($form['open_at'] ?: null);
-            $due_at = dt_from_input($form['due_at'] ?: null);
-            $close_at = dt_from_input($form['close_at'] ?: null);
-
-            if ($editing) {
-                $stmt = $pdo->prepare('UPDATE assignments
-                    SET test_id=:test_id, title=:title, description=:description, is_published=:pub,
-                        open_at=:open_at, due_at=:due_at, close_at=:close_at,
-                        attempt_limit=:limitv, shuffle_questions=:shuffle
-                    WHERE id = :id AND assigned_by_teacher_id = :tid');
-                $stmt->execute([
-                    ':test_id' => $form['test_id'],
-                    ':title' => $form['title'],
-                    ':description' => $form['description'],
-                    ':pub' => $form['is_published'],
-                    ':open_at' => $open_at,
-                    ':due_at' => $due_at,
-                    ':close_at' => $close_at,
-                    ':limitv' => $form['attempt_limit'],
-                    ':shuffle' => $form['shuffle_questions'],
-                    ':id' => $assignment_id,
-                    ':tid' => $user['id'],
-                ]);
-
-                $pdo->prepare('DELETE FROM assignment_classes WHERE assignment_id = :id')->execute([':id' => $assignment_id]);
-                $pdo->prepare('DELETE FROM assignment_students WHERE assignment_id = :id')->execute([':id' => $assignment_id]);
-            } else {
-                $stmt = $pdo->prepare('
-                    INSERT INTO assignments
-                        (test_id, assigned_by_teacher_id, title, description, is_published,
-                         open_at, due_at, close_at, attempt_limit, shuffle_questions)
-                    VALUES
-                        (:test_id, :tid, :title, :description, :pub,
-                         :open_at, :due_at, :close_at, :limitv, :shuffle)
-                ');
-                $stmt->execute([
-                    ':test_id' => $form['test_id'],
-                    ':tid' => $user['id'],
-                    ':title' => $form['title'],
-                    ':description' => $form['description'],
-                    ':pub' => $form['is_published'],
-                    ':open_at' => $open_at,
-                    ':due_at' => $due_at,
-                    ':close_at' => $close_at,
-                    ':limitv' => $form['attempt_limit'],
-                    ':shuffle' => $form['shuffle_questions'],
-                ]);
-                $assignment_id = (int) $pdo->lastInsertId();
-                $editing = true;
-            }
-
-            // Targets
-            if ($form['class_ids']) {
-                $ins = $pdo->prepare('INSERT INTO assignment_classes (assignment_id, class_id) VALUES (:aid, :cid)');
-                foreach ($form['class_ids'] as $cid) {
-                    $ins->execute([':aid' => $assignment_id, ':cid' => $cid]);
-                }
-            }
-            if ($form['student_ids']) {
-                $ins = $pdo->prepare('INSERT INTO assignment_students (assignment_id, student_id) VALUES (:aid, :sid)');
-                foreach ($form['student_ids'] as $sid) {
-                    $ins->execute([':aid' => $assignment_id, ':sid' => $sid]);
-                }
-            }
-
-            $pdo->commit();
+            $editing = true;
             $saved = true;
+
+            // Reload stickies
+            // (Optional: Factory could return full object but lazy reload is fine)
         } catch (Throwable $e) {
-            if ($pdo->inTransaction())
-                $pdo->rollBack();
             $errors[] = 'Грешка при запис: ' . $e->getMessage();
         }
     }
@@ -364,7 +312,7 @@ if (isset($_GET['delete'])) {
                 <div class="scroll-area">
                     <?php foreach ($students as $s):
                         $isChecked = in_array((int) $s['id'], $form['student_ids'], true);
-                        $classIdsRaw = (string)($s['class_ids'] ?? '');
+                        $classIdsRaw = (string) ($s['class_ids'] ?? '');
                         $classIdsArr = $classIdsRaw !== '' ? array_filter(array_map('intval', explode(',', $classIdsRaw))) : [];
                         $classIdsAttr = htmlspecialchars(implode(' ', $classIdsArr));
                         ?>
@@ -429,45 +377,45 @@ if (isset($_GET['delete'])) {
                 <a class="text-decoration-none" href="contact.php">Контакт</a>
             </div>
         </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-    (function () {
-        const classCheckboxes = Array.from(document.querySelectorAll('input[name="class_ids[]"]'));
-        const studentRows = Array.from(document.querySelectorAll('[data-student-row]'));
-        if (!classCheckboxes.length || !studentRows.length) {
-            return;
-        }
-
-        function getSelectedClassIds() {
-            return classCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
-        }
-
-        function updateStudentVisibility() {
-            const selectedIds = getSelectedClassIds();
-            const hasSelection = selectedIds.length > 0;
-            studentRows.forEach(row => {
-                const checkbox = row.querySelector('input[type="checkbox"]');
-                const attr = (row.getAttribute('data-class-ids') || '').trim();
-                const rowClassIds = attr !== '' ? attr.split(/\s+/) : [];
-
-                const shouldShow = !hasSelection || rowClassIds.some(id => selectedIds.includes(id));
-
-                if (shouldShow) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                    if (checkbox) {
-                        checkbox.checked = false;
-                    }
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            (function () {
+                const classCheckboxes = Array.from(document.querySelectorAll('input[name="class_ids[]"]'));
+                const studentRows = Array.from(document.querySelectorAll('[data-student-row]'));
+                if (!classCheckboxes.length || !studentRows.length) {
+                    return;
                 }
-            });
-        }
 
-        classCheckboxes.forEach(cb => cb.addEventListener('change', updateStudentVisibility));
-        updateStudentVisibility();
-    })();
-    </script>
-</footer>
+                function getSelectedClassIds() {
+                    return classCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+                }
+
+                function updateStudentVisibility() {
+                    const selectedIds = getSelectedClassIds();
+                    const hasSelection = selectedIds.length > 0;
+                    studentRows.forEach(row => {
+                        const checkbox = row.querySelector('input[type="checkbox"]');
+                        const attr = (row.getAttribute('data-class-ids') || '').trim();
+                        const rowClassIds = attr !== '' ? attr.split(/\s+/) : [];
+
+                        const shouldShow = !hasSelection || rowClassIds.some(id => selectedIds.includes(id));
+
+                        if (shouldShow) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                            if (checkbox) {
+                                checkbox.checked = false;
+                            }
+                        }
+                    });
+                }
+
+                classCheckboxes.forEach(cb => cb.addEventListener('change', updateStudentVisibility));
+                updateStudentVisibility();
+            })();
+        </script>
+    </footer>
 </body>
 
 </html>
