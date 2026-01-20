@@ -305,7 +305,7 @@ if ($mode === 'take' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <?php if (in_array($q['qtype'], ['single_choice', 'true_false'], true)): ?>
                                     <?php foreach ($q['answers'] as $a): ?>
                                         <label
-                                            class="form-check p-3 rounded-3 border bg-white bg-opacity-50 hover-bg-light cursor-pointer transition-all">
+                                            class="form-check p-3 rounded-3 border bg-white bg-opacity-50 hover-bg-light cursor-pointer transition-all position-relative">
                                             <input class="form-check-input mt-1 me-2" type="radio" name="q_<?= (int) $q['id'] ?>"
                                                 value="<?= (int) $a['id'] ?>" <?= $mode === 'preview' ? 'disabled' : '' ?> />
                                             <span class="form-check-label stretched-link"><?= htmlspecialchars($a['content']) ?></span>
@@ -315,7 +315,7 @@ if ($mode === 'take' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <?php elseif ($q['qtype'] === 'multiple_choice'): ?>
                                     <?php foreach ($q['answers'] as $a): ?>
                                         <label
-                                            class="form-check p-3 rounded-3 border bg-white bg-opacity-50 hover-bg-light cursor-pointer transition-all">
+                                            class="form-check p-3 rounded-3 border bg-white bg-opacity-50 hover-bg-light cursor-pointer transition-all position-relative">
                                             <input class="form-check-input mt-1 me-2" type="checkbox" name="q_<?= (int) $q['id'] ?>[]"
                                                 value="<?= (int) $a['id'] ?>" <?= $mode === 'preview' ? 'disabled' : '' ?> />
                                             <span class="form-check-label stretched-link"><?= htmlspecialchars($a['content']) ?></span>
