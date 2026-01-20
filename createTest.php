@@ -29,7 +29,7 @@ function map_ui_to_qtype(string $ui): string
     return match ($ui) {
         'multiple' => 'multiple_choice',
         'true_false' => 'true_false',
-        'fill' => 'short_answer',
+        'fill', 'short_answer' => 'short_answer',
         default => 'single_choice'
     };
 }
@@ -310,6 +310,40 @@ $view = [
                 </div>
             </form>
         </div>
+
+        <!-- AI Modal -->
+        <div class="modal fade" id="aiModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content glass-card border-0 shadow-lg" style="background: rgba(255,255,255,0.95);">
+                    <div class="modal-header border-bottom-0">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="bg-warning rounded-circle p-2 d-flex align-items-center justify-content-center text-dark"
+                                style="width:40px;height:40px;">
+                                <i class="bi bi-stars fs-5"></i>
+                            </div>
+                            <h5 class="modal-title fw-bold">AI Генератор на въпроси</h5>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Въведете текст или тема</label>
+                            <textarea id="aiSourceText" class="form-control" rows="6"
+                                placeholder="Поставете текст от урок, статия или просто напишете тема (напр. 'Втора световна война')..."></textarea>
+                            <div class="form-text text-muted">AI ще анализира текста и ще предложи 3 въпроса.</div>
+                        </div>
+                        <!-- Future: Upload PDF here -->
+                    </div>
+                    <div class="modal-footer border-top-0">
+                        <button type="button" class="btn btn-link text-muted text-decoration-none"
+                            data-bs-dismiss="modal">Отказ</button>
+                        <button type="button" class="btn btn-dark rounded-pill px-4" onclick="runAiGeneration()">
+                            <i class="bi bi-magic me-2"></i> Генерирай
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <?php include __DIR__ . '/components/footer.php'; ?>
@@ -554,6 +588,20 @@ $view = [
         updateType = function (qIdx, val) {
             syncState();
             questions[qIdx].type = val;
+
+            if (val === 'true_false') {
+                questions[qIdx].answers = [
+                    { content: 'Вярно', is_correct: 1 },
+                    { content: 'Грешно', is_correct: 0 }
+                ];
+            } else if (val === 'single' || val === 'multiple') {
+                if (questions[qIdx].answers.length < 2) {
+                    questions[qIdx].answers = [
+                        { content: '', is_correct: 0 },
+                        { content: '', is_correct: 0 }
+                    ];
+                }
+            }
             renderQuestions();
         };
 
@@ -648,6 +696,54 @@ $view = [
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
+        }
+
+        // AI Mock Logic
+        function runAiGeneration() {
+            const text = document.getElementById('aiSourceText').value;
+            if (!text) { alert('Моля въведете текст.'); return; }
+
+            const btn = event.currentTarget;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Мисля...';
+
+            setTimeout(() => {
+                syncState();
+
+                // Mock Questions (Demo)
+                questions.push({
+                    content: 'Каква е основната идея на въведения текст?',
+                    type: 'single',
+                    points: 1,
+                    answers: [
+                        { content: 'Анализ на данни', is_correct: 1 },
+                        { content: 'Исторически преглед', is_correct: 0 },
+                        { content: 'Художествена измислица', is_correct: 0 }
+                    ]
+                });
+                questions.push({
+                    content: 'Текстът споменава ли конкретни дати?',
+                    type: 'true_false',
+                    points: 1,
+                    answers: [
+                        { content: 'Вярно', is_correct: 1 },
+                        { content: 'Грешно', is_correct: 0 }
+                    ]
+                });
+
+                renderQuestions();
+
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+
+                const modalEl = document.getElementById('aiModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+
+                // scroll to bottom
+                window.scrollTo(0, document.body.scrollHeight);
+            }, 1500);
         }
 
         // Initial Render
