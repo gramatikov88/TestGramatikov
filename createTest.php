@@ -166,19 +166,19 @@ $view = [
         </div>
 
         <?php if ($errors): ?>
-                <div class="alert alert-danger shadow-sm rounded-3">
-                    <ul class="mb-0 ps-3">
-                        <?php foreach ($errors as $e): ?>
-                                <li><?= htmlspecialchars($e) ?></li><?php endforeach; ?>
-                    </ul>
-                </div>
+            <div class="alert alert-danger shadow-sm rounded-3">
+                <ul class="mb-0 ps-3">
+                    <?php foreach ($errors as $e): ?>
+                        <li><?= htmlspecialchars($e) ?></li><?php endforeach; ?>
+                </ul>
+            </div>
         <?php endif; ?>
 
         <?php if ($saved): ?>
-                <div class="alert alert-success shadow-sm rounded-3">
-                    <i class="bi bi-check-circle-fill me-2"></i> Промените са запазени успешно. <a href="dashboard.php"
-                        class="alert-link">Към таблото</a>
-                </div>
+            <div class="alert alert-success shadow-sm rounded-3">
+                <i class="bi bi-check-circle-fill me-2"></i> Промените са запазени успешно. <a href="dashboard.php"
+                    class="alert-link">Към таблото</a>
+            </div>
         <?php endif; ?>
 
         <form method="post" enctype="multipart/form-data" id="createTestForm" class="row g-4">
@@ -212,8 +212,9 @@ $view = [
                         <select name="subject_id" class="form-select">
                             <option value="">-- Избери предмет --</option>
                             <?php foreach ($subjectChoices as $id => $name): ?>
-                                    <option value="<?= $id ?>" <?= (int) $view['subject_id'] === $id ? 'selected' : '' ?>>
-                                        <?= htmlspecialchars($name) ?></option>
+                                <option value="<?= $id ?>" <?= (int) $view['subject_id'] === $id ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($name) ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -319,41 +320,41 @@ $view = [
     </script>
 
     <script>
-    let questions = initialQuestions;
-    const container = document.getElementById('questions-container');
-    const emptyState = document.getElementById('empty-state');
+        let questions = initialQuestions;
+        const container = document.getElementById('questions-container');
+        const emptyState = document.getElementById('empty-state');
 
-    function renderQuestions() {
-        container.innerHTML = '';
-        if (questions.length === 0) {
-            container.appendChild(emptyState);
-            emptyState.style.display = 'block';
-            return;
-        }
-        emptyState.style.display = 'none';
+        function renderQuestions() {
+            container.innerHTML = '';
+            if (questions.length === 0) {
+                container.appendChild(emptyState);
+                emptyState.style.display = 'block';
+                return;
+            }
+            emptyState.style.display = 'none';
 
-        questions.forEach((q, idx) => {
-            const index = idx; // 0-based
-            const qNum = idx + 1;
-            
-            const card = document.createElement('div');
-            card.className = 'glass-card mb-4 position-relative question-item';
-            
-            // Build answers HTML
-            let answersHtml = '';
-            (q.answers || []).forEach((a, aIdx) => {
-                const isCorrectChecked = a.is_correct ? 'checked' : '';
-                // For radio/checkbox depending on type
-                const inputType = (q.type === 'single' || q.type === 'true_false') ? 'radio' : 'checkbox';
-                // Name for correctness: q[i][answers][j][is_correct]. 
-                // For radio groups (single choice), they must share name per question to be exclusive? 
-                // Actually usually cleaner to use hidden int input updated by js, or specific naming convention.
-                // Simple convention: questions[index][answers][aIdx][is_correct] value=1.
-                // For single choice, we might need a workaround for exclusive radio UI but separate hidden inputs, 
-                // OR just use same name 'questions[...][correct_idx]' value=aIdx.
-                // LET'S STICK to the existing PHP logic which expects: questions[i][answers][j][is_correct] (value 1 or empty).
-                
-                answersHtml += `
+            questions.forEach((q, idx) => {
+                const index = idx; // 0-based
+                const qNum = idx + 1;
+
+                const card = document.createElement('div');
+                card.className = 'glass-card mb-4 position-relative question-item';
+
+                // Build answers HTML
+                let answersHtml = '';
+                (q.answers || []).forEach((a, aIdx) => {
+                    const isCorrectChecked = a.is_correct ? 'checked' : '';
+                    // For radio/checkbox depending on type
+                    const inputType = (q.type === 'single' || q.type === 'true_false') ? 'radio' : 'checkbox';
+                    // Name for correctness: q[i][answers][j][is_correct]. 
+                    // For radio groups (single choice), they must share name per question to be exclusive? 
+                    // Actually usually cleaner to use hidden int input updated by js, or specific naming convention.
+                    // Simple convention: questions[index][answers][aIdx][is_correct] value=1.
+                    // For single choice, we might need a workaround for exclusive radio UI but separate hidden inputs, 
+                    // OR just use same name 'questions[...][correct_idx]' value=aIdx.
+                    // LET'S STICK to the existing PHP logic which expects: questions[i][answers][j][is_correct] (value 1 or empty).
+
+                    answersHtml += `
                     <div class="input-group mb-2">
                         <div class="input-group-text bg-white bg-opacity-50">
                             <input class="form-check-input mt-0" type="${inputType}" 
@@ -367,9 +368,9 @@ $view = [
                         <button class="btn btn-outline-danger bg-white bg-opacity-50" type="button" onclick="removeAnswer(${index}, ${aIdx})"><i class="bi bi-trash"></i></button>
                     </div>
                 `;
-            });
+                });
 
-            card.innerHTML = `
+                card.innerHTML = `
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-3">Въпрос ${qNum}</span>
@@ -424,178 +425,234 @@ $view = [
                     </div>
                 </div>
             `;
-            container.appendChild(card);
-        });
-    }
-
-    function addQuestion() {
-        questions.push({
-            content: '',
-            type: 'single',
-            points: 1,
-            answers: [
-                {content: '', is_correct: 0}, 
-                {content: '', is_correct: 0}
-            ],
-            media_url: ''
-        });
-        renderQuestions();
-    }
-
-    function removeQuestion(idx) {
-        if (!confirm('Сигурни ли сте, че искате да изтриете този въпрос?')) return;
-        questions.splice(idx, 1);
-        renderQuestions();
-    }
-
-    function updateType(qIdx, newType) {
-        questions[qIdx].type = newType;
-        renderQuestions(); // Re-render to update inputs (radios vs checkbox)
-    }
-
-    function addAnswer(qIdx) {
-        questions[qIdx].answers.push({content: '', is_correct: 0});
-        renderQuestions();
-    }
-
-    function removeAnswer(qIdx, aIdx) {
-        questions[qIdx].answers.splice(aIdx, 1);
-        renderQuestions();
-    }
-
-    // Helper to update state from DOM to keep 'questions' array in sync isn't strictly needed 
-    // if we just rely on form submission, BUT for re-rendering (adding/removing stuff) 
-    // we need the array to remain authoritative. 
-    // Thus, simpler approach: "Dump" array to DOM, but when user types, how does array update?
-    // Actually, simpler is to NOT fully re-render on every keystroke, only on structural changes.
-    // However, keeping array in sync with Inputs is tedious without a framework (React/Vue).
-    // ALTERNATIVE: Just render once. "Add Question" appends. "Remove" removes element.
-    // Renumbering indices for PHP array parsing is tricky if gaps exist.
-    // PHP handles nested key gaps fine? No, `questions[0]... questions[2]` results in array with keys 0 and 2. 
-    // `array_values` in PHP backend handles it? 
-    // looking at `createTest.php` logic: `$questions = $_POST['questions'] ?? []; foreach($questions as $idx => $q)...`
-    // So gaps are fine, it iterates whatever keys come in.
-    
-    // So better approach for this Vanilla JS:
-    // 1. Render initial
-    // 2. Add functions append HTML manually instead of full re-render.
-    // 3. This loses the "reactive" sync but is much more stable for a simple script.
-    
-    // RE-WRITING render logic to be "Append Only" for new items, and "Initial Render" for load.
-    
-    // Wait, let's stick to the simplest working version. 
-    // Since I already wrote `renderQuestions` that wipes container, I must ensure state is up to date before re-renders.
-    // This requires reading ALL inputs back into object before render.
-    
-    function syncState() {
-        const renderedCards = container.querySelectorAll('.question-item');
-        const newState = [];
-        renderedCards.forEach((card, idx) => {
-            const content = card.querySelector(`textarea[name^="questions"]`).value;
-            const type = card.querySelector(`select[name^="questions"]`).value;
-            const points = card.querySelector(`input[name^="questions"][name$="[points]"]`).value;
-            // Existing media fields
-            const existingMediaUrlInput = card.querySelector(`input[name$="[existing_media_url]"]`);
-            const existingMediaUrl = existingMediaUrlInput ? existingMediaUrlInput.value : '';
-            
-            // Answers
-            const answers = [];
-            const ansRows = card.querySelectorAll(`.input-group`);
-            ansRows.forEach(row => {
-                const txt = row.querySelector(`input[type="text"]`).value;
-                const isCorr = row.querySelector(`.is-correct-hidden`).value == '1';
-                answers.push({content: txt, is_correct: isCorr});
+                container.appendChild(card);
             });
-            
-            newState.push({
-                content: content,
-                type: type,
-                points: points,
-                answers: answers,
-                media_url: existingMediaUrl
-            });
-        });
-        questions = newState;
-    }
-
-    // Wrap structural changes in sync
-    const originalAddQ = addQuestion;
-    addQuestion = function() {
-        syncState();
-        questions.push({content:'', type:'single', points:1, answers:[{content:'', is_correct:0}, {content:'', is_correct:0}]});
-        renderQuestions();
-        window.scrollTo(0, document.body.scrollHeight);
-    };
-
-    const originalRemoveQ = removeQuestion;
-    removeQuestion = function(idx) {
-        if (!confirm('Сигурни ли сте?')) return;
-        syncState();
-        questions.splice(idx, 1);
-        renderQuestions();
-    };
-    
-    const originalAddA = addAnswer;
-    addAnswer = function(qIdx) {
-        syncState();
-        questions[qIdx].answers.push({content:'', is_correct:0});
-        renderQuestions();
-    };
-    
-    const originalRemoveA = removeAnswer;
-    removeAnswer = function(qIdx, aIdx) {
-        syncState();
-        questions[qIdx].answers.splice(aIdx, 1);
-        renderQuestions();
-    };
-
-    const originalUpdateType = updateType;
-    updateType = function(qIdx, val) {
-        syncState();
-        questions[qIdx].type = val;
-        renderQuestions();
-    };
-
-    // Update Hidden Input for correctness when radio/checkbox changes
-    window.updateCorrect = function(qIdx, aIdx, checked) {
-        // If single/true_false, uncheck others in data model?
-        // syncState will read the DOM state.
-        // For radio behavior visual:
-        const inputs = document.querySelectorAll(`input[name="q_correct_${qIdx}"]`);
-        const type = questions[qIdx].type;
-        
-        if (type === 'single' || type === 'true_false') {
-            // Uncheck others in DOM
-             inputs.forEach(inp => {
-                 if (inp !== event.target) inp.checked = false;
-             });
-             // Update hidden fields
-             const hiddenInputs = document.querySelectorAll(`input[name^="questions[${qIdx}][answers]"][name$="[is_correct]"]`);
-             hiddenInputs.forEach((h, idx) => {
-                 h.value = (idx === aIdx && checked) ? 1 : 0;
-             });
-        } else {
-             // For multiple, just toggle this one
-             const hidden = document.querySelector(`input[name="questions[${qIdx}][answers][${aIdx}][is_correct]"]`);
-             if(hidden) hidden.value = checked ? 1 : 0;
         }
-    };
 
-    // Utils
-    function escapeHtml(text) {
-        if (!text) return '';
-        return text
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
+        function addQuestion() {
+            questions.push({
+                content: '',
+                type: 'single',
+                points: 1,
+                answers: [
+                    { content: '', is_correct: 0 },
+                    { content: '', is_correct: 0 }
+                ],
+                media_url: ''
+            });
+            renderQuestions();
+        }
 
-    // Initial Render
-    renderQuestions();
+        function removeQuestion(idx) {
+            if (!confirm('Сигурни ли сте, че искате да изтриете този въпрос?')) return;
+            questions.splice(idx, 1);
+            renderQuestions();
+        }
 
-</script>
+        function updateType(qIdx, newType) {
+            questions[qIdx].type = newType;
+            renderQuestions(); // Re-render to update inputs (radios vs checkbox)
+        }
+
+        function addAnswer(qIdx) {
+            questions[qIdx].answers.push({ content: '', is_correct: 0 });
+            renderQuestions();
+        }
+
+        function removeAnswer(qIdx, aIdx) {
+            questions[qIdx].answers.splice(aIdx, 1);
+            renderQuestions();
+        }
+
+        // Helper to update state from DOM to keep 'questions' array in sync isn't strictly needed 
+        // if we just rely on form submission, BUT for re-rendering (adding/removing stuff) 
+        // we need the array to remain authoritative. 
+        // Thus, simpler approach: "Dump" array to DOM, but when user types, how does array update?
+        // Actually, simpler is to NOT fully re-render on every keystroke, only on structural changes.
+        // However, keeping array in sync with Inputs is tedious without a framework (React/Vue).
+        // ALTERNATIVE: Just render once. "Add Question" appends. "Remove" removes element.
+        // Renumbering indices for PHP array parsing is tricky if gaps exist.
+        // PHP handles nested key gaps fine? No, `questions[0]... questions[2]` results in array with keys 0 and 2. 
+        // `array_values` in PHP backend handles it? 
+        // looking at `createTest.php` logic: `$questions = $_POST['questions'] ?? []; foreach($questions as $idx => $q)...`
+        // So gaps are fine, it iterates whatever keys come in.
+
+        // So better approach for this Vanilla JS:
+        // 1. Render initial
+        // 2. Add functions append HTML manually instead of full re-render.
+        // 3. This loses the "reactive" sync but is much more stable for a simple script.
+
+        // RE-WRITING render logic to be "Append Only" for new items, and "Initial Render" for load.
+
+        // Wait, let's stick to the simplest working version. 
+        // Since I already wrote `renderQuestions` that wipes container, I must ensure state is up to date before re-renders.
+        // This requires reading ALL inputs back into object before render.
+
+        function syncState() {
+            const renderedCards = container.querySelectorAll('.question-item');
+            const newState = [];
+            renderedCards.forEach((card, idx) => {
+                const content = card.querySelector(`textarea[name^="questions"]`).value;
+                const type = card.querySelector(`select[name^="questions"]`).value;
+                const points = card.querySelector(`input[name^="questions"][name$="[points]"]`).value;
+                // Existing media fields
+                const existingMediaUrlInput = card.querySelector(`input[name$="[existing_media_url]"]`);
+                const existingMediaUrl = existingMediaUrlInput ? existingMediaUrlInput.value : '';
+
+                // Answers
+                const answers = [];
+                const ansRows = card.querySelectorAll(`.input-group`);
+                ansRows.forEach(row => {
+                    const txt = row.querySelector(`input[type="text"]`).value;
+                    const isCorr = row.querySelector(`.is-correct-hidden`).value == '1';
+                    answers.push({ content: txt, is_correct: isCorr });
+                });
+
+                newState.push({
+                    content: content,
+                    type: type,
+                    points: points,
+                    answers: answers,
+                    media_url: existingMediaUrl
+                });
+            });
+            questions = newState;
+        }
+
+        // Wrap structural changes in sync
+        const originalAddQ = addQuestion;
+        addQuestion = function () {
+            syncState();
+            questions.push({ content: '', type: 'single', points: 1, answers: [{ content: '', is_correct: 0 }, { content: '', is_correct: 0 }] });
+            renderQuestions();
+            window.scrollTo(0, document.body.scrollHeight);
+        };
+
+        const originalRemoveQ = removeQuestion;
+        removeQuestion = function (idx) {
+            if (!confirm('Сигурни ли сте?')) return;
+            syncState();
+            questions.splice(idx, 1);
+            renderQuestions();
+        };
+
+        const originalAddA = addAnswer;
+        addAnswer = function (qIdx) {
+            syncState();
+            questions[qIdx].answers.push({ content: '', is_correct: 0 });
+            renderQuestions();
+        };
+
+        const originalRemoveA = removeAnswer;
+        removeAnswer = function (qIdx, aIdx) {
+            syncState();
+            questions[qIdx].answers.splice(aIdx, 1);
+            renderQuestions();
+        };
+
+        const originalUpdateType = updateType;
+        updateType = function (qIdx, val) {
+            syncState();
+            questions[qIdx].type = val;
+            renderQuestions();
+        };
+
+        // Update Hidden Input for correctness when radio/checkbox changes
+        window.updateCorrect = function (qIdx, aIdx, checked) {
+            // If single/true_false, uncheck others in data model?
+            // syncState will read the DOM state.
+            // For radio behavior visual:
+            const inputs = document.querySelectorAll(`input[name="q_correct_${qIdx}"]`);
+            const type = questions[qIdx].type;
+
+            if (type === 'single' || type === 'true_false') {
+                // Uncheck others in DOM
+                inputs.forEach(inp => {
+                    if (inp !== event.target) inp.checked = false;
+                });
+                // Update hidden fields
+                const hiddenInputs = document.querySelectorAll(`input[name^="questions[${qIdx}][answers]"][name$="[is_correct]"]`);
+                hiddenInputs.forEach((h, idx) => {
+                    h.value = (idx === aIdx && checked) ? 1 : 0;
+                });
+            } else {
+                // For multiple, just toggle this one
+                const hidden = document.querySelector(`input[name="questions[${qIdx}][answers][${aIdx}][is_correct]"]`);
+                if (hidden) hidden.value = checked ? 1 : 0;
+            }
+        };
+
+        // Wizard Logic
+        function goToStep(step) {
+            // Validation Step 1
+            if (step === 2) {
+                const title = document.getElementById('inpTitle').value.trim();
+                if (!title) {
+                    alert('Моля, въведете заглавие на теста.');
+                    return;
+                }
+            }
+            // Validation Step 3 (Sync)
+            if (step === 3) {
+                syncState(); // Ensure questions array is fresh
+                if (questions.length === 0) {
+                    alert('Моля, добавете поне един въпрос.');
+                    return;
+                }
+                updateSummary();
+            }
+
+            // Toggle UI
+            document.querySelectorAll('.wizard-step').forEach(el => el.classList.add('d-none'));
+            document.getElementById('step-' + step).classList.remove('d-none');
+
+            // Progress Bar
+            const progress = document.getElementById('wizardProgress');
+            const ind2 = document.getElementById('step2-indicator');
+            const ind3 = document.getElementById('step3-indicator');
+
+            if (step === 1) {
+                progress.style.width = '0%';
+                ind2.classList.remove('btn-primary', 'text-white'); ind2.classList.add('btn-light', 'text-dark');
+                ind3.classList.remove('btn-primary', 'text-white'); ind3.classList.add('btn-light', 'text-dark');
+            } else if (step === 2) {
+                progress.style.width = '50%';
+                ind2.classList.remove('btn-light', 'text-dark'); ind2.classList.add('btn-primary', 'text-white');
+                ind3.classList.remove('btn-primary', 'text-white'); ind3.classList.add('btn-light', 'text-dark');
+            } else if (step === 3) {
+                progress.style.width = '100%';
+                ind2.classList.remove('btn-light', 'text-dark'); ind2.classList.add('btn-primary', 'text-white');
+                ind3.classList.remove('btn-light', 'text-dark'); ind3.classList.add('btn-primary', 'text-white');
+            }
+
+            window.scrollTo(0, 0);
+        }
+
+        function updateSummary() {
+            document.getElementById('summaryTitle').textContent = document.getElementById('inpTitle').value;
+            const pts = questions.reduce((acc, q) => acc + parseFloat(q.points || 0), 0);
+            document.getElementById('summaryCount').textContent = `${questions.length} въпроса • Общо ${pts} точки`;
+        }
+
+        function validateForm() {
+            syncState(); // Ensure final state is captured
+            return true;
+        }
+
+        // Utils
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Initial Render
+        renderQuestions();
+    </script>
 </body>
 
 </html>
