@@ -270,46 +270,83 @@ $heroSubtitle = $user['role'] === 'teacher'
                                 class="bi bi-plus-lg me-1"></i> Нов Тест</a>
                     </div>
 
-                    <!-- Ungraded Assignments Stack -->
-                    <?php
-                    // Find assignments with ungraded answers
-                    // Logic derived from dashboard fetching but focused on "Actionable"
-                    $actionableStmt = $pdo->prepare("
-                            SELECT a.id, a.title, t.title as test_title, c.name as class_name, c.grade, c.section,
+<!-- Smart-Engine: The "Now" Stream -->
+                    <?php 
+                        // Status Clarity Algorithm:
+                        // 1. Burning (Priority 100): Valid Assignment + internal ungraded answers > 0
+                        // 2. Active (Priority 50): Valid Assignment + Now < Due Date
+                        // 3. Zombie (Priority 0): Expired + All Graded -> Hidden from "Now" (To History/Archived)
+
+                        $now = date('Y-m-d H:i:s');
+                        $smartStmt = $pdo->prepare("
+                            SELECT a.id, a.title, a.due_at, t.title as test_title, c.name as class_name, c.grade, c.section,
                                    (SELECT COUNT(DISTINCT aa.attempt_id) 
                                     FROM attempt_answers aa 
                                     JOIN attempts atp ON atp.id = aa.attempt_id 
-                                    WHERE atp.assignment_id = a.id AND aa.score_awarded IS NULL) as needs_grading_count
+                                    WHERE atp.assignment_id = a.id AND aa.score_awarded IS NULL) as needs_grading_count,
+                                   (SELECT COUNT(*) FROM attempts atp WHERE atp.assignment_id = a.id) as total_attempts
                             FROM assignments a 
                             JOIN tests t ON t.id = a.test_id
                             LEFT JOIN assignment_classes ac ON ac.assignment_id = a.id
                             LEFT JOIN classes c ON c.id = ac.class_id
                             WHERE a.assigned_by_teacher_id = :tid
-                            HAVING needs_grading_count > 0
-                            ORDER BY needs_grading_count DESC
-                            LIMIT 5
+                            -- Filter out Zombies (Expired AND No Grading Needed)
+                            AND (
+                                (a.due_at IS NOT NULL AND a.due_at > :now) -- Still active
+                                OR 
+                                (SELECT COUNT(DISTINCT aa.attempt_id) 
+                                 FROM attempt_answers aa 
+                                 JOIN attempts atp ON atp.id = aa.attempt_id 
+                                 WHERE atp.assignment_id = a.id AND aa.score_awarded IS NULL) > 0 -- Needs grading (even if expired)
+                            )
+                            ORDER BY 
+                                (needs_grading_count > 0) DESC, -- Burning first
+                                a.due_at ASC -- Then by nearest deadline
+                            LIMIT 10
                         ");
-                    $actionableStmt->execute([':tid' => $user['id']]);
-                    $gradingQueue = $actionableStmt->fetchAll();
+                        $smartStmt->execute([':tid' => $user['id'], ':now' => $now]);
+                        $streamItems = $smartStmt->fetchAll();
                     ?>
 
-                    <?php if ($gradingQueue): ?>
-                        <?php foreach ($gradingQueue as $qv): ?>
-                            <div class="glass-card p-4 mb-3 border-start border-4 border-warning hover-lift animate-fade-up">
+                    <?php if ($streamItems): ?>
+                        <?php foreach($streamItems as $item): 
+                            // Determine State
+                            $isBurning = $item['needs_grading_count'] > 0;
+                            // If not burning but shown here, it's Active/Monitoring
+                        ?>
+                            <div class="glass-card p-4 mb-3 border-start border-4 <?= $isBurning ? 'border-warning' : 'border-primary' ?> hover-lift animate-fade-up">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-warning small fw-bold text-uppercase mb-1"><i
-                                                class="bi bi-hourglass-split me-1"></i> Чака оценка</div>
-                                        <h5 class="fw-bold mb-1"><?= htmlspecialchars($qv['title']) ?></h5>
-                                        <div class="text-muted small">
-                                            <?= htmlspecialchars($qv['class_name'] ?: ($qv['grade'] . $qv['section'])) ?> •
-                                            <?= htmlspecialchars($qv['test_title']) ?></div>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <!-- State Icon -->
+                                        <div class="rounded-circle p-3 d-flex align-items-center justify-content-center <?= $isBurning ? 'bg-warning bg-opacity-10 text-warning' : 'bg-primary bg-opacity-10 text-primary' ?>" style="width: 50px; height: 50px;">
+                                            <i class="bi <?= $isBurning ? 'bi-fire' : 'bi-activity' ?> fs-4"></i>
+                                        </div>
+                                        
+                                        <div>
+                                            <div class="<?= $isBurning ? 'text-warning' : 'text-primary' ?> small fw-bold text-uppercase mb-1 tracking-wider">
+                                                <?= $isBurning ? 'Изисква Оценка' : 'Активен' ?>
+                                            </div>
+                                            <h5 class="fw-bold mb-1"><?= htmlspecialchars($item['title']) ?></h5>
+                                            <div class="text-muted small">
+                                                <?= htmlspecialchars($item['class_name'] ?: ($item['grade'] . $item['section'])) ?> • <?= htmlspecialchars($item['test_title']) ?>
+                                                <?php if($item['due_at']): ?>
+                                                    <span class="mx-1">•</span> <i class="bi bi-clock"></i> <?= format_date($item['due_at']) ?>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
                                     </div>
+
                                     <div class="text-end">
-                                        <div class="h2 fw-bold mb-0 text-primary"><?= $qv['needs_grading_count'] ?></div>
-                                        <div class="small text-muted mb-3">отговора</div>
-                                        <a href="grading_batch.php?assignment_id=<?= $qv['id'] ?>"
-                                            class="btn btn-outline-primary btn-sm rounded-pill px-3 stretched-link">Оцени всички</a>
+                                        <?php if ($isBurning): ?>
+                                            <div class="h2 fw-bold mb-0 text-dark"><?= $item['needs_grading_count'] ?></div>
+                                            <div class="small text-muted mb-3">за проверка</div>
+                                            <a href="grading_batch.php?assignment_id=<?= $item['id'] ?>" class="btn btn-warning btn-sm rounded-pill px-4 text-dark fw-bold stretched-link">Оцени</a>
+                                        <?php else: ?>
+                                            <div class="h2 fw-bold mb-0 text-dark"><?= $item['total_attempts'] ?></div>
+                                            <div class="small text-muted mb-3">предадени</div>
+                                            <!-- Future: Link to a "Monitor" page or Results page -->
+                                            <a href="#" class="btn btn-outline-primary btn-sm rounded-pill px-4 stretched-link">Мониторинг</a>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
@@ -317,11 +354,12 @@ $heroSubtitle = $user['role'] === 'teacher'
                     <?php else: ?>
                         <!-- Zero Inbox State -->
                         <div class="glass-card p-5 text-center mb-4 border-success border-opacity-25 bg-success bg-opacity-10">
-                            <i class="bi bi-cup-hot display-4 text-success opacity-50 mb-3"></i>
-                            <h5 class="fw-bold text-success">Всичко е оценено!</h5>
-                            <p class="text-muted small">Няма спешни задачи за проверка. Наслади се на кафето.</p>
+                            <i class="bi bi-check-circle-fill display-4 text-success opacity-50 mb-3"></i>
+                            <h5 class="fw-bold text-success">Всичко е спокойно!</h5>
+                            <p class="text-muted small">Няма спешни задачи или активни тестове в момента.</p>
                         </div>
                     <?php endif; ?>
+
 
                     <!-- Active Classes (Running Tests) -->
                     <!-- Placeholder for "Live" monitoring if we had it, strictly "Now" context -->
@@ -336,8 +374,11 @@ $heroSubtitle = $user['role'] === 'teacher'
                     <div class="glass-card p-0 overflow-hidden mb-4">
                         <div
                             class="p-3 border-bottom bg-white bg-opacity-25 d-flex justify-content-between align-items-center">
-                            <span class="fw-bold small text-muted">ПОСЛЕДНИ ТЕСТОВЕ</span>
-                            <a href="tests.php" class="text-decoration-none small">Всички</a>
+                            <span class="fw-bold small text-muted">БИБЛИОТЕКА / ШАБЛОНИ</span>
+                            <div class="d-flex gap-3">
+                                <a href="assignments.php?view=history" class="text-decoration-none small text-secondary">Архив</a>
+                                <a href="tests.php" class="text-decoration-none small">Всички</a>
+                            </div>
                         </div>
                         <div class="list-group list-group-flush">
                             <?php foreach ($teacher['tests'] as $testRow): ?>
