@@ -130,13 +130,13 @@ h6 {
     border-color: var(--tg-primary);
 }
 
-/* Utilities */
+/* Utilities - Fixing Opacity Support */
 .text-primary {
     color: var(--tg-primary) !important;
 }
 
 .bg-primary {
-    background-color: var(--tg-primary) !important;
+    background-color: rgba(var(--tg-primary-rgb), var(--bs-bg-opacity, 1)) !important;
 }
 
 .text-success {
@@ -144,7 +144,7 @@ h6 {
 }
 
 .bg-success {
-    background-color: var(--tg-success) !important;
+    background-color: rgba(var(--tg-success-rgb), var(--bs-bg-opacity, 1)) !important;
 }
 
 .text-danger {
@@ -152,7 +152,23 @@ h6 {
 }
 
 .bg-danger {
-    background-color: var(--tg-danger) !important;
+    background-color: rgba(var(--tg-danger-rgb), var(--bs-bg-opacity, 1)) !important;
+}
+
+.text-warning {
+    color: var(--tg-warning) !important;
+}
+
+.bg-warning {
+    background-color: rgba(var(--tg-warning-rgb), var(--bs-bg-opacity, 1)) !important;
+}
+
+.text-info {
+    color: var(--tg-info) !important;
+}
+
+.bg-info {
+    background-color: rgba(var(--tg-info-rgb), var(--bs-bg-opacity, 1)) !important;
 }
 
 /* Subtleties */
