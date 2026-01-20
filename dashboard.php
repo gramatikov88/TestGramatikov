@@ -256,7 +256,8 @@ $heroSubtitle = $user['role'] === 'teacher'
         <div class="mb-5 animate-fade-up">
             <h1 class="display-6 fw-bold mb-1">Здравей, <?= htmlspecialchars($user['first_name']) ?>.</h1>
             <p class="text-muted lead">
-                <?= $user['role'] === 'teacher' ? 'Ето какво изисква внимание днес.' : 'Твоят прогрес и задачи.' ?></p>
+                <?= $user['role'] === 'teacher' ? 'Ето какво изисква внимание днес.' : 'Твоят прогрес и задачи.' ?>
+            </p>
         </div>
 
         <?php if ($user['role'] === 'teacher'): ?>
@@ -270,15 +271,15 @@ $heroSubtitle = $user['role'] === 'teacher'
                                 class="bi bi-plus-lg me-1"></i> Нов Тест</a>
                     </div>
 
-<!-- Smart-Engine: The "Now" Stream -->
-                    <?php 
-                        // Status Clarity Algorithm:
-                        // 1. Burning (Priority 100): Valid Assignment + internal ungraded answers > 0
-                        // 2. Active (Priority 50): Valid Assignment + Now < Due Date
-                        // 3. Zombie (Priority 0): Expired + All Graded -> Hidden from "Now" (To History/Archived)
-
-                        $now = date('Y-m-d H:i:s');
-                        $smartStmt = $pdo->prepare("
+                    <!-- Smart-Engine: The "Now" Stream -->
+                    <?php
+                    // Status Clarity Algorithm:
+                    // 1. Burning (Priority 100): Valid Assignment + internal ungraded answers > 0
+                    // 2. Active (Priority 50): Valid Assignment + Now < Due Date
+                    // 3. Zombie (Priority 0): Expired + All Graded -> Hidden from "Now" (To History/Archived)
+                
+                    $now = date('Y-m-d H:i:s');
+                    $smartStmt = $pdo->prepare("
                             SELECT a.id, a.title, a.due_at, t.title as test_title, c.name as class_name, c.grade, c.section,
                                    (SELECT COUNT(DISTINCT aa.attempt_id) 
                                     FROM attempt_answers aa 
@@ -304,33 +305,38 @@ $heroSubtitle = $user['role'] === 'teacher'
                                 a.due_at ASC -- Then by nearest deadline
                             LIMIT 10
                         ");
-                        $smartStmt->execute([':tid' => $user['id'], ':now' => $now]);
-                        $streamItems = $smartStmt->fetchAll();
+                    $smartStmt->execute([':tid' => $user['id'], ':now' => $now]);
+                    $streamItems = $smartStmt->fetchAll();
                     ?>
 
                     <?php if ($streamItems): ?>
-                        <?php foreach($streamItems as $item): 
+                        <?php foreach ($streamItems as $item):
                             // Determine State
                             $isBurning = $item['needs_grading_count'] > 0;
                             // If not burning but shown here, it's Active/Monitoring
-                        ?>
-                            <div class="glass-card p-4 mb-3 border-start border-4 <?= $isBurning ? 'border-warning' : 'border-primary' ?> hover-lift animate-fade-up">
+                            ?>
+                            <div
+                                class="glass-card p-4 mb-3 border-start border-4 <?= $isBurning ? 'border-warning' : 'border-primary' ?> hover-lift animate-fade-up">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div class="d-flex align-items-center gap-3">
                                         <!-- State Icon -->
-                                        <div class="rounded-circle p-3 d-flex align-items-center justify-content-center <?= $isBurning ? 'bg-warning bg-opacity-10 text-warning' : 'bg-primary bg-opacity-10 text-primary' ?>" style="width: 50px; height: 50px;">
+                                        <div class="rounded-circle p-3 d-flex align-items-center justify-content-center <?= $isBurning ? 'bg-warning bg-opacity-10 text-warning' : 'bg-primary bg-opacity-10 text-primary' ?>"
+                                            style="width: 50px; height: 50px;">
                                             <i class="bi <?= $isBurning ? 'bi-fire' : 'bi-activity' ?> fs-4"></i>
                                         </div>
-                                        
+
                                         <div>
-                                            <div class="<?= $isBurning ? 'text-warning' : 'text-primary' ?> small fw-bold text-uppercase mb-1 tracking-wider">
+                                            <div
+                                                class="<?= $isBurning ? 'text-warning' : 'text-primary' ?> small fw-bold text-uppercase mb-1 tracking-wider">
                                                 <?= $isBurning ? 'Изисква Оценка' : 'Активен' ?>
                                             </div>
                                             <h5 class="fw-bold mb-1"><?= htmlspecialchars($item['title']) ?></h5>
                                             <div class="text-muted small">
-                                                <?= htmlspecialchars($item['class_name'] ?: ($item['grade'] . $item['section'])) ?> • <?= htmlspecialchars($item['test_title']) ?>
-                                                <?php if($item['due_at']): ?>
-                                                    <span class="mx-1">•</span> <i class="bi bi-clock"></i> <?= format_date($item['due_at']) ?>
+                                                <?= htmlspecialchars($item['class_name'] ?: ($item['grade'] . $item['section'])) ?>
+                                                • <?= htmlspecialchars($item['test_title']) ?>
+                                                <?php if ($item['due_at']): ?>
+                                                    <span class="mx-1">•</span> <i class="bi bi-clock"></i>
+                                                    <?= format_date($item['due_at']) ?>
                                                 <?php endif; ?>
                                             </div>
                                         </div>
@@ -338,14 +344,16 @@ $heroSubtitle = $user['role'] === 'teacher'
 
                                     <div class="text-end">
                                         <?php if ($isBurning): ?>
-                                            <div class="h2 fw-bold mb-0 text-dark"><?= $item['needs_grading_count'] ?></div>
+                                            <div class="h2 fw-bold mb-0 text-body"><?= $item['needs_grading_count'] ?></div>
                                             <div class="small text-muted mb-3">за проверка</div>
-                                            <a href="grading_batch.php?assignment_id=<?= $item['id'] ?>" class="btn btn-warning btn-sm rounded-pill px-4 text-dark fw-bold stretched-link">Оцени</a>
+                                            <a href="grading_batch.php?assignment_id=<?= $item['id'] ?>"
+                                                class="btn btn-warning btn-sm rounded-pill px-4 text-dark fw-bold stretched-link">Оцени</a>
                                         <?php else: ?>
-                                            <div class="h2 fw-bold mb-0 text-dark"><?= $item['total_attempts'] ?></div>
+                                            <div class="h2 fw-bold mb-0 text-body"><?= $item['total_attempts'] ?></div>
                                             <div class="small text-muted mb-3">предадени</div>
                                             <!-- Future: Link to a "Monitor" page or Results page -->
-                                            <a href="#" class="btn btn-outline-primary btn-sm rounded-pill px-4 stretched-link">Мониторинг</a>
+                                            <a href="#"
+                                                class="btn btn-outline-primary btn-sm rounded-pill px-4 stretched-link">Мониторинг</a>
                                         <?php endif; ?>
                                     </div>
                                 </div>
@@ -376,7 +384,8 @@ $heroSubtitle = $user['role'] === 'teacher'
                             class="p-3 border-bottom bg-white bg-opacity-25 d-flex justify-content-between align-items-center">
                             <span class="fw-bold small text-muted">БИБЛИОТЕКА / ШАБЛОНИ</span>
                             <div class="d-flex gap-3">
-                                <a href="assignments.php?view=history" class="text-decoration-none small text-secondary">Архив</a>
+                                <a href="assignments.php?view=history"
+                                    class="text-decoration-none small text-secondary">Архив</a>
                                 <a href="tests.php" class="text-decoration-none small">Всички</a>
                             </div>
                         </div>
@@ -385,7 +394,7 @@ $heroSubtitle = $user['role'] === 'teacher'
                                 <div
                                     class="list-group-item bg-transparent p-3 border-light d-flex justify-content-between align-items-center">
                                     <div class="text-truncate me-2">
-                                        <div class="fw-semibold text-dark"><?= htmlspecialchars($testRow['title']) ?></div>
+                                        <div class="fw-semibold text-body"><?= htmlspecialchars($testRow['title']) ?></div>
                                         <div class="small text-muted"><?= format_date($testRow['updated_at']) ?></div>
                                     </div>
                                     <a href="createTest.php?id=<?= $testRow['id'] ?>"
