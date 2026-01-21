@@ -181,106 +181,171 @@ $view = [
             </div>
         <?php endif; ?>
 
-        <form method="post" enctype="multipart/form-data" id="createTestForm" class="row g-4">
+        <!-- Wizard Progress -->
+        <div class="position-relative mb-5 mx-4">
+            <div class="progress" style="height: 2px;">
+                <div class="progress-bar bg-primary transition-all" id="wizardProgress" style="width: 0%"></div>
+            </div>
+            <div class="position-absolute top-0 start-0 translate-middle btn btn-sm btn-primary rounded-pill fw-bold"
+                style="width: 2rem; height:2rem;">1</div>
+            <div class="position-absolute top-0 start-50 translate-middle btn btn-sm btn-light border rounded-pill fw-bold"
+                id="step2-indicator" style="width: 2rem; height:2rem;">2</div>
+            <div class="position-absolute top-0 start-100 translate-middle btn btn-sm btn-light border rounded-pill fw-bold"
+                id="step3-indicator" style="width: 2rem; height:2rem;">3</div>
+        </div>
 
-            <!-- Left: Settings -->
-            <div class="col-lg-4 order-lg-2">
-                <div class="glass-card p-4 sticky-top" style="top: 5rem; z-index: 1;">
-                    <h5 class="mb-3 fw-bold"><i class="bi bi-sliders me-2"></i>Настройки</h5>
+        <form method="post" enctype="multipart/form-data" id="wizardForm" onsubmit="return validateForm()">
+            <!-- STEP 1: SETUP -->
+            <div id="step-1" class="wizard-step animate-fade-in">
+                <div class="text-center mb-5">
+                    <h2 class="fw-bold">Настройки на теста</h2>
+                    <p class="text-muted">Дайте име и основни параметри на вашия тест.</p>
+                </div>
 
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold text-uppercase">Статус</label>
-                        <select name="status" class="form-select">
-                            <option value="draft" <?= $view['status'] === 'draft' ? 'selected' : '' ?>>Чернова</option>
-                            <option value="published" <?= $view['status'] === 'published' ? 'selected' : '' ?>>Публикуван
-                            </option>
-                        </select>
+                <div class="row justify-content-center">
+                    <div class="col-md-8 col-lg-6">
+                        <div class="glass-card p-4 p-md-5">
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Заглавие</label>
+                                <input type="text" name="title" id="inpTitle"
+                                    class="form-control form-control-lg fw-bold" placeholder="Напр. Входно ниво по БЕЛ"
+                                    value="<?= htmlspecialchars($view['title']) ?>" required>
+                            </div>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-6">
+                                    <label class="form-label fw-bold small text-uppercase text-muted">Видимост</label>
+                                    <select name="visibility" class="form-select">
+                                        <option value="private" <?= $view['visibility'] === 'private' ? 'selected' : '' ?>>
+                                            Личен</option>
+                                        <option value="shared" <?= $view['visibility'] === 'shared' ? 'selected' : '' ?>>
+                                            Споделен</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label fw-bold small text-uppercase text-muted">Предмет</label>
+                                    <select name="subject_id" class="form-select">
+                                        <option value="">-- Избери --</option>
+                                        <?php foreach ($subjectChoices as $id => $name): ?>
+                                            <option value="<?= $id ?>" <?= (int) $view['subject_id'] === $id ? 'selected' : '' ?>><?= htmlspecialchars($name) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Описание</label>
+                                <textarea name="description" class="form-control"
+                                    rows="3"><?= htmlspecialchars($view['description']) ?></textarea>
+                            </div>
+
+                            <hr class="opacity-10 my-4">
+
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <label class="form-label fw-bold small text-uppercase text-muted">Време
+                                        (сек)</label>
+                                    <input type="number" name="time_limit_sec" class="form-control"
+                                        placeholder="0 = без"
+                                        value="<?= htmlspecialchars((string) $view['time_limit']) ?>">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label fw-bold small text-uppercase text-muted">Опити</label>
+                                    <input type="number" name="max_attempts" class="form-control" placeholder="0 = без"
+                                        value="<?= htmlspecialchars((string) ($view['max_attempts'] ?? '')) ?>">
+                                </div>
+                            </div>
+
+                            <div class="form-check form-switch mt-4">
+                                <input class="form-check-input" type="checkbox" name="is_randomized" id="is_randomized"
+                                    value="1" <?= !empty($view['is_randomized']) ? 'checked' : '' ?>>
+                                <label class="form-check-label small" for="is_randomized">Разбъркване на въпроси</label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-4">
+                            <button type="button" class="btn btn-primary btn-lg rounded-pill px-5 shadow-sm"
+                                onclick="goToStep(2)">
+                                Напред <i class="bi bi-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2: BUILD -->
+            <div id="step-2" class="wizard-step d-none animate-fade-in">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="fw-bold mb-0">Въпроси</h2>
+                        <p class="text-muted mb-0">Добавете съдържанието на теста.</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-warning rounded-pill px-4 text-dark fw-bold"
+                            data-bs-toggle="modal" data-bs-target="#aiModal">
+                            <i class="bi bi-stars me-2"></i> AI
+                        </button>
+                        <button type="button" class="btn btn-outline-primary rounded-pill px-4" onclick="addQuestion()">
+                            <i class="bi bi-plus-lg me-2"></i> Нов
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-toggle="modal"
+                            data-bs-target="#importModal">
+                            <i class="bi bi-file-earmark-excel me-2"></i> Импорт
+                        </button>
+                    </div>
+                </div>
+
+                <div id="questions-container" class="mx-auto" style="max-width: 900px;">
+                    <!-- Javascript renders questions here -->
+                    <div class="text-center py-5 text-muted" id="empty-state">
+                        <i class="bi bi-layers display-1 opacity-25"></i>
+                        <p class="mt-3">Все още няма въпроси.</p>
+                        <button type="button" class="btn btn-sm btn-link" onclick="addQuestion()">Добави първия
+                            въпрос</button>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between mx-auto mt-5" style="max-width: 900px;">
+                    <button type="button" class="btn btn-outline-secondary btn-lg rounded-pill px-4"
+                        onclick="goToStep(1)">
+                        <i class="bi bi-arrow-left me-2"></i> Назад
+                    </button>
+                    <button type="button" class="btn btn-primary btn-lg rounded-pill px-5 shadow-sm"
+                        onclick="goToStep(3)">
+                        Преглед и Публикуване <i class="bi bi-check2 me-2"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 3: PUBLISH -->
+            <div id="step-3" class="wizard-step d-none animate-fade-in">
+                <div class="text-center mb-5">
+                    <h2 class="fw-bold">Готово за публикуване?</h2>
+                    <p class="text-muted">Прегледайте данните преди да запазите.</p>
+                </div>
+
+                <div class="glass-card p-5 mx-auto text-center border-success border-opacity-25"
+                    style="max-width: 600px;">
+                    <div class="display-1 text-success mb-3"><i class="bi bi-check-circle-fill opacity-25"></i></div>
+                    <h3 class="fw-bold" id="summaryTitle">Заглавие</h3>
+                    <p class="text-muted mb-4" id="summaryCount">0 въпроса</p>
+
+                    <div class="alert alert-light border small text-start">
+                        <i class="bi bi-info-circle me-1"></i> Този тест ще бъде запазен и ще можете да го възложите на
+                        класове от таблото веднага.
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold text-uppercase">Видимост</label>
-                        <select name="visibility" class="form-select">
-                            <option value="private" <?= $view['visibility'] === 'private' ? 'selected' : '' ?>>Личен
-                            </option>
-                            <option value="shared" <?= $view['visibility'] === 'shared' ? 'selected' : '' ?>>Споделен
-                            </option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold text-uppercase">Предмет</label>
-                        <select name="subject_id" class="form-select">
-                            <option value="">-- Избери предмет --</option>
-                            <?php foreach ($subjectChoices as $id => $name): ?>
-                                <option value="<?= $id ?>" <?= (int) $view['subject_id'] === $id ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($name) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <hr class="opacity-10 my-4">
-
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold text-uppercase">Време (секунди)</label>
-                        <input type="number" name="time_limit_sec" class="form-control" placeholder="0 за без лимит"
-                            value="<?= htmlspecialchars((string) $view['time_limit']) ?>">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold text-uppercase">Опити</label>
-                        <input type="number" name="max_attempts" class="form-control" placeholder="0 за без лимит"
-                            value="<?= htmlspecialchars((string) ($view['max_attempts'] ?? '')) ?>">
-                    </div>
-
-                    <div class="form-check form-switch mb-2">
-                        <input class="form-check-input mt-1" type="checkbox" name="is_randomized" id="is_randomized"
-                            value="1" <?= !empty($view['is_randomized']) ? 'checked' : '' ?>>
-                        <label class="form-check-label cursor-pointer" for="is_randomized">Разбъркване на
-                            въпроси</label>
-                    </div>
-
-                    <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow-sm">
-                            <i class="bi bi-save me-2"></i> Запази теста
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg rounded-pill py-3 shadow fw-bold">
+                            <i class="bi bi-save-fill me-2"></i> ЗАПАЗИ ТЕСТА
+                        </button>
+                        <button type="button" class="btn btn-link text-muted" onclick="goToStep(2)">
+                            Върни се за редакция
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Right: Content -->
-            <div class="col-lg-8 order-lg-1">
-                <div class="glass-card p-4 mb-4">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Заглавие</label>
-                        <input type="text" name="title" class="form-control form-control-lg fw-bold text-primary"
-                            placeholder="Въведете заглавие..." value="<?= htmlspecialchars($view['title']) ?>" required>
-                    </div>
-                    <div class="mb-0">
-                        <label class="form-label">Описание</label>
-                        <textarea name="description" class="form-control" rows="3"
-                            placeholder="Кратко описание за учениците..."><?= htmlspecialchars($view['description']) ?></textarea>
-                    </div>
-                </div>
-
-                <div id="questions-container">
-                    <!-- Javascript will render questions here -->
-                    <div class="text-center py-5 text-muted" id="empty-state">
-                        <i class="bi bi-file-earmark-plus display-1 opacity-25"></i>
-                        <p class="mt-3">Няма добавени въпроси. Започнете да добавяте!</p>
-                    </div>
-                </div>
-
-                <div class="d-flex justify-content-center gap-3 my-5">
-                    <button type="button" class="btn btn-outline-primary rounded-pill px-4" onclick="addQuestion()">
-                        <i class="bi bi-plus-lg me-2"></i> Добави въпрос
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-toggle="modal"
-                        data-bs-target="#importModal">
-                        <i class="bi bi-file-earmark-excel me-2"></i> Импорт от Excel
-                    </button>
-                </div>
-            </div>
         </form>
     </main>
 
