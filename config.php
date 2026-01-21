@@ -7,6 +7,10 @@ define('DB_NAME', getenv('DB_NAME') ?: 'gramtest_testgramatikov');
 define('DB_USER', getenv('DB_USER') ?: 'gramtest');
 define('DB_PASS', getenv('DB_PASS') ?: 'zbc2D!shaZirp7t');
 
+// AI Configuration (Google Gemini)
+define('AI_API_KEY', getenv('AI_API_KEY') ?: ''); // Put your key here or in env
+define('AI_MODEL', 'gemini-pro');
+
 // Lazy PDO singleton
 function db(): PDO
 {

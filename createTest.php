@@ -765,42 +765,40 @@ $view = [
                 btn.disabled = true;
                 btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Мисля...';
 
-                setTimeout(() => {
-                    syncState();
+                fetch('api/generate_questions.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        syncState();
 
-                    // Mock Questions (Demo)
-                    questions.push({
-                        content: 'Каква е основната идея на въведения текст?',
-                        type: 'single',
-                        points: 1,
-                        answers: [
-                            { content: 'Анализ на данни', is_correct: 1 },
-                            { content: 'Исторически преглед', is_correct: 0 },
-                            { content: 'Художествена измислица', is_correct: 0 }
-                        ]
+                        if (data.status === 'success' && data.questions) {
+                            data.questions.forEach(q => {
+                                questions.push(q);
+                            });
+                            renderQuestions();
+
+                            const modalEl = document.getElementById('aiModal');
+                            const modal = bootstrap.Modal.getInstance(modalEl);
+                            if (modal) modal.hide();
+
+                            window.scrollTo(0, document.body.scrollHeight);
+                            alert('Успешно генерирани ' + data.questions.length + ' въпроса!');
+                        } else {
+                            alert('Грешка при генериране: ' + (data.message || 'Неизвестна грешка'));
+                            if (data.debug) console.warn('AI Debug:', data.debug);
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Възникна системна грешка. Моля опитайте отново.');
+                    })
+                    .finally(() => {
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
                     });
-                    questions.push({
-                        content: 'Текстът споменава ли конкретни дати?',
-                        type: 'true_false',
-                        points: 1,
-                        answers: [
-                            { content: 'Вярно', is_correct: 1 },
-                            { content: 'Грешно', is_correct: 0 }
-                        ]
-                    });
-
-                    renderQuestions();
-
-                    btn.disabled = false;
-                    btn.innerHTML = originalText;
-
-                    const modalEl = document.getElementById('aiModal');
-                    const modal = bootstrap.Modal.getInstance(modalEl);
-                    if (modal) modal.hide();
-
-                    // scroll to bottom
-                    window.scrollTo(0, document.body.scrollHeight);
-                }, 1500);
             }
 
             // Initial Render
