@@ -149,7 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // UPDATE existing test
                 $stmt = $pdo->prepare('UPDATE tests SET 
                     subject_id = :sid, title = :title, description = :desc, 
-                    visibility = :vis, status = :status, time_limit = :tl, 
+                    visibility = :vis, status = :status, time_limit_sec = :tl, 
                     max_attempts = :ma, is_randomized = :ir, is_strict_mode = :ism,
                     updated_at = NOW()
                     WHERE id = :id AND owner_teacher_id = :tid');
@@ -169,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 // INSERT new test
                 $stmt = $pdo->prepare('INSERT INTO tests 
-                    (owner_teacher_id, subject_id, title, description, visibility, status, time_limit, max_attempts, is_randomized, is_strict_mode, created_at, updated_at)
+                    (owner_teacher_id, subject_id, title, description, visibility, status, time_limit_sec, max_attempts, is_randomized, is_strict_mode, created_at, updated_at)
                     VALUES (:tid, :sid, :title, :desc, :vis, :status, :tl, :ma, :ir, :ism, NOW(), NOW())');
                 $stmt->execute([
                     ':tid' => $user['id'],
