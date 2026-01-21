@@ -357,26 +357,28 @@ $view = [
                     <h5 class="modal-title fw-bold text-primary"><i class="bi bi-magic me-2"></i>AI Генератор</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Тема или Текст</label>
-                        <textarea id="aiSourceText" class="form-control" rows="6"
-                            placeholder="Поставете тук текст (урока, статия) или напишете тема (напр. 'Втората световна война')..."></textarea>
-                        <div class="form-text"><i class="bi bi-info-circle me-1"></i> AI ще анализира текста и ще
-                            генерира въпроси автоматично.</div>
+                <form onsubmit="event.preventDefault(); startAiGeneration();">
+                    <div class="modal-body">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Тема или Текст</label>
+                            <textarea id="aiSourceText" class="form-control" rows="6"
+                                placeholder="Поставете тук текст (урока, статия) или напишете тема (напр. 'Втората световна война')..."></textarea>
+                            <div class="form-text"><i class="bi bi-info-circle me-1"></i> AI ще анализира текста и ще
+                                генерира въпроси автоматично.</div>
+                        </div>
                     </div>
-                </div>
-                <div class="d-flex justify-content-between align-items-center w-100">
-                    <div class="input-group w-auto">
-                        <span class="input-group-text bg-white border-0 fw-bold text-muted">Брой:</span>
-                        <input type="number" id="aiCount" class="form-control text-center" value="3" min="1" max="10"
-                            style="max-width: 80px;">
+                    <div class="d-flex justify-content-between align-items-center w-100 modal-footer border-top-0">
+                        <div class="input-group w-auto">
+                            <span class="input-group-text bg-white border-0 fw-bold text-muted">Брой:</span>
+                            <input type="number" id="aiCount" class="form-control text-center" value="3" min="1"
+                                max="10" style="max-width: 80px;">
+                        </div>
+                        <button type="submit" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm"
+                            id="btnStartAi">
+                            <i class="bi bi-stars me-2"></i> Генерирай
+                        </button>
                     </div>
-                    <button type="button" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm" id="btnStartAi"
-                        onclick="startAiGeneration()">
-                        <i class="bi bi-stars me-2"></i> Генерирай
-                    </button>
-                </div>
+                </form>
             </div>
         </div>
     </div>

@@ -129,6 +129,14 @@ function generateSmartQuestions(string $text, int $limit): array
         ];
     }
 
+    // Final Shuffle of Answers for 'single'/'multiple' types
+    foreach ($questions as &$q) {
+        if (in_array($q['type'], ['single', 'multiple'])) {
+            shuffle($q['answers']);
+        }
+    }
+    unset($q);
+
     return array_slice($questions, 0, $limit);
 }
 
