@@ -113,188 +113,201 @@ if ($editing && $test['subject_id'] && !isset($subjectChoices[$test['subject_id'
 }
 
 /* ---------------- Handle POST ---------------- */
-// --- VALIDATION ---
-if (!$title)
-    $errors[] = 'Моля въведете заглавие.';
-if ($visibility !== 'private' && $visibility !== 'shared')
-    $visibility = 'private';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Collect Vars
+    $isImport = isset($_POST['import_excel']);
+    $title = trim((string) ($_POST['title'] ?? ''));
+    $description = trim((string) ($_POST['description'] ?? ''));
+    $visibility = norm_visibility($_POST['visibility'] ?? 'private');
+    $status = in_array(($_POST['status'] ?? 'draft'), ['draft', 'published'], true) ? $_POST['status'] : 'draft';
+    $time_limit = isset($_POST['time_limit_sec']) ? to_int($_POST['time_limit_sec'], 0, 86400) : null;
+    $max_attempts = to_int($_POST['max_attempts'] ?? 0, 0, 100);
+    $is_randomized = !empty($_POST['is_randomized']) ? 1 : 0;
+    $is_strict_mode = !empty($_POST['is_strict_mode']) ? 1 : 0;
 
-// Check subject ownership
-if (!empty($_POST['subject_id'])) {
-    $sid = (int) $_POST['subject_id'];
-    $stmt = $pdo->prepare('SELECT id FROM subjects WHERE id = :id AND (owner_teacher_id = :tid OR owner_teacher_id IS NULL)');
-    $stmt->execute([':id' => $sid, ':tid' => $user['id']]);
-    if (!$stmt->fetch())
-        $errors[] = 'Невалиден предмет.';
-}
+    // --- VALIDATION ---
+    if (!$title)
+        $errors[] = 'Моля въведете заглавие.';
+    if ($visibility !== 'private' && $visibility !== 'shared')
+        $visibility = 'private';
 
-// --- SAVE LOGIC ---
-if (empty($errors)) {
-    try {
-        $pdo->beginTransaction();
+    // Check subject ownership
+    if (!empty($_POST['subject_id'])) {
+        $sid = (int) $_POST['subject_id'];
+        $stmt = $pdo->prepare('SELECT id FROM subjects WHERE id = :id AND (owner_teacher_id = :tid OR owner_teacher_id IS NULL)');
+        $stmt->execute([':id' => $sid, ':tid' => $user['id']]);
+        if (!$stmt->fetch())
+            $errors[] = 'Невалиден предмет.';
+    }
 
-        if ($editing) {
-            // UPDATE existing test
-            $stmt = $pdo->prepare('UPDATE tests SET 
+    // --- SAVE LOGIC ---
+    if (empty($errors)) {
+        try {
+            $pdo->beginTransaction();
+
+            if ($editing) {
+                // UPDATE existing test
+                $stmt = $pdo->prepare('UPDATE tests SET 
                     subject_id = :sid, title = :title, description = :desc, 
                     visibility = :vis, status = :status, time_limit = :tl, 
                     max_attempts = :ma, is_randomized = :ir, is_strict_mode = :ism,
                     updated_at = NOW()
                     WHERE id = :id AND owner_teacher_id = :tid');
-            $stmt->execute([
-                ':sid' => $_POST['subject_id'] ?: null,
-                ':title' => $title,
-                ':desc' => $description,
-                ':vis' => $visibility,
-                ':status' => $status,
-                ':tl' => $time_limit,
-                ':ma' => $max_attempts,
-                ':ir' => $is_randomized,
-                ':ism' => $is_strict_mode,
-                ':id' => $test_id,
-                ':tid' => $user['id']
-            ]);
-        } else {
-            // INSERT new test
-            $stmt = $pdo->prepare('INSERT INTO tests 
+                $stmt->execute([
+                    ':sid' => $_POST['subject_id'] ?: null,
+                    ':title' => $title,
+                    ':desc' => $description,
+                    ':vis' => $visibility,
+                    ':status' => $status,
+                    ':tl' => $time_limit,
+                    ':ma' => $max_attempts,
+                    ':ir' => $is_randomized,
+                    ':ism' => $is_strict_mode,
+                    ':id' => $test_id,
+                    ':tid' => $user['id']
+                ]);
+            } else {
+                // INSERT new test
+                $stmt = $pdo->prepare('INSERT INTO tests 
                     (owner_teacher_id, subject_id, title, description, visibility, status, time_limit, max_attempts, is_randomized, is_strict_mode, created_at, updated_at)
                     VALUES (:tid, :sid, :title, :desc, :vis, :status, :tl, :ma, :ir, :ism, NOW(), NOW())');
-            $stmt->execute([
-                ':tid' => $user['id'],
-                ':sid' => $_POST['subject_id'] ?: null,
-                ':title' => $title,
-                ':desc' => $description,
-                ':vis' => $visibility,
-                ':status' => $status,
-                ':tl' => $time_limit,
-                ':ma' => $max_attempts,
-                ':ir' => $is_randomized,
-                ':ism' => $is_strict_mode
-            ]);
-            $test_id = $pdo->lastInsertId();
-        }
+                $stmt->execute([
+                    ':tid' => $user['id'],
+                    ':sid' => $_POST['subject_id'] ?: null,
+                    ':title' => $title,
+                    ':desc' => $description,
+                    ':vis' => $visibility,
+                    ':status' => $status,
+                    ':tl' => $time_limit,
+                    ':ma' => $max_attempts,
+                    ':ir' => $is_randomized,
+                    ':ism' => $is_strict_mode
+                ]);
+                $test_id = $pdo->lastInsertId();
+            }
 
-        // --- PROCESS QUESTIONS ---
-        // Simpler approach for editing: Detach old questions, Insert new ones (or update if we tracked IDs, but UI suggests full rewrite is easier for consistency)
-        // However, detaching removes history if question bank is shared. 
-        // In this system, questions seem bound to the test or just "question_bank".
-        // If we want to edit *in place*, it's complex. 
-        // Let's assume "Replace All" strategy for the *linkage* but we have to be careful about polluting question_bank.
-        // For now, simpler: Delete old links. If we treat questions as unique to this test copy, we can delete them from question_bank too if not used elsewhere.
-        // But strict "Question Bank" implies reusability. 
-        // Given the task, I will implement: Unlink all, Create New Questions in Bank, Link them. 
-        // (Garbage collection of orphaned questions is a separate concern).
+            // --- PROCESS QUESTIONS ---
+            // Simpler approach for editing: Detach old questions, Insert new ones (or update if we tracked IDs, but UI suggests full rewrite is easier for consistency)
+            // However, detaching removes history if question bank is shared. 
+            // In this system, questions seem bound to the test or just "question_bank".
+            // If we want to edit *in place*, it's complex. 
+            // Let's assume "Replace All" strategy for the *linkage* but we have to be careful about polluting question_bank.
+            // For now, simpler: Delete old links. If we treat questions as unique to this test copy, we can delete them from question_bank too if not used elsewhere.
+            // But strict "Question Bank" implies reusability. 
+            // Given the task, I will implement: Unlink all, Create New Questions in Bank, Link them. 
+            // (Garbage collection of orphaned questions is a separate concern).
 
-        if ($editing) {
-            // Get old QIDs to potential cleanup? No, safe route: Just delete links.
-            $pdo->prepare('DELETE FROM test_questions WHERE test_id = :tid')->execute([':tid' => $test_id]);
-            // NOTE: We are NOT deleting from question_bank to avoid breaking other tests if shared.
-        }
+            if ($editing) {
+                // Get old QIDs to potential cleanup? No, safe route: Just delete links.
+                $pdo->prepare('DELETE FROM test_questions WHERE test_id = :tid')->execute([':tid' => $test_id]);
+                // NOTE: We are NOT deleting from question_bank to avoid breaking other tests if shared.
+            }
 
-        // Insert submitted questions
-        $postedQuestions = $_POST['questions'] ?? [];
-        if (is_array($postedQuestions)) {
-            $order = 0;
-            foreach ($postedQuestions as $qIdx => $qData) {
-                $content = trim($qData['content'] ?? '');
-                if (!$content)
-                    continue; // Skip empty
+            // Insert submitted questions
+            $postedQuestions = $_POST['questions'] ?? [];
+            if (is_array($postedQuestions)) {
+                $order = 0;
+                foreach ($postedQuestions as $qIdx => $qData) {
+                    $content = trim($qData['content'] ?? '');
+                    if (!$content)
+                        continue; // Skip empty
 
-                $qType = map_ui_to_qtype($qData['type'] ?? 'single');
-                $points = (float) ($qData['points'] ?? 1);
+                    $qType = map_ui_to_qtype($qData['type'] ?? 'single');
+                    $points = (float) ($qData['points'] ?? 1);
 
-                // Handle file upload for this question if any (complex in wizard form, assume standard $_FILES)
-                // The UI puts generic inputs. If file implementation is simple:
-                $mediaUrl = $qData['existing_media_url'] ?? null;
-                $mediaMime = $qData['existing_media_mime'] ?? null;
+                    // Handle file upload for this question if any (complex in wizard form, assume standard $_FILES)
+                    // The UI puts generic inputs. If file implementation is simple:
+                    $mediaUrl = $qData['existing_media_url'] ?? null;
+                    $mediaMime = $qData['existing_media_mime'] ?? null;
 
-                // Check valid new upload
-                if (!empty($_FILES['question_media']['name'][$qIdx])) {
-                    // Logic to upload would go here. For now, assume it works or skip.
-                    // Impl: simple move_uploaded_file
-                    $f = extract_question_media($_FILES['question_media'], $qIdx);
-                    if ($f) {
-                        $ext = pathinfo($f['name'], PATHINFO_EXTENSION);
-                        $fname = 'qm_' . uniqid() . '.' . $ext;
-                        $path = __DIR__ . '/uploads/' . $fname;
-                        if (move_uploaded_file($f['tmp_name'], $path)) {
-                            $mediaUrl = 'uploads/' . $fname;
-                            $mediaMime = $f['type'];
+                    // Check valid new upload
+                    if (!empty($_FILES['question_media']['name'][$qIdx])) {
+                        // Logic to upload would go here. For now, assume it works or skip.
+                        // Impl: simple move_uploaded_file
+                        $f = extract_question_media($_FILES['question_media'], $qIdx);
+                        if ($f) {
+                            $ext = pathinfo($f['name'], PATHINFO_EXTENSION);
+                            $fname = 'qm_' . uniqid() . '.' . $ext;
+                            $path = __DIR__ . '/uploads/' . $fname;
+                            if (move_uploaded_file($f['tmp_name'], $path)) {
+                                $mediaUrl = 'uploads/' . $fname;
+                                $mediaMime = $f['type'];
+                            }
+                        }
+                    }
+                    if (!empty($qData['remove_media'])) {
+                        $mediaUrl = null;
+                        $mediaMime = null;
+                    }
+
+                    // Insert into question_bank
+                    $stmtQ = $pdo->prepare('INSERT INTO question_bank (owner_teacher_id, body, qtype, media_url, media_mime, created_at) 
+                                            VALUES (:tid, :body, :type, :url, :mime, NOW())');
+                    $stmtQ->execute([
+                        ':tid' => $user['id'],
+                        ':body' => $content,
+                        ':type' => $qType,
+                        ':url' => $mediaUrl,
+                        ':mime' => $mediaMime
+                    ]);
+                    $newQid = $pdo->lastInsertId();
+
+                    // Link to test
+                    $stmtL = $pdo->prepare('INSERT INTO test_questions (test_id, question_id, points, order_index) VALUES (:tid, :qid, :pts, :ord)');
+                    $stmtL->execute([
+                        ':tid' => $test_id,
+                        ':qid' => $newQid,
+                        ':pts' => $points,
+                        ':ord' => ++$order
+                    ]);
+
+                    // Insert Answers (if not fill_in/short - actually even they might have correct answers stored)
+                    if (!empty($qData['answers']) && is_array($qData['answers'])) {
+                        $aOrder = 0;
+                        foreach ($qData['answers'] as $aData) {
+                            $aContent = trim($aData['content'] ?? '');
+                            // For true/false or single, empty might be valid? usually not.
+                            if ($aContent === '')
+                                continue;
+
+                            $isCorrect = !empty($aData['is_correct']) ? 1 : 0;
+
+                            $stmtA = $pdo->prepare('INSERT INTO answers (question_id, content, is_correct, order_index) VALUES (:qid, :content, :corr, :ord)');
+                            $stmtA->execute([
+                                ':qid' => $newQid,
+                                ':content' => $aContent,
+                                ':corr' => $isCorrect,
+                                ':ord' => ++$aOrder
+                            ]);
                         }
                     }
                 }
-                if (!empty($qData['remove_media'])) {
-                    $mediaUrl = null;
-                    $mediaMime = null;
-                }
-
-                // Insert into question_bank
-                $stmtQ = $pdo->prepare('INSERT INTO question_bank (owner_teacher_id, body, qtype, media_url, media_mime, created_at) 
-                                            VALUES (:tid, :body, :type, :url, :mime, NOW())');
-                $stmtQ->execute([
-                    ':tid' => $user['id'],
-                    ':body' => $content,
-                    ':type' => $qType,
-                    ':url' => $mediaUrl,
-                    ':mime' => $mediaMime
-                ]);
-                $newQid = $pdo->lastInsertId();
-
-                // Link to test
-                $stmtL = $pdo->prepare('INSERT INTO test_questions (test_id, question_id, points, order_index) VALUES (:tid, :qid, :pts, :ord)');
-                $stmtL->execute([
-                    ':tid' => $test_id,
-                    ':qid' => $newQid,
-                    ':pts' => $points,
-                    ':ord' => ++$order
-                ]);
-
-                // Insert Answers (if not fill_in/short - actually even they might have correct answers stored)
-                if (!empty($qData['answers']) && is_array($qData['answers'])) {
-                    $aOrder = 0;
-                    foreach ($qData['answers'] as $aData) {
-                        $aContent = trim($aData['content'] ?? '');
-                        // For true/false or single, empty might be valid? usually not.
-                        if ($aContent === '')
-                            continue;
-
-                        $isCorrect = !empty($aData['is_correct']) ? 1 : 0;
-
-                        $stmtA = $pdo->prepare('INSERT INTO answers (question_id, content, is_correct, order_index) VALUES (:qid, :content, :corr, :ord)');
-                        $stmtA->execute([
-                            ':qid' => $newQid,
-                            ':content' => $aContent,
-                            ':corr' => $isCorrect,
-                            ':ord' => ++$aOrder
-                        ]);
-                    }
-                }
             }
-        }
 
-        $pdo->commit();
-        $saved = true;
-        // Refresh test data if editing to show updates ?? 
-        // Or just redirect?
-        // Usually stay on page with success message.
-        if (!$editing) {
-            // Redirect to edit mode to avoid re-submission
-            header("Location: createTest.php?id=$test_id&saved=1");
-            exit;
-        } else {
-            // If editing, just set saved flag
+            $pdo->commit();
             $saved = true;
-            // Re-fetch test data? 
-            $stmt = $pdo->prepare('SELECT * FROM tests WHERE id = :id');
-            $stmt->execute([':id' => $test_id]);
-            $test = $stmt->fetch();
-        }
+            // Refresh test data if editing to show updates ?? 
+            // Or just redirect?
+            // Usually stay on page with success message.
+            if (!$editing) {
+                // Redirect to edit mode to avoid re-submission
+                header("Location: createTest.php?id=$test_id&saved=1");
+                exit;
+            } else {
+                // If editing, just set saved flag
+                $saved = true;
+                // Re-fetch test data? 
+                $stmt = $pdo->prepare('SELECT * FROM tests WHERE id = :id');
+                $stmt->execute([':id' => $test_id]);
+                $test = $stmt->fetch();
+            }
 
-    } catch (Exception $e) {
-        $pdo->rollBack();
-        $errors[] = 'Грешка при запазване: ' . $e->getMessage();
-    }
-}
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            $errors[] = 'Грешка при запазване: ' . $e->getMessage();
+        }
+    } // End if empty errors
+} // End POST Check
 
 // View Variables
 $view = [
