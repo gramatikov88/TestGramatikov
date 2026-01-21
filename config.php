@@ -8,7 +8,7 @@ define('DB_USER', getenv('DB_USER') ?: 'gramtest');
 define('DB_PASS', getenv('DB_PASS') ?: 'zbc2D!shaZirp7t');
 
 // AI Configuration (Google Gemini)
-define('AI_API_KEY', getenv('AI_API_KEY') ?: ''); // Put your key here or in env
+define('AI_API_KEY', getenv('AI_API_KEY') ?: 'AIzaSyBveAhk6V0bR-mP4SGN9niR5pu2ZrW89Gk');
 define('AI_MODEL', 'gemini-pro');
 
 // Lazy PDO singleton
