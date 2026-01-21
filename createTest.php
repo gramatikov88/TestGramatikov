@@ -119,7 +119,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = trim((string) ($_POST['title'] ?? ''));
     $description = trim((string) ($_POST['description'] ?? ''));
     $visibility = norm_visibility($_POST['visibility'] ?? 'private');
-    $status = in_array(($_POST['status'] ?? 'draft'), ['draft', 'published'], true) ? $_POST['status'] : 'draft';
+    $rawStatus = $_POST['status'] ?? 'published'; // Default to published if saving from wizard? Or draft? Let's default to published as it is the "Final Save". Actually, let's Stick to 'draft' if uncertain, BUT 'published' makes sense for "I am done".
+    // Re-reading user intent: "Ready to publish?" -> "Save Test". 
+    // Let's use 'published' as default if not provided, assuming the wizard completes the process.
+    $status = in_array($rawStatus, ['draft', 'published'], true) ? $rawStatus : 'published';
     $time_limit = isset($_POST['time_limit_sec']) ? to_int($_POST['time_limit_sec'], 0, 86400) : null;
     $max_attempts = to_int($_POST['max_attempts'] ?? 0, 0, 100);
     $is_randomized = !empty($_POST['is_randomized']) ? 1 : 0;
