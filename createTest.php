@@ -369,7 +369,7 @@ $view = [
                 <div class="modal-footer border-top-0">
                     <button type="button" class="btn btn-link text-muted" data-bs-dismiss="modal">Отказ</button>
                     <button type="button" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm"
-                        onclick="runAiGeneration(event)">
+                        id="btnStartAi" onclick="startAiGeneration()">
                         <i class="bi bi-stars me-2"></i> Генерирай въпроси
                     </button>
                 </div>
@@ -755,12 +755,13 @@ $view = [
                     .replace(/'/g, "&#039;");
             }
 
-            // AI Mock Logic
-            function runAiGeneration() {
+            // AI Logic
+            function startAiGeneration() {
+                console.log('Starting Real AI Generation...');
                 const text = document.getElementById('aiSourceText').value;
                 if (!text) { alert('Моля въведете текст.'); return; }
 
-                const btn = event.currentTarget;
+                const btn = document.getElementById('btnStartAi');
                 const originalText = btn.innerHTML;
                 btn.disabled = true;
                 btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Мисля...';
