@@ -9,7 +9,7 @@ define('DB_PASS', getenv('DB_PASS') ?: 'zbc2D!shaZirp7t');
 
 // AI Configuration (Google Gemini)
 define('AI_API_KEY', getenv('AI_API_KEY') ?: 'AIzaSyBveAhk6V0bR-mP4SGN9niR5pu2ZrW89Gk');
-define('AI_MODEL', 'gemini-pro');
+define('AI_MODEL', 'gemini-1.5-flash');
 
 // Lazy PDO singleton
 function db(): PDO
