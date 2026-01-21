@@ -1,24 +1,18 @@
 <?php
 /**
- * API Endpoint: Generate Questions (LOCAL LOGIC VERSION)
+ * API Endpoint: Generate Questions (Enhanced Local Logic)
  * 
- * Since external APIs (Gemini) are returning Quota/404 errors,
- * this version implements a "Smart Local Heuristic" to generate
- * questions directly from the text without external calls.
- * 
- * It ensures the user gets questions INSTANTLY and RELIABLY.
- * 
- * Logic:
- * 1. Analyzes text structure (sentences, key terms).
- * 2. Generates True/False questions based on real sentences.
- * 3. Generates "Complete the sentence" questions.
+ * Features:
+ * - Fill-in-the-blank generation (contextual)
+ * - Definition extration (What is X?)
+ * - Configurable count
  */
 
 require_once __DIR__ . '/../config.php';
 
 header('Content-Type: application/json');
 
-// 1. Auth Check
+// 1. Auth & Input
 session_start();
 if (empty($_SESSION['user'])) {
     http_response_code(403);
@@ -26,9 +20,13 @@ if (empty($_SESSION['user'])) {
     exit;
 }
 
-// 2. Input
 $input = json_decode(file_get_contents('php://input'), true);
 $text = trim($input['text'] ?? '');
+$requestedCount = (int) ($input['count'] ?? 3);
+if ($requestedCount < 1)
+    $requestedCount = 1;
+if ($requestedCount > 20)
+    $requestedCount = 20;
 
 if (empty($text)) {
     echo json_encode(['status' => 'error', 'message' => 'Empty text provided']);
@@ -36,108 +34,92 @@ if (empty($text)) {
 }
 
 try {
-    $questions = generateLocalQuestions($text);
-    // Simulate thinking time for effect (optional, but good for UX)
-    usleep(800000); // 0.8s
+    // Simulate thinking (UX)
+    usleep(500000);
+
+    $questions = generateSmartQuestions($text, $requestedCount);
     echo json_encode(['status' => 'success', 'questions' => $questions]);
 } catch (Exception $e) {
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
 
 /**
- * The "Local Brain" Logic
+ * Smart Local Logic Engine
  */
-function generateLocalQuestions(string $text): array
+function generateSmartQuestions(string $text, int $limit): array
 {
-    // Remove extra spaces/newlines
+    // Clean text
     $cleanText = preg_replace('/\s+/', ' ', $text);
 
-    // Split into sentences (simple regex for . ! ?)
-    $sentences = preg_split('/(?<=[.?!])\s+(?=[A-ZА-Я])/', $cleanText, -1, PREG_SPLIT_NO_EMPTY);
+    // Split sentences more robustly
+    // Look for punctuation followed by space and capital letter (or end of string)
+    preg_match_all('/[^.!?]+[.!?]+/', $cleanText, $matches);
+    $sentences = $matches[0] ?? [];
 
-    // Filter sentences that are too short to be useful
-    $sentences = array_filter($sentences, function ($s) {
-        return mb_strlen($s, 'UTF-8') > 15;
-    });
-
-    // Shuffle to get random parts of text
+    // Clean each sentence
+    $sentences = array_map('trim', $sentences);
+    // Filter useful ones (> 20 chars, has spaces)
+    $sentences = array_filter($sentences, fn($s) => mb_strlen($s) > 20 && substr_count($s, ' ') > 3);
     shuffle($sentences);
 
     $questions = [];
-    $maxQuestions = 3;
+    $usedSentences = [];
 
-    // --- Strategy 1: "True/False" (Verifying information) ---
-    // Take a real sentence -> True.
-    if (count($sentences) > 0) {
-        $s = array_shift($sentences);
-        // Sometimes just take the sentence as is
-        $questions[] = [
-            'content' => 'Вярно ли е следното твърдение според текста: "' . trim($s) . '"',
-            'type' => 'true_false',
-            'points' => 1,
-            'answers' => [
-                ['content' => 'Вярно', 'is_correct' => 1],
-                ['content' => 'Грешно', 'is_correct' => 0]
-            ]
-        ];
-    }
+    // --- Strategy 1: "Gap Fill" (Cloze Deletion) - Priority ---
+    // Takes a sentence, hides a key term (capitalized or long word).
+    foreach ($sentences as $k => $s) {
+        if (count($questions) >= $limit)
+            break;
+        if (in_array($s, $usedSentences))
+            continue;
 
-    // --- Strategy 2: "Complete the Sentence" (Single Choice) ---
-    if (count($sentences) > 0) {
-        $s = array_shift($sentences);
-        $words = explode(' ', trim($s));
-
-        // Only if sentence is long enough (e.g., > 5 words)
-        if (count($words) >= 5) {
-            // Remove last 2-3 words to make a "gap"
-            $cutCount = 2;
-            if (count($words) > 10)
-                $cutCount = 3;
-
-            $hiddenPart = implode(' ', array_slice($words, -$cutCount));
-            $visiblePart = implode(' ', array_slice($words, 0, count($words) - $cutCount));
-
-            // Wrong answers logic
-            $wrong1 = "не се споменава";
-            $wrong2 = "грешна информация";
-
-            $questions[] = [
-                'content' => 'Довършете изречението от текста: "' . $visiblePart . ' ..."',
-                'type' => 'single',
-                'points' => 1,
-                'answers' => [
-                    ['content' => $hiddenPart, 'is_correct' => 1],
-                    ['content' => 'информацията липсва', 'is_correct' => 0],
-                    ['content' => 'друго', 'is_correct' => 0]
-                ]
-            ];
+        $q = tryCreateGapFill($s);
+        if ($q) {
+            $questions[] = $q;
+            $usedSentences[] = $s;
+            unset($sentences[$k]); // Remove to avoid reuse
         }
     }
 
-    // --- Strategy 3: "Keyword Context" (Fallback) ---
-    // If we ran out of long sentences, or just to add variety.
-    // Check if text mentions "SDLC" or "софтуер" (based on user's known text) purely heuristically?
-    // No, let's look for capitalized words (terms).
+    // --- Strategy 2: "What is X?" (Definition Extraction) ---
+    // Looks for "X is Y", "X represents Y".
+    // Reset index for remaining sentences
+    $sentences = array_values($sentences);
+    foreach ($sentences as $k => $s) {
+        if (count($questions) >= $limit)
+            break;
+        if (in_array($s, $usedSentences))
+            continue;
 
-    // Extract capitalized words (potential terms)
-    preg_match_all('/\b[A-ZА-Я]{2,}\b/u', $text, $matches);
-    $terms = array_unique($matches[0] ?? []);
+        $q = tryCreateDefinitionQuestion($s);
+        if ($q) {
+            $questions[] = $q;
+            $usedSentences[] = $s;
+            unset($sentences[$k]);
+        }
+    }
 
-    if (count($terms) > 0) {
-        $term = $terms[array_rand($terms)];
+    // --- Strategy 3: True/False (Fallback) ---
+    // If we still need questions
+    $sentences = array_values($sentences);
+    foreach ($sentences as $k => $s) {
+        if (count($questions) >= $limit)
+            break;
+
+        $isTrue = rand(0, 1) === 1;
+        $content = $s;
+
+        // If we want a False question, we need to subtly break the sentence (hard to do locally)
+        // OR just present a random other sentence as "Is this derived from...?" (confusing)
+        // Safest Local Logic: Present exact sentence -> TRUE.
+        // Modified sentence logic is risky without NLP.
+
+        // Let's stick to "Is this statement correct regarding the text?" -> True
+        // Or pick a random sentence from another text? (Not available).
+        // Let's just make it True for now or skip logic.
+
         $questions[] = [
-            'content' => 'Текстът обсъжда понятието/термина "' . $term . '".',
-            'type' => 'true_false',
-            'points' => 1,
-            'answers' => [
-                ['content' => 'Вярно', 'is_correct' => 1],
-                ['content' => 'Грешно', 'is_correct' => 0]
-            ]
-        ];
-    } else {
-        // Generic fallback question if no terms found
-        $questions[] = [
-            'content' => 'Основната цел на този текст е информативна.',
+            'content' => 'Вярно ли е твърдението: "' . $s . '"',
             'type' => 'true_false',
             'points' => 1,
             'answers' => [
@@ -147,5 +129,73 @@ function generateLocalQuestions(string $text): array
         ];
     }
 
-    return $questions;
+    return array_slice($questions, 0, $limit);
+}
+
+function tryCreateGapFill(string $sentence): ?array
+{
+    $words = explode(' ', $sentence);
+    // Find candidate words to hide (Longer than 4 chars, preferably capitalized if not first word, or just long)
+    $candidates = [];
+    foreach ($words as $i => $w) {
+        $cleanW = preg_replace('/[^a-zA-Zа-яА-Я0-9]/u', '', $w);
+        if (mb_strlen($cleanW) > 5) {
+            $candidates[] = $i;
+        }
+    }
+
+    if (empty($candidates))
+        return null;
+
+    // Pick one
+    $hideIdx = $candidates[array_rand($candidates)];
+    $answer = preg_replace('/[^a-zA-Zа-яА-Я0-9\-]/u', '', $words[$hideIdx]); // Keep clean answer
+
+    // Replace in sentence
+    $words[$hideIdx] = '_______';
+    $questionText = implode(' ', $words);
+
+    // Generate wrong answers (random words from same sentence or generic)
+    $wrongs = ['(липсваща дума)', 'друго', 'неизвестно'];
+
+    return [
+        'content' => $questionText,
+        'type' => 'single',
+        'points' => 1,
+        'answers' => [
+            ['content' => $answer, 'is_correct' => 1],
+            ['content' => 'грешен отговор', 'is_correct' => 0], // Generic placeholders are weak pt of local logic
+            ['content' => 'друго понятие', 'is_correct' => 0]
+        ]
+    ];
+}
+
+function tryCreateDefinitionQuestion(string $sentence): ?array
+{
+    // Regex for "X е Y" or "X представлява Y"
+    // Limitations: structure can be complex.
+    // Try simple split by " е " (is)
+    if (strpos($sentence, ' е ') !== false) {
+        $parts = explode(' е ', $sentence, 2);
+        $term = trim($parts[0]);
+        $def = trim($parts[1]);
+
+        // Only if term is short (likely a concept) and def is resonable
+        if (mb_strlen($term) < 30 && mb_strlen($def) > 10) {
+            // Check if term starts with capital
+            if (preg_match('/^[A-ZА-Я]/u', $term)) {
+                return [
+                    'content' => 'Какво е определението за: ' . $term . '?',
+                    'type' => 'single',
+                    'points' => 1,
+                    'answers' => [
+                        ['content' => $def, 'is_correct' => 1],
+                        ['content' => 'Не се споменава в текста', 'is_correct' => 0],
+                        ['content' => 'Друго понятие', 'is_correct' => 0]
+                    ]
+                ];
+            }
+        }
+    }
+    return null;
 }

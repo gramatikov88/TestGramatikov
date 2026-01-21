@@ -366,11 +366,15 @@ $view = [
                             генерира въпроси автоматично.</div>
                     </div>
                 </div>
-                <div class="modal-footer border-top-0">
-                    <button type="button" class="btn btn-link text-muted" data-bs-dismiss="modal">Отказ</button>
-                    <button type="button" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm"
-                        id="btnStartAi" onclick="startAiGeneration()">
-                        <i class="bi bi-stars me-2"></i> Генерирай въпроси
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <div class="input-group w-auto">
+                        <span class="input-group-text bg-white border-0 fw-bold text-muted">Брой:</span>
+                        <input type="number" id="aiCount" class="form-control text-center" value="3" min="1" max="10"
+                            style="max-width: 80px;">
+                    </div>
+                    <button type="button" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm" id="btnStartAi"
+                        onclick="startAiGeneration()">
+                        <i class="bi bi-stars me-2"></i> Генерирай
                     </button>
                 </div>
             </div>
@@ -766,10 +770,12 @@ $view = [
                 btn.disabled = true;
                 btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Мисля...';
 
+                const count = document.getElementById('aiCount').value || 3;
+
                 fetch('api/generate_questions.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: text })
+                    body: JSON.stringify({ text: text, count: count })
                 })
                     .then(response => response.json())
                     .then(data => {
