@@ -367,7 +367,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
         </div>
 
         <!-- Attempts List -->
-        <div class="glass-card overflow-hidden animate-fade-up delay-300">
+        <div class="glass-card animate-fade-up delay-300">
             <div class="p-4 border-bottom border-light bg-white bg-opacity-40 d-flex flex-wrap gap-3 justify-content-between align-items-center">
                 <div>
                     <h5 class="fw-bold m-0">Списък с предали</h5>
