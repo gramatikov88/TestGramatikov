@@ -351,8 +351,7 @@ $heroSubtitle = $user['role'] === 'teacher'
                                         <?php else: ?>
                                             <div class="h2 fw-bold mb-0 text-body"><?= $item['total_attempts'] ?></div>
                                             <div class="small text-muted mb-3">предадени</div>
-                                            <!-- Future: Link to a "Monitor" page or Results page -->
-                                            <a href="#"
+                                            <a href="assignment_overview.php?id=<?= $item['id'] ?>"
                                                 class="btn btn-outline-primary btn-sm rounded-pill px-4 stretched-link">Мониторинг</a>
                                         <?php endif; ?>
                                     </div>

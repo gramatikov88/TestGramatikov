@@ -66,6 +66,27 @@ require_once __DIR__ . '/../config.php';
                     <?php if (!empty($_SESSION['user'])): ?>
                         <li class="nav-item"><a class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm"
                                 href="dashboard.php"><i class="bi bi-speedometer2 me-2"></i>Табло</a></li>
+                        <!-- Teacher Manage Menu -->
+                        <?php if ($_SESSION['user']['role'] === 'teacher'): ?>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle fw-medium" href="#" role="button" data-bs-toggle="dropdown">
+                                    Управление
+                                </a>
+                                <ul class="dropdown-menu glass-card border-0 p-2 shadow-lg">
+                                    <li><a class="dropdown-item rounded-2" href="assignments.php?view=history"><i
+                                                class="bi bi-clock-history me-2 text-muted"></i> Архив Задания</a></li>
+                                    <li><a class="dropdown-item rounded-2" href="tests.php"><i
+                                                class="bi bi-file-earmark-text me-2 text-muted"></i> Моите Тестове</a></li>
+                                    <li>
+                                        <hr class="dropdown-divider opacity-10">
+                                    </li>
+                                    <li><a class="dropdown-item rounded-2" href="classes_create.php"><i
+                                                class="bi bi-plus-circle me-2 text-primary"></i> Нов Клас</a></li>
+                                    <li><a class="dropdown-item rounded-2" href="createTest.php"><i
+                                                class="bi bi-magic me-2 text-primary"></i> Нов Тест</a></li>
+                                </ul>
+                            </li>
+                        <?php endif; ?>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button"
                                 data-bs-toggle="dropdown" aria-expanded="false">
