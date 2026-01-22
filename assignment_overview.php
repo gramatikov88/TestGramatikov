@@ -400,19 +400,26 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                             </tr>
                         </thead>
                         <tbody class="border-top-0">
-                            <?php foreach ($attempts as $attempt): ?>
+                            <?php foreach ($attempts as $idx => $attemptRow): ?>
                                 <?php
-                                $fullName = trim($attempt['first_name'] . ' ' . $attempt['last_name']);
-                                $percentValue = $attempt['percent'];
-                                $autoGrade = $attempt['auto_grade'];
-                                $teacherGrade = $attempt['teacher_grade'];
-                                $statusLabel = match ($attempt['status']) {
+                                $fName = (string)($attemptRow['first_name'] ?? '');
+                                $lName = (string)($attemptRow['last_name'] ?? '');
+                                $fullName = trim($fName . ' ' . $lName);
+                                if ($fullName === '') $fullName = 'Anonymous';
+                                $email = (string)($attemptRow['email'] ?? '');
+                                
+                                $percentValue = $attemptRow['percent'];
+                                $autoGrade = $attemptRow['auto_grade'];
+                                $teacherGrade = $attemptRow['teacher_grade'];
+                                $statusKey = (string)($attemptRow['status'] ?? '');
+                                
+                                $statusLabel = match ($statusKey) {
                                     'in_progress' => 'Работи',
                                     'submitted' => 'Предаден',
                                     'graded' => 'Оценен',
-                                    default => ucfirst($attempt['status']),
+                                    default => ucfirst($statusKey),
                                 };
-                                $statusClass = match ($attempt['status']) {
+                                $statusClass = match ($statusKey) {
                                     'in_progress' => 'bg-info bg-opacity-10 text-info',
                                     'submitted' => 'bg-warning bg-opacity-10 text-warning',
                                     'graded' => 'bg-success bg-opacity-10 text-success',
@@ -426,29 +433,29 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                                 <?= mb_substr($fullName, 0, 1) ?>
                                             </div>
                                             <div>
-                                                <div class="fw-bold text-dark"><?= htmlspecialchars($fullName) ?></div>
-                                                <div class="small text-muted"><?= htmlspecialchars($attempt['email']) ?></div>
+                                                <div class="fw-bold text-body fs-6"><?= htmlspecialchars($fullName) ?></div>
+                                                <div class="small text-muted"><?= htmlspecialchars($email) ?></div>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="small">
-                                            <?php if ($attempt['submitted_at']): ?>
-                                                <div><?= format_date($attempt['submitted_at']) ?></div>
-                                                <div class="text-muted" style="font-size: 0.75rem;">Предаден</div>
+                                        <div class="small text-body">
+                                            <?php if (!empty($attemptRow['submitted_at'])): ?>
+                                                <div><?= format_date($attemptRow['submitted_at']) ?></div>
+                                                <div class="text-muted opacity-75" style="font-size: 0.75rem;">Предаден</div>
                                             <?php else: ?>
-                                                <div><?= format_date($attempt['started_at']) ?></div>
-                                                <div class="text-muted" style="font-size: 0.75rem;">Започнат</div>
+                                                <div><?= format_date($attemptRow['started_at']) ?></div>
+                                                <div class="text-muted opacity-75" style="font-size: 0.75rem;">Започнат</div>
                                             <?php endif; ?>
                                         </div>
                                     </td>
                                     <td>
                                         <?php if ($percentValue !== null): ?>
                                             <div class="d-flex align-items-center gap-2">
-                                                <div class="progress flex-grow-1" style="width: 60px; height: 6px; background: rgba(0,0,0,0.05);">
+                                                <div class="progress flex-grow-1" style="width: 60px; height: 6px; background: rgba(0,0,0,0.1);">
                                                     <div class="progress-bar <?= $percentValue >= 50 ? 'bg-success' : 'bg-danger' ?> rounded-pill" style="width: <?= $percentValue ?>%"></div>
                                                 </div>
-                                                <span class="fw-bold small"><?= $percentValue ?>%</span>
+                                                <span class="fw-bold small text-body"><?= $percentValue ?>%</span>
                                             </div>
                                         <?php else: ?>
                                             <span class="text-muted">—</span>
@@ -467,7 +474,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                         <span class="badge <?= $statusClass ?> rounded-pill px-2 fw-normal">
                                             <?= htmlspecialchars($statusLabel) ?>
                                         </span>
-                                        <?php if (!empty($attempt['strict_violation'])): ?>
+                                        <?php if (!empty($attemptRow['strict_violation'])): ?>
                                             <i class="bi bi-exclamation-triangle-fill text-danger ms-1" title="Нарушение на стриктен режим"></i>
                                         <?php endif; ?>
                                     </td>
@@ -477,11 +484,11 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                                 <i class="bi bi-three-dots-vertical"></i>
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg">
-                                                <li><a class="dropdown-item" href="attempt_review.php?id=<?= (int)$attempt['id'] ?>"><i class="bi bi-eye me-2 text-muted"></i> Преглед</a></li>
-                                                <li><a class="dropdown-item" href="student_attempt.php?id=<?= (int)$attempt['id'] ?>" target="_blank"><i class="bi bi-box-arrow-up-right me-2 text-muted"></i> Виж като ученик</a></li>
-                                                <?php if (!empty($attempt['submitted_at'])): ?>
+                                                <li><a class="dropdown-item" href="attempt_review.php?id=<?= (int)$attemptRow['id'] ?>"><i class="bi bi-eye me-2 text-muted"></i> Преглед</a></li>
+                                                <li><a class="dropdown-item" href="student_attempt.php?id=<?= (int)$attemptRow['id'] ?>" target="_blank"><i class="bi bi-box-arrow-up-right me-2 text-muted"></i> Виж като ученик</a></li>
+                                                <?php if (!empty($attemptRow['submitted_at'])): ?>
                                                     <li><hr class="dropdown-divider"></li>
-                                                    <li><a class="dropdown-item small" href="test_log_event.php?attempt_id=<?= (int)$attempt['id'] ?>"><i class="bi bi-activity me-2 text-muted"></i> Журнал</a></li>
+                                                    <li><a class="dropdown-item small" href="test_log_event.php?attempt_id=<?= (int)$attemptRow['id'] ?>"><i class="bi bi-activity me-2 text-muted"></i> Журнал</a></li>
                                                 <?php endif; ?>
                                             </ul>
                                         </div>
