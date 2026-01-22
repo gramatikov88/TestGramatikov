@@ -167,425 +167,323 @@ $pageTitle = 'Задание: ' . $assignment['title'];
 ?>
 <!DOCTYPE html>
 <html lang="bg">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?= htmlspecialchars($pageTitle) ?></title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/theme.css?v=<?= time() ?>">
     <style>
-        :root {
-            --page-bg: #f5f7fb;
-            --surface-1: #ffffff;
-            --surface-2: #eef2ff;
-            --surface-card-border: rgba(15, 23, 42, 0.08);
-            --surface-border-strong: rgba(15, 23, 42, 0.15);
-            --text-main: #0f172a;
-            --text-muted: #5d6685;
-            --accent-strong: #2563eb;
-            --accent-strong-border: #1d4ed8;
-            --accent-soft: rgba(37, 99, 235, 0.2);
-            --accent-contrast: #ffffff;
-            --success-strong: #15803d;
-            --success-soft: rgba(34, 197, 94, 0.18);
-            --danger-strong: #b42318;
-            --danger-soft: rgba(252, 129, 129, 0.22);
-            --warning-strong: #a15c07;
-            --warning-soft: rgba(251, 191, 36, 0.25);
-            --neutral-soft: rgba(148, 163, 184, 0.23);
-            --focus-ring: rgba(37, 99, 235, 0.38);
-        }
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --page-bg: #050a18;
-                --surface-1: #0c1424;
-                --surface-2: #131f36;
-                --surface-card-border: rgba(148, 163, 184, 0.25);
-                --surface-border-strong: rgba(148, 163, 184, 0.35);
-                --text-main: #f8fafc;
-                --text-muted: #9da8c2;
-                --accent-strong: #60a5fa;
-                --accent-strong-border: #3b82f6;
-                --accent-soft: rgba(96, 165, 250, 0.35);
-                --accent-contrast: #02101f;
-                --success-strong: #4ade80;
-                --success-soft: rgba(74, 222, 128, 0.25);
-                --danger-strong: #fb7185;
-                --danger-soft: rgba(248, 113, 113, 0.3);
-                --warning-strong: #fbbf24;
-                --warning-soft: rgba(251, 191, 36, 0.4);
-                --neutral-soft: rgba(148, 163, 184, 0.25);
-                --focus-ring: rgba(96, 165, 250, 0.45);
-            }
-        }
-        body {
-            font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans", sans-serif;
-            background: radial-gradient(circle at top, rgba(37, 99, 235, 0.14), transparent 42%) var(--page-bg);
-            color: var(--text-main);
-        }
-        body.app-surface {
-            min-height: 100vh;
-        }
-        main.container {
-            max-width: 1200px;
-        }
-        .card {
-            background-color: var(--surface-1);
-            border-color: var(--surface-card-border);
-            border-radius: 1.1rem;
-            box-shadow: 0 25px 40px rgba(15, 23, 42, 0.08);
-        }
-        .card-header {
-            background: var(--surface-2) !important;
-            border-bottom-color: var(--surface-border-strong) !important;
-            font-weight: 600;
-        }
-        .shadow-soft {
-            box-shadow: 0 20px 35px rgba(15, 23, 42, 0.12);
-        }
-        .text-muted, .small.text-muted {
-            color: var(--text-muted) !important;
-        }
-        .btn {
-            border-radius: 0.65rem;
-            font-weight: 600;
-        }
-        .btn-primary {
-            background-color: var(--accent-strong);
-            border-color: var(--accent-strong-border);
-            color: var(--accent-contrast);
-            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
-        }
-        .btn-primary:hover, .btn-primary:focus-visible {
-            background-color: #1f4fd8;
-            border-color: #1f4fd8;
-        }
-        .btn-outline-primary {
-            color: var(--accent-strong);
-            border-color: var(--accent-strong);
-        }
-        .btn-outline-primary:hover, .btn-outline-primary:focus-visible {
-            background-color: var(--accent-strong);
-            color: var(--accent-contrast);
-        }
-        .btn-outline-secondary {
-            color: var(--text-muted);
-            border-color: var(--surface-border-strong);
-        }
-        .btn-outline-secondary:hover, .btn-outline-secondary:focus-visible {
-            color: var(--text-main);
-            border-color: var(--text-muted);
-            background: rgba(148, 163, 184, 0.12);
-        }
-        .form-control, .form-select {
-            border-radius: 0.75rem;
-            border-color: var(--surface-card-border);
-            background-color: var(--surface-1);
-            color: var(--text-main);
-            box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
-        }
-        .form-control:focus, .form-select:focus {
-            border-color: var(--accent-strong);
-            box-shadow: 0 0 0 0.2rem var(--focus-ring);
-        }
-        :focus-visible {
-            outline: 3px solid transparent;
-            box-shadow: 0 0 0 0.25rem var(--focus-ring);
-        }
-        .badge-soft {
-            border-radius: 999px;
-            font-weight: 600;
-            padding: 0.25rem 0.75rem;
-            border: 1px solid transparent;
-            letter-spacing: 0.02em;
-        }
-        .badge-soft-success {
-            background: var(--success-soft);
-            color: var(--success-strong);
-            border-color: rgba(21, 128, 61, 0.35);
-        }
-        .badge-soft-primary {
-            background: var(--accent-soft);
-            color: var(--accent-strong);
-            border-color: rgba(37, 99, 235, 0.35);
-        }
-        .badge-soft-danger {
-            background: var(--danger-soft);
-            color: var(--danger-strong);
-            border-color: rgba(180, 35, 24, 0.35);
-        }
-        .badge-soft-warning {
-            background: var(--warning-soft);
-            color: var(--warning-strong);
-            border-color: rgba(161, 92, 7, 0.35);
-        }
-        .badge-soft-neutral {
-            background: var(--neutral-soft);
-            color: var(--text-main);
-            border-color: rgba(148, 163, 184, 0.35);
-        }
-        #assignmentShareQr {
-            background: var(--surface-2);
-            border-color: var(--surface-card-border) !important;
-        }
-        .table {
-            color: var(--text-main);
-        }
-        .table thead,
-        .table-light {
-            background-color: var(--surface-2) !important;
-        }
-        .table-striped > tbody > tr:nth-of-type(odd) {
-            background-color: rgba(15, 23, 42, 0.02);
-        }
-        @media (prefers-color-scheme: dark) {
-            .table-striped > tbody > tr:nth-of-type(odd) {
-                background-color: rgba(255, 255, 255, 0.04);
-            }
-        }
-        .table-hover > tbody > tr:hover {
-            background-color: rgba(37, 99, 235, 0.08);
-        }
-        .table-danger {
-            background-color: var(--danger-soft) !important;
-            color: var(--danger-strong) !important;
-        }
-        .table-responsive {
-            border-radius: 1.1rem;
-            border: 1px solid var(--surface-card-border);
-        }
-        .alert {
-            border: none;
-            border-radius: 1rem;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
-        }
-        .stat-card .card-body {
-            padding: 1.5rem;
-        }
-        .stat-card .h4 {
-            font-size: 1.75rem;
-        }
-        .qr-helper {
-            background: rgba(37, 99, 235, 0.08);
-            border-radius: 0.75rem;
-            padding: 0.65rem 1rem;
-            color: var(--text-muted);
+        .stat-card-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 1.5rem;
         }
     </style>
 </head>
-<body class="app-surface">
-<main class="container py-4">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
-        <div>
-            <h1 class="h3 mb-1"><?= htmlspecialchars($assignment['title']) ?><?php if ($strict_mode_active): ?><span class="badge badge-soft badge-soft-danger ms-2 text-uppercase small">Стриктен режим</span><?php endif; ?></h1>
-            <div class="text-muted small">
-                Тест: <?= htmlspecialchars($assignment['test_title']) ?>
-                <?php if ($selectedClassLabel): ?>
-                    <span class="ms-2">| Клас: <?= htmlspecialchars($selectedClassLabel) ?></span>
-                <?php endif; ?>
-            </div>
-        <div class="d-flex gap-2">
-            <a class="btn btn-outline-secondary" href="dashboard.php"><i class="bi bi-arrow-left"></i> Назад</a>
-            <a class="btn btn-primary" href="assignments_create.php?id=<?= (int)$assignment['id'] ?>"><i class="bi bi-pencil-square"></i> Редакция</a>
-    </div>
 
-    <?php if ($classes): ?>
-        <form method="get" class="row gy-2 gx-2 align-items-end mb-4">
-            <input type="hidden" name="id" value="<?= (int)$assignment['id'] ?>" />
-            <div class="col-sm-6 col-md-4 col-lg-3">
-                <label for="class_id" class="form-label small mb-1">Клас</label>
-                <select name="class_id" id="class_id" class="form-select" onchange="this.form.submit()">
-                    <?php foreach ($classes as $option): ?>
-                        <option value="<?= (int)$option['id'] ?>" <?= (int)$option['id'] === $selectedClassId ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($option['grade'] . $option['section']) ?> - <?= htmlspecialchars($option['school_year']) ?> - <?= htmlspecialchars($option['name']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <?php if (count($classes) > 1): ?>
-                <div class="col-12 col-sm-auto">
-                    <button type="submit" class="btn btn-outline-primary"><i class="bi bi-arrow-repeat"></i> Обнови</button>
-                </div>
-            <?php endif; ?>
-        </form>
-    <?php elseif (!$classes): ?>
-        <div class="alert alert-info d-flex align-items-center gap-2">
-            <i class="bi bi-info-circle-fill"></i>
-            <div>Заданието е възложено индивидуално на ученици, без конкретен клас.</div>
-    <?php endif; ?>
+<body class="bg-body">
+    <?php include __DIR__ . '/components/header.php'; ?>
 
-    <?php $assignmentShareLink = app_url('assignment.php?id=' . $assignmentId); ?>
-    <div class="card shadow-sm mb-4" id="assignment-share">
-        <div class="card-body d-flex flex-column flex-lg-row gap-4 align-items-start">
+    <main class="container my-5">
+        <!-- Header -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-5 animate-fade-up">
             <div>
-                <div id="assignmentShareQr" data-url="<?= htmlspecialchars($assignmentShareLink) ?>" class="p-2 border rounded bg-white"></div>
-                <div class="small text-muted mt-2 qr-helper">Students scan the QR code to open this assignment after logging in.</div>
-            </div>
-            <div class="flex-grow-1 w-100">
-                <h2 class="h5 mb-2">Assignment QR Link</h2>
-                <p class="text-muted small mb-3">Share this link or QR code with your class. Only students assigned to the activity will be able to start it.</p>
-                <div class="input-group mb-3">
-                    <input type="text" class="form-control" id="assignmentShareLink" value="<?= htmlspecialchars($assignmentShareLink) ?>" readonly />
-                    <button type="button" class="btn btn-outline-secondary" data-copy-target="#assignmentShareLink"><i class="bi bi-clipboard"></i> Copy</button>
-                </div>
-                <a class="btn btn-outline-primary" href="<?= htmlspecialchars($assignmentShareLink) ?>" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Open student view</a>
-            </div>
-        </div>
-    </div>
-    <div class="row g-3 g-md-4 mb-4">
-        <div class="col-sm-6 col-lg-3">
-            <div class="card shadow-sm h-100 stat-card">
-                <div class="card-body">
-                    <div class="text-muted small text-uppercase mb-1">Общо опити</div>
-                    <div class="h4 mb-0"><?= $attemptsCount ?></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-            <div class="card shadow-sm h-100 stat-card">
-                <div class="card-body">
-                    <div class="text-muted small text-uppercase mb-1">Предадени</div>
-                    <div class="h4 mb-0"><?= $submittedCount ?></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-            <div class="card shadow-sm h-100 stat-card">
-                <div class="card-body">
-                    <div class="text-muted small text-uppercase mb-1">Среден резултат</div>
-                    <div class="h4 mb-0"><?= $averagePercent !== null ? $averagePercent . '%' : '-' ?></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-            <div class="card shadow-sm h-100 stat-card">
-                <div class="card-body">
-                    <div class="text-muted small text-uppercase mb-1">Чакат оценка</div>
-                    <div class="h4 mb-0"><?= $needsGrade ?></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-            <div class="card shadow-sm h-100 stat-card">
-                <div class="card-body">
-                    <div class="text-muted small text-uppercase mb-1">Строги нарушения</div>
-                    <div class="h4 mb-0 text-danger"><?= $strictViolations ?></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="row g-3 g-md-4 mb-4 flex-lg-nowrap">
-        <div class="col-lg-7 d-flex">
-            <div class="card shadow-sm flex-fill">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <strong>Резултати по опити</strong>
-                    <?php if ($bestPercent !== null): ?>
-                        <span class="badge badge-soft badge-soft-success">Най-добър: <?= $bestPercent ?>%</span>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <h1 class="display-6 fw-bold m-0"><?= htmlspecialchars($assignment['title']) ?></h1>
+                    <?php if ($strict_mode_active): ?>
+                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill text-uppercase tracking-wider small px-3">Стриктен режим</span>
                     <?php endif; ?>
                 </div>
-                <div class="card-body">
-                    <?php if ($attemptsCount === 0): ?>
-                        <div class="text-muted">Все още няма опити за показване.</div>
-                    <?php else: ?>
-                        <canvas id="attemptScoresChart" height="160" aria-label="Графика с резултати" role="img"></canvas>
+                <div class="text-muted d-flex align-items-center gap-2">
+                    <i class="bi bi-folder2-open"></i>
+                    Test: <span class="fw-semibold text-body"><?= htmlspecialchars($assignment['test_title']) ?></span>
+                    <?php if ($selectedClassLabel): ?>
+                        <span class="text-secondary mx-1">•</span>
+                        <i class="bi bi-people"></i> <?= htmlspecialchars($selectedClassLabel) ?>
                     <?php endif; ?>
                 </div>
             </div>
-        </div>
-        <div class="col-lg-5 d-flex">
-            <div class="card shadow-sm flex-fill">
-                <div class="card-header bg-white"><strong>Разпределение на оценките</strong></div>
-                <div class="card-body">
-                    <?php if (array_sum($gradeDistribution) === 0): ?>
-                        <div class="text-muted">Все още няма изчислени оценки.</div>
-                    <?php else: ?>
-                        <ul class="list-group list-group-flush">
-                            <?php foreach ([6,5,4,3,2] as $grade): ?>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Оценка <?= $grade ?></span>
-                                    <span class="badge badge-soft badge-soft-primary"><?= (int)($gradeDistribution[$grade] ?? 0) ?></span>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                        <small class="text-muted d-block mt-2">Оценките са изчислени автоматично според процента.</small>
-                    <?php endif; ?>
-                </div>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary rounded-pill px-4" href="dashboard.php"><i class="bi bi-arrow-left me-2"></i> Табло</a>
+                <a class="btn btn-primary rounded-pill px-4 shadow-sm" href="assignments_create.php?id=<?= (int)$assignment['id'] ?>"><i class="bi bi-pencil-square me-2"></i> Редакция</a>
             </div>
         </div>
-    </div>
 
-    <div class="card shadow-sm">
-        <div class="card-header bg-white d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-2">
-            <strong>Списък с опити</strong>
-            <div class="text-muted small">
-                <?php if ($assignment['open_at']): ?>
-                    Отворено: <?= htmlspecialchars($assignment['open_at']) ?>
-                <?php endif; ?>
-                <?php if ($assignment['due_at']): ?>
-                    <span class="ms-2">Краен срок: <?= htmlspecialchars($assignment['due_at']) ?></span>
-                <?php endif; ?>
-                <?php if ($assignment['close_at']): ?>
-                    <span class="ms-2">Затваряне: <?= htmlspecialchars($assignment['close_at']) ?></span>
-                <?php endif; ?>
+        <!-- Filters (Glass Panel) -->
+        <?php if ($classes): ?>
+            <div class="glass-card p-4 mb-5 animate-fade-up delay-100">
+                <form method="get" class="row gy-2 gx-3 align-items-end">
+                    <input type="hidden" name="id" value="<?= (int)$assignment['id'] ?>" />
+                    <div class="col-sm-6 col-md-4 col-lg-3">
+                        <label for="class_id" class="form-label small text-muted text-uppercase tracking-wider fw-bold">Филтър по Клас</label>
+                        <select name="class_id" id="class_id" class="form-select border-0 bg-white bg-opacity-50" onchange="this.form.submit()">
+                            <?php foreach ($classes as $option): ?>
+                                <option value="<?= (int)$option['id'] ?>" <?= (int)$option['id'] === $selectedClassId ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($option['grade'] . $option['section']) ?> • <?= htmlspecialchars($option['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <?php if (count($classes) > 1): ?>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-light rounded-pill px-3"><i class="bi bi-arrow-repeat"></i></button>
+                        </div>
+                    <?php endif; ?>
+                </form>
             </div>
-        <div class="card-body p-0">
+        <?php elseif (!$classes): ?>
+            <div class="alert alert-info border-0 bg-info bg-opacity-10 d-flex align-items-center gap-3 rounded-4 mb-5">
+                <i class="bi bi-info-circle-fill fs-4 text-info"></i>
+                <div class="text-info-emphasis">Заданието е възложено индивидуално на ученици, без конкретен клас.</div>
+            </div>
+        <?php endif; ?>
+
+        <!-- QR & Share (Glass Card) -->
+        <?php $assignmentShareLink = app_url('assignment.php?id=' . $assignmentId); ?>
+        <div class="glass-card p-0 mb-5 overflow-hidden animate-fade-up delay-200">
+            <div class="row g-0">
+                <div class="col-md-3 bg-white bg-opacity-40 p-4 d-flex align-items-center justify-content-center border-end border-light">
+                    <div id="assignmentShareQr" data-url="<?= htmlspecialchars($assignmentShareLink) ?>" class="p-2 bg-white rounded-3 shadow-sm"></div>
+                </div>
+                <div class="col-md-9 p-4 d-flex flex-column justify-content-center">
+                    <h5 class="fw-bold mb-2">QR Код за бърз достъп</h5>
+                    <p class="text-muted small mb-4">Споделете този линк или QR код с учениците. Само тези, които са добавени към заданието, ще имат достъп.</p>
+                    
+                    <div class="input-group shadow-sm rounded-pill overflow-hidden" style="max-width: 600px;">
+                        <span class="input-group-text bg-white border-0 ps-3"><i class="bi bi-link-45deg"></i></span>
+                        <input type="text" class="form-control border-0 bg-white ps-1" id="assignmentShareLink" value="<?= htmlspecialchars($assignmentShareLink) ?>" readonly />
+                        <button class="btn btn-primary px-4" type="button" data-copy-target="#assignmentShareLink">Копирай</button>
+                        <a class="btn btn-outline-secondary px-3" href="<?= htmlspecialchars($assignmentShareLink) ?>" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="row g-4 mb-5 animate-fade-up delay-300">
+            <div class="col-sm-6 col-lg-3">
+                <div class="glass-card p-4 h-100 hover-lift">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="text-muted small text-uppercase tracking-wider fw-bold">Общо опити</div>
+                        <div class="stat-card-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-people"></i></div>
+                    </div>
+                    <div class="display-6 fw-bold"><?= $attemptsCount ?></div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="glass-card p-4 h-100 hover-lift">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="text-muted small text-uppercase tracking-wider fw-bold">Предадени</div>
+                        <div class="stat-card-icon bg-success bg-opacity-10 text-success"><i class="bi bi-check2-circle"></i></div>
+                    </div>
+                    <div class="display-6 fw-bold"><?= $submittedCount ?></div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="glass-card p-4 h-100 hover-lift">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="text-muted small text-uppercase tracking-wider fw-bold">Среден успех</div>
+                        <div class="stat-card-icon bg-info bg-opacity-10 text-info"><i class="bi bi-graph-up-arrow"></i></div>
+                    </div>
+                    <div class="display-6 fw-bold"><?= $averagePercent !== null ? $averagePercent . '<span class="fs-5 text-muted ms-1">%</span>' : '—' ?></div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="glass-card p-4 h-100 hover-lift <?= $strictViolations > 0 ? 'border-danger' : '' ?>">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="text-muted small text-uppercase tracking-wider fw-bold">Нарушения</div>
+                        <div class="stat-card-icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-exclamation-triangle"></i></div>
+                    </div>
+                    <div class="display-6 fw-bold text-danger"><?= $strictViolations ?></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="row g-4 mb-5 animate-fade-up delay-300">
+            <div class="col-lg-8">
+                <div class="glass-card p-4 h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold m-0">Резултати</h5>
+                        <?php if ($bestPercent !== null): ?>
+                            <span class="badge bg-success rounded-pill px-3 shadow-sm">Най-добър: <?= $bestPercent ?>%</span>
+                        <?php endif; ?>
+                    </div>
+                    <div style="height: 300px;">
+                        <?php if ($attemptsCount === 0): ?>
+                            <div class="h-100 d-flex align-items-center justify-content-center text-muted border rounded-3 bg-light bg-opacity-50">
+                                Няма достатъчно данни за графика.
+                            </div>
+                        <?php else: ?>
+                            <canvas id="attemptScoresChart"></canvas>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="glass-card p-4 h-100">
+                    <h5 class="fw-bold mb-4">Разпределение</h5>
+                    <?php if (array_sum($gradeDistribution) === 0): ?>
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-bar-chart fs-1 opacity-25 d-block mb-2"></i>
+                            Няма оценки
+                        </div>
+                    <?php else: ?>
+                        <div class="d-flex flex-column gap-3">
+                            <?php foreach ([6, 5, 4, 3, 2] as $grade): 
+                                $count = $gradeDistribution[$grade] ?? 0;
+                                $maxCount = max($gradeDistribution) ?: 1;
+                                $width = ($count / $maxCount) * 100;
+                                $colorClass = match($grade) {
+                                    6 => 'bg-success',
+                                    5 => 'bg-primary',
+                                    4 => 'bg-info',
+                                    3 => 'bg-warning',
+                                    2 => 'bg-danger',
+                                    default => 'bg-secondary'
+                                };
+                            ?>
+                                <div>
+                                    <div class="d-flex justify-content-between small fw-bold mb-1">
+                                        <span>Оценка <?= $grade ?></span>
+                                        <span class="text-muted"><?= $count ?></span>
+                                    </div>
+                                    <div class="progress" style="height: 8px; background: rgba(0,0,0,0.05);">
+                                        <div class="progress-bar <?= $colorClass ?> rounded-pill" style="width: <?= $width ?>%"></div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attempts List -->
+        <div class="glass-card overflow-hidden animate-fade-up delay-300">
+            <div class="p-4 border-bottom border-light bg-white bg-opacity-40 d-flex flex-wrap gap-3 justify-content-between align-items-center">
+                <div>
+                    <h5 class="fw-bold m-0">Списък с предали</h5>
+                    <div class="small text-muted mt-1">Детайлна справка за всички опити</div>
+                </div>
+                <div class="d-flex gap-3 small text-muted">
+                    <?php if ($assignment['due_at']): ?>
+                        <div class="d-flex align-items-center gap-1"><i class="bi bi-clock"></i> Краен срок: <?= format_date($assignment['due_at']) ?></div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
             <?php if ($attemptsCount === 0): ?>
-                <div class="p-4 text-center text-muted">Няма опити за това задание.</div>
+                <div class="p-5 text-center">
+                    <div class="display-1 text-muted opacity-25 mb-3"><i class="bi bi-inbox"></i></div>
+                    <h5 class="mb-2">Все още няма опити</h5>
+                    <p class="text-muted">Щом учениците започнат да решават, резултатите ще се появят тук.</p>
+                </div>
             <?php else: ?>
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover align-middle mb-0">
-                        <thead class="table-light">
+                    <table class="table table-hover align-middle mb-0" style="background: transparent;">
+                        <thead class="bg-light bg-opacity-50 text-uppercase text-muted small tracking-wider">
                             <tr>
-                                <th scope="col">Ученик</th>
-                                <th scope="col">Начало</th>
-                                <th scope="col">Предадено</th>
-                                <th scope="col">Резултат</th>
-                                <th scope="col">Авт. оценка</th>
-                                <th scope="col">Учителска оценка</th>
-                                <th scope="col">Статус</th>
-                                <th scope="col" class="text-end">Действия</th>
+                                <th class="ps-4 border-0">Ученик</th>
+                                <th class="border-0">Време</th>
+                                <th class="border-0">Резултат</th>
+                                <th class="border-0">Оценка</th>
+                                <th class="border-0">Статус</th>
+                                <th class="pe-4 border-0 text-end">Действия</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="border-top-0">
                             <?php foreach ($attempts as $attempt): ?>
                                 <?php
                                 $fullName = trim($attempt['first_name'] . ' ' . $attempt['last_name']);
                                 $percentValue = $attempt['percent'];
                                 $autoGrade = $attempt['auto_grade'];
                                 $teacherGrade = $attempt['teacher_grade'];
-                                $strictViolation = !empty($attempt['strict_violation']);
-                                $rowClass = $strictViolation ? 'table-danger' : '';
                                 $statusLabel = match ($attempt['status']) {
-                                    'in_progress' => 'Започнат',
+                                    'in_progress' => 'Работи',
                                     'submitted' => 'Предаден',
                                     'graded' => 'Оценен',
                                     default => ucfirst($attempt['status']),
                                 };
+                                $statusClass = match ($attempt['status']) {
+                                    'in_progress' => 'bg-info bg-opacity-10 text-info',
+                                    'submitted' => 'bg-warning bg-opacity-10 text-warning',
+                                    'graded' => 'bg-success bg-opacity-10 text-success',
+                                    default => 'bg-secondary bg-opacity-10 text-secondary',
+                                };
                                 ?>
-                                <tr class="<?= $rowClass ?>">
-                                    <td>
-                                        <div class="fw-semibold"><?= htmlspecialchars($fullName) ?></div>
-                                        <div class="text-muted small"><?= htmlspecialchars($attempt['email']) ?></div>
+                                <tr class="border-light border-opacity-50">
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="avatar-initials rounded-circle bg-white text-primary border shadow-sm d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px;">
+                                                <?= mb_substr($fullName, 0, 1) ?>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-dark"><?= htmlspecialchars($fullName) ?></div>
+                                                <div class="small text-muted"><?= htmlspecialchars($attempt['email']) ?></div>
+                                            </div>
+                                        </div>
                                     </td>
-                                    <td><?= htmlspecialchars($attempt['started_at'] ?: '-') ?></td>
-                                    <td><?= htmlspecialchars($attempt['submitted_at'] ?: '-') ?></td>
+                                    <td>
+                                        <div class="small">
+                                            <?php if ($attempt['submitted_at']): ?>
+                                                <div><?= format_date($attempt['submitted_at']) ?></div>
+                                                <div class="text-muted" style="font-size: 0.75rem;">Предаден</div>
+                                            <?php else: ?>
+                                                <div><?= format_date($attempt['started_at']) ?></div>
+                                                <div class="text-muted" style="font-size: 0.75rem;">Започнат</div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
                                     <td>
                                         <?php if ($percentValue !== null): ?>
-                                            <span class="badge badge-soft <?= $percentValue >= 50 ? 'badge-soft-success' : 'badge-soft-danger' ?>"><?= $percentValue ?>%</span>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="progress flex-grow-1" style="width: 60px; height: 6px; background: rgba(0,0,0,0.05);">
+                                                    <div class="progress-bar <?= $percentValue >= 50 ? 'bg-success' : 'bg-danger' ?> rounded-pill" style="width: <?= $percentValue ?>%"></div>
+                                                </div>
+                                                <span class="fw-bold small"><?= $percentValue ?>%</span>
+                                            </div>
                                         <?php else: ?>
-                                            -
+                                            <span class="text-muted">—</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td><?= $autoGrade !== null ? $autoGrade : '-' ?></td>
-                                    <td><?= $teacherGrade !== null ? (int)$teacherGrade : '-' ?></td>
-                                    <td><?= htmlspecialchars($statusLabel) ?></td>
-                                    <td class="text-end">
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a class="btn btn-outline-secondary" href="attempt_review.php?id=<?= (int)$attempt['id'] ?>" title="Преглед"><i class="bi bi-eye"></i></a>
-                                            <a class="btn btn-outline-primary" href="student_attempt.php?id=<?= (int)$attempt['id'] ?>" title="Преглед като ученик"><i class="bi bi-box-arrow-up-right"></i></a>
-                                            <?php if (!empty($attempt['submitted_at'])): ?>
-                                                <a class="btn btn-outline-warning" href="test_log_event.php?attempt_id=<?= (int)$attempt['id'] ?>" title="Журнал дейности"><i class="bi bi-activity"></i></a>
-                                            <?php endif; ?>
+                                    <td>
+                                        <?php if ($teacherGrade): ?>
+                                            <span class="badge bg-primary rounded-pill px-3"><?= (int)$teacherGrade ?></span>
+                                        <?php elseif ($autoGrade): ?>
+                                            <span class="badge bg-light text-secondary border rounded-pill px-3"><?= $autoGrade ?> (Авт)</span>
+                                        <?php else: ?>
+                                            <span class="text-muted small">—</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <span class="badge <?= $statusClass ?> rounded-pill px-2 fw-normal">
+                                            <?= htmlspecialchars($statusLabel) ?>
+                                        </span>
+                                        <?php if (!empty($attempt['strict_violation'])): ?>
+                                            <i class="bi bi-exclamation-triangle-fill text-danger ms-1" title="Нарушение на стриктен режим"></i>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="pe-4 text-end">
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-light rounded-circle" type="button" data-bs-toggle="dropdown">
+                                                <i class="bi bi-three-dots-vertical"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg">
+                                                <li><a class="dropdown-item" href="attempt_review.php?id=<?= (int)$attempt['id'] ?>"><i class="bi bi-eye me-2 text-muted"></i> Преглед</a></li>
+                                                <li><a class="dropdown-item" href="student_attempt.php?id=<?= (int)$attempt['id'] ?>" target="_blank"><i class="bi bi-box-arrow-up-right me-2 text-muted"></i> Виж като ученик</a></li>
+                                                <?php if (!empty($attempt['submitted_at'])): ?>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li><a class="dropdown-item small" href="test_log_event.php?attempt_id=<?= (int)$attempt['id'] ?>"><i class="bi bi-activity me-2 text-muted"></i> Журнал</a></li>
+                                                <?php endif; ?>
+                                            </ul>
                                         </div>
                                     </td>
                                 </tr>
@@ -594,113 +492,119 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                     </table>
                 </div>
             <?php endif; ?>
-    </div>
-</main>
+        </div>
+    </main>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script>
-(function(){
-    var qrBox = document.getElementById('assignmentShareQr');
-    if (qrBox && typeof QRCode === 'function') {
-        var shareUrl = qrBox.getAttribute('data-url');
-        if (shareUrl) {
-            qrBox.innerHTML = '';
-            new QRCode(qrBox, { text: shareUrl, width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M });
-        }
-    }
-    document.querySelectorAll('[data-copy-target]').forEach(function(btn){
-        btn.addEventListener('click', function(){
-            var target = document.querySelector(btn.getAttribute('data-copy-target'));
-            if (!target) return;
-            var value = target.value || target.textContent || '';
-            if (!value) return;
-            var highlight = function(){
-                btn.classList.remove('btn-outline-secondary');
-                btn.classList.add('btn-success');
-                setTimeout(function(){
-                    btn.classList.add('btn-outline-secondary');
-                    btn.classList.remove('btn-success');
-                }, 1500);
-            };
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(value).then(function(){ highlight(); }).catch(function(){});
-            } else if (target.select) {
-                target.select();
-                try { document.execCommand('copy'); highlight(); } catch (err) {}
-                if (window.getSelection) { window.getSelection().removeAllRanges(); }
-                target.blur && target.blur();
+    <?php include __DIR__ . '/components/footer.php'; ?>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script>
+        // QR Code
+        (function() {
+            var qrBox = document.getElementById('assignmentShareQr');
+            if (qrBox && typeof QRCode === 'function') {
+                var shareUrl = qrBox.getAttribute('data-url');
+                if (shareUrl) {
+                    qrBox.innerHTML = '';
+                    new QRCode(qrBox, {
+                        text: shareUrl,
+                        width: 128,
+                        height: 128,
+                        correctLevel: QRCode.CorrectLevel.M,
+                        colorDark: "#1e293b",
+                        colorLight: "#ffffff"
+                    });
+                }
             }
-        });
-    });
-})();
-</script>
-<?php if ($attemptsCount > 0): ?>
-<script>
-(function() {
-    const labels = <?= $chartLabelsJson ?>;
-    const dataValues = <?= $chartPercentsJson ?>;
-    const ctx = document.getElementById('attemptScoresChart');
-    if (!ctx) return;
-    const rootStyles = getComputedStyle(document.documentElement);
-    const barBorder = (rootStyles.getPropertyValue('--accent-strong') || '#2563eb').trim() || '#2563eb';
-    const barFill = (rootStyles.getPropertyValue('--accent-soft') || 'rgba(37, 99, 235, 0.25)').trim() || 'rgba(37, 99, 235, 0.25)';
-    const axisColor = (rootStyles.getPropertyValue('--text-muted') || '#475467').trim() || '#475467';
-    const gridColor = (rootStyles.getPropertyValue('--surface-card-border') || 'rgba(15, 23, 42, 0.15)').trim() || 'rgba(15, 23, 42, 0.15)';
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Резултат (%)',
-                data: dataValues,
-                backgroundColor: barFill,
-                borderColor: barBorder,
-                borderWidth: 2,
-                borderRadius: 6,
-                maxBarThickness: 28,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    suggestedMax: 100,
-                    ticks: {
-                        color: axisColor,
-                        callback: value => value + '%'
-                    },
-                    grid: {
-                        color: gridColor,
-                        drawBorder: false
-                    }
+            
+            // Clipboard Copy
+            document.querySelectorAll('[data-copy-target]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var target = document.querySelector(btn.getAttribute('data-copy-target'));
+                    if (!target) return;
+                    navigator.clipboard.writeText(target.value).then(function() {
+                        var originalText = btn.innerHTML;
+                        btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
+                        btn.classList.add('btn-success');
+                        btn.classList.remove('btn-primary');
+                        setTimeout(function() {
+                            btn.innerHTML = originalText;
+                            btn.classList.remove('btn-success');
+                            btn.classList.add('btn-primary');
+                        }, 2000);
+                    });
+                });
+            });
+        })();
+
+        // Chart
+        <?php if ($attemptsCount > 0): ?>
+        (function() {
+            const ctx = document.getElementById('attemptScoresChart');
+            if (!ctx) return;
+            
+            // Get CSS Variables -- wait for next tick for vars to be active if needed, but usually fine
+            // We'll hardcode defaults similar to theme if vars fail or use computed logic
+            const style = getComputedStyle(document.body);
+            // Fallback colors if vars not readable (rare)
+            const primaryColor = style.getPropertyValue('--tg-primary') || '#2563eb';
+            const primaryRgb = style.getPropertyValue('--tg-primary-rgb') || '37, 99, 235';
+            
+            const labels = <?= $chartLabelsJson ?>;
+            const dataValues = <?= $chartPercentsJson ?>;
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Успеваемост (%)',
+                        data: dataValues,
+                        backgroundColor: `rgba(${primaryRgb}, 0.25)`,
+                        borderColor: primaryColor,
+                        borderWidth: 2,
+                        borderRadius: 6,
+                        hoverBackgroundColor: `rgba(${primaryRgb}, 0.45)`,
+                        maxBarThickness: 40
+                    }]
                 },
-                x: {
-                    ticks: {
-                        color: axisColor,
-                        autoSkip: true,
-                        maxRotation: 30
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y + '%';
+                                }
+                            }
+                        }
                     },
-                    grid: {
-                        display: false
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: {
+                                color: 'rgba(0,0,0,0.05)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                callback: function(value) { return value + '%' }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { display: false } // Hide labels if crowded
+                        }
                     }
                 }
-            },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: ctx => ctx.parsed.y !== null ? ctx.parsed.y + '%' : '-'
-                    }
-                }
-            }
-        }
-    });
-})();
-</script>
-<?php endif; ?>
+            });
+        })();
+        <?php endif; ?>
+    </script>
 </body>
+
 </html>
