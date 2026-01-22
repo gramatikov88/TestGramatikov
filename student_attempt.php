@@ -60,11 +60,12 @@ $gradeColor = get_grade_color_class($grade);
     <title>Преглед на опит – TestGramatikov</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/theme.css?v=<?= time() ?>">
 </head>
-<body>
+<body class="bg-body">
 <?php include __DIR__ . '/components/header.php'; ?>
 
-<main class="container my-4 my-md-5">
+<main class="container my-4 my-md-5 animate-fade-up">
     <!-- Header / Summary Card -->
     <div class="glass-card p-4 mb-4">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">

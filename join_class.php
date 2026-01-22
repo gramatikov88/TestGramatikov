@@ -3,9 +3,9 @@ session_start();
 require_once __DIR__ . '/config.php';
 header('Content-Type: text/html; charset=utf-8');
 
-$rawCode = trim((string)($_GET['code'] ?? ''));
+$rawCode = trim((string) ($_GET['code'] ?? ''));
 if ($rawCode === '' && !empty($_SESSION['pending_class_code'])) {
-    $rawCode = (string)$_SESSION['pending_class_code'];
+    $rawCode = (string) $_SESSION['pending_class_code'];
 }
 $code = $rawCode;
 if ($rawCode !== '' && preg_match('/^[A-Za-z0-9]{6}$/', $rawCode)) {
@@ -34,7 +34,7 @@ if ($pdo && $code !== '') {
     $stmt->execute([':token' => $code]);
     $class = $stmt->fetch();
     if (!$class) {
-        $error = 'This invitation is no longer valid.';
+        $error = 'This invitation is no longer valid or the code is incorrect.';
     }
 } elseif ($code === '') {
     $error = 'Missing invitation code.';
@@ -60,7 +60,7 @@ if (!$user) {
     exit;
 }
 
-if (!empty($_SESSION['after_login_redirect']) && sanitize_redirect_path((string)$_SESSION['after_login_redirect']) === 'join_class.php?code=' . $code) {
+if (!empty($_SESSION['after_login_redirect']) && sanitize_redirect_path((string) $_SESSION['after_login_redirect']) === 'join_class.php?code=' . $code) {
     unset($_SESSION['after_login_redirect']);
 }
 
@@ -71,10 +71,10 @@ $joined = false;
 if ($class && $pdo && $isStudent) {
     $memberStmt = $pdo->prepare('SELECT 1 FROM class_students WHERE class_id = :cid AND student_id = :sid LIMIT 1');
     $memberStmt->execute([
-        ':cid' => (int)$class['id'],
-        ':sid' => (int)$user['id'],
+        ':cid' => (int) $class['id'],
+        ':sid' => (int) $user['id'],
     ]);
-    $alreadyMember = (bool)$memberStmt->fetchColumn();
+    $alreadyMember = (bool) $memberStmt->fetchColumn();
 }
 
 if ($class && $pdo && $isStudent && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['__action'] ?? '') === 'join_class') {
@@ -82,8 +82,8 @@ if ($class && $pdo && $isStudent && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_
         try {
             $ins = $pdo->prepare('INSERT IGNORE INTO class_students (class_id, student_id) VALUES (:cid, :sid)');
             $ins->execute([
-                ':cid' => (int)$class['id'],
-                ':sid' => (int)$user['id'],
+                ':cid' => (int) $class['id'],
+                ':sid' => (int) $user['id'],
             ]);
             $joined = $ins->rowCount() > 0;
             $alreadyMember = true;
@@ -103,105 +103,173 @@ $gradeLabel = '';
 $sectionLabel = '';
 $schoolYearLabel = '';
 if ($class) {
-    $teacherFirst = (string)($class['teacher_first'] ?? '');
-    $teacherLast = (string)($class['teacher_last'] ?? '');
+    $teacherFirst = (string) ($class['teacher_first'] ?? '');
+    $teacherLast = (string) ($class['teacher_last'] ?? '');
     $teacherName = trim($teacherFirst . ' ' . $teacherLast);
-    $gradeLabel = isset($class['grade']) ? (string)$class['grade'] : '';
-    $sectionLabel = (string)($class['section'] ?? '');
-    $schoolYearLabel = isset($class['school_year']) ? (string)$class['school_year'] : '';
+    $gradeLabel = isset($class['grade']) ? (string) $class['grade'] : '';
+    $sectionLabel = (string) ($class['section'] ?? '');
+    $schoolYearLabel = isset($class['school_year']) ? (string) $class['school_year'] : '';
 }
 
 ?>
 <!DOCTYPE html>
 <html lang="bg">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Join Class - TestGramatikov</title>
+    <title>Присъединяване към Клас - TestGramatikov</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/theme.css?v=<?= time() ?>">
 </head>
-<body>
-<?php include __DIR__ . '/components/header.php'; ?>
 
-<main class="container my-4 my-md-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
+<body class="bg-body d-flex flex-column min-vh-100">
+    <?php include __DIR__ . '/components/header.php'; ?>
+
+    <main class="container my-5 d-flex flex-column align-items-center justify-content-center flex-grow-1">
+        <div class="w-100 animate-fade-up" style="max-width: 600px;">
+
             <?php if ($error): ?>
-                <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
-            <?php endif; ?>
-
-            <?php if ($statusMessage === 'joined'): ?>
-                <div class="alert alert-success"><i class="bi bi-check-circle-fill me-2"></i>Присъединихте се успешно към класа.</div>
-            <?php elseif ($statusMessage === 'already'): ?>
-                <div class="alert alert-info"><i class="bi bi-info-circle-fill me-2"></i>Вие вече сте записани в този клас.</div>
-            <?php elseif ($statusMessage === 'error'): ?>
-                <div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Не успяхме да ви добавим в класа. Моля, опитайте отново.</div>
-            <?php endif; ?>
-
-            <?php if ($class): ?>
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h1 class="h4 mb-3"><?= htmlspecialchars($class['name']) ?></h1>
-                        <ul class="list-unstyled text-muted small mb-4">
-                            <?php if ($teacherName !== ''): ?>
-                                <li><strong>Teacher:</strong> <?= htmlspecialchars($teacherName) ?></li>
-                            <?php endif; ?>
-                            <li><strong>Grade / Section:</strong> <?= htmlspecialchars($gradeLabel . ($sectionLabel !== '' ? (' ' . $sectionLabel) : '')) ?></li>
-                            <li><strong>School Year:</strong> <?= htmlspecialchars($schoolYearLabel) ?></li>
-                            <?php if (!empty($class['description'])): ?>
-                                <li><strong>Description:</strong> <?= htmlspecialchars($class['description']) ?></li>
-                            <?php endif; ?>
-                        </ul>
-
-                        <?php if ($isStudent): ?>
-                            <?php if ($alreadyMember): ?>
-                                <div class="alert alert-info d-flex align-items-center gap-2">
-                                    <i class="bi bi-people-fill"></i>
-                                    <span>Вие вече сте добавени в този клас</span>
-                                </div>
-                            <?php else: ?>
-                                <p class="mb-3">Кликнете на бутона, за да бъдете добавени в клас</p>
-                                <form method="post" class="mb-3">
-                                    <input type="hidden" name="__action" value="join_class" />
-                                    <button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Присъедини се към класа</button>
-                                </form>
-                            <?php endif; ?>
-                        <?php else: ?>
-                            <div class="alert alert-warning d-flex align-items-center gap-2">
-                                <i class="bi bi-person-fill-exclamation"></i>
-                                <span>Само ученически акаунти могат да се присъединят към клас чрез този линк.</span>
-                            </div>
-                        <?php endif; ?>
-
-                        <a href="dashboard.php" class="btn btn-outline-secondary"><i class="bi bi-speedometer2 me-1"></i>Отидете на таблото</a>
+                <div class="alert alert-danger shadow-sm border-0 rounded-4 mb-4">
+                    <div class="d-flex gap-3 align-items-center">
+                        <i class="bi bi-exclamation-circle-fill fs-3 text-danger"></i>
+                        <div>
+                            <div class="fw-bold">Възникна грешка</div>
+                            <div><?= htmlspecialchars($error) ?></div>
+                        </div>
                     </div>
+                </div>
+                <div class="text-center">
+                    <a href="index.php" class="btn btn-primary rounded-pill px-4">Към началото</a>
                 </div>
             <?php else: ?>
-                <div class="card shadow-sm">
-                    <div class="card-body text-center">
-                        <i class="bi bi-link-45deg display-5 text-muted"></i>
-                        <h2 class="h5 mt-3">Поканата не е налична</h2>
-                        <p class="text-muted">Моля, попитайте учителя си за нов QR код или линк за клас.</p>
-                        <a href="index.php" class="btn btn-primary"><i class="bi bi-house me-1"></i>Назад към началото</a>
+
+                <!-- Status Messages -->
+                <?php if ($statusMessage === 'joined'): ?>
+                    <div class="alert alert-success shadow-sm border-0 rounded-4 mb-4 animate-scale-in">
+                        <div class="d-flex gap-3 align-items-center">
+                            <i class="bi bi-check-circle-fill fs-3 text-success"></i>
+                            <div>
+                                <div class="fw-bold fs-5">Успех!</div>
+                                <div>Присъединихте се успешно към класа.</div>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                <?php elseif ($statusMessage === 'already'): ?>
+                    <div class="alert alert-info shadow-sm border-0 rounded-4 mb-4 animate-scale-in">
+                        <div class="d-flex gap-3 align-items-center">
+                            <i class="bi bi-info-circle-fill fs-3 text-info"></i>
+                            <div>
+                                <div class="fw-bold">Инфо</div>
+                                <div>Вие вече сте част от този клас.</div>
+                            </div>
+                        </div>
+                    </div>
+                <?php elseif ($statusMessage === 'error'): ?>
+                    <div class="alert alert-danger shadow-sm border-0 rounded-4 mb-4 animate-scale-in">
+                        <div class="d-flex gap-3 align-items-center">
+                            <i class="bi bi-x-circle-fill fs-3 text-danger"></i>
+                            <div>Не успяхме да ви добавим в класа. Моля, опитайте отново.</div>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($class): ?>
+                    <div class="glass-card overflow-hidden">
+                        <div class="bg-primary bg-opacity-10 p-5 text-center border-bottom border-light">
+                            <div class="d-inline-flex align-items-center justify-content-center bg-white rounded-circle shadow-sm mb-3"
+                                style="width: 80px; height: 80px;">
+                                <i class="bi bi-people-fill text-primary display-5"></i>
+                            </div>
+                            <h1 class="display-6 fw-bold mb-1"><?= htmlspecialchars($class['name']) ?></h1>
+                            <div class="text-muted small text-uppercase tracking-wider fw-bold">Покана за клас</div>
+                        </div>
+
+                        <div class="p-5">
+                            <div class="row g-4 mb-5">
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-light bg-opacity-50 rounded-3 border h-100">
+                                        <small
+                                            class="text-muted text-uppercase tracking-wider fw-bold d-block mb-1">Учител</small>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-person-circle text-secondary"></i>
+                                            <span class="fw-semibold"><?= htmlspecialchars($teacherName) ?: '—' ?></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-light bg-opacity-50 rounded-3 border h-100">
+                                        <small class="text-muted text-uppercase tracking-wider fw-bold d-block mb-1">Клас /
+                                            Година</small>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-mortarboard-fill text-secondary"></i>
+                                            <span class="fw-semibold">
+                                                <?= htmlspecialchars($gradeLabel . ($sectionLabel ? ' ' . $sectionLabel : '')) ?>
+                                                <span class="text-muted mx-1">•</span>
+                                                <?= htmlspecialchars($schoolYearLabel) ?>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <?php if (!empty($class['description'])): ?>
+                                    <div class="col-12">
+                                        <div class="p-3 bg-light bg-opacity-50 rounded-3 border">
+                                            <small
+                                                class="text-muted text-uppercase tracking-wider fw-bold d-block mb-1">Описание</small>
+                                            <div class="text-dark"><?= htmlspecialchars($class['description']) ?></div>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="d-grid gap-3">
+                                <?php if ($isStudent): ?>
+                                    <?php if ($alreadyMember): ?>
+                                        <a href="dashboard.php" class="btn btn-primary btn-lg rounded-pill shadow-lg hover-lift">
+                                            <i class="bi bi-speedometer2 me-2"></i> Към таблото
+                                        </a>
+                                        <button disabled class="btn btn-light rounded-pill border">
+                                            <i class="bi bi-check2-all me-2"></i> Вече сте записани
+                                        </button>
+                                    <?php else: ?>
+                                        <form method="post" class="d-grid">
+                                            <input type="hidden" name="__action" value="join_class" />
+                                            <button type="submit"
+                                                class="btn btn-primary btn-lg rounded-pill shadow-lg hover-lift py-3 fw-bold">
+                                                Присъедини се към класа
+                                            </button>
+                                        </form>
+                                        <a href="dashboard.php" class="btn btn-outline-secondary rounded-pill">Отказ</a>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <div
+                                        class="alert alert-warning border-0 bg-warning bg-opacity-10 text-dark rounded-3 d-flex align-items-center gap-3">
+                                        <i class="bi bi-person-lock fs-4 text-warning"></i>
+                                        <div>Тук могат да се присъединяват само ученически акаунти.</div>
+                                    </div>
+                                    <a href="dashboard.php" class="btn btn-outline-primary rounded-pill">Към таблото</a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="glass-card p-5 text-center">
+                        <div class="mb-4 text-muted opacity-25">
+                            <i class="bi bi-slash-circle display-1"></i>
+                        </div>
+                        <h3>Невалидна покана</h3>
+                        <p class="text-muted mb-4">Кодът, който използвате, не е валиден или е изтекъл.</p>
+                        <a href="index.php" class="btn btn-primary rounded-pill px-4">Начало</a>
+                    </div>
+                <?php endif; ?>
+
             <?php endif; ?>
         </div>
-    </div>
-</main>
+    </main>
 
-<footer class="border-top py-4 mt-5">
-    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-        <div class="text-muted">&copy; <?= date('Y'); ?> TestGramatikov</div>
-        <div class="d-flex gap-3 small">
-            <a class="text-decoration-none" href="terms.php">Условия за ползване</a>
-            <a class="text-decoration-none" href="privacy.php">Декларация за поверителност</a>
-            <a class="text-decoration-none" href="contact.php">Контакт</a>
-        </div>
-    </div>
+    <?php include __DIR__ . '/components/footer.php'; ?>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</footer>
 </body>
-</html>
 
+</html>
