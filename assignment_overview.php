@@ -249,7 +249,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
         <?php $assignmentShareLink = app_url('assignment.php?id=' . $assignmentId); ?>
         <div class="glass-card p-0 mb-5 overflow-hidden animate-fade-up delay-200">
             <div class="row g-0">
-                <div class="col-md-3 bg-white bg-opacity-40 p-4 d-flex align-items-center justify-content-center border-end border-light">
+                <div class="col-md-3 bg-secondary bg-opacity-10 p-4 d-flex align-items-center justify-content-center border-end border-light border-opacity-10">
                     <div id="assignmentShareQr" data-url="<?= htmlspecialchars($assignmentShareLink) ?>" class="p-2 bg-white rounded-3 shadow-sm"></div>
                 </div>
                 <div class="col-md-9 p-4 d-flex flex-column justify-content-center">
@@ -368,7 +368,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
 
         <!-- Attempts List -->
         <div class="glass-card animate-fade-up delay-300">
-            <div class="p-4 border-bottom border-light bg-white bg-opacity-40 d-flex flex-wrap gap-3 justify-content-between align-items-center">
+            <div class="p-4 border-bottom border-light border-opacity-10 bg-secondary bg-opacity-10 d-flex flex-wrap gap-3 justify-content-between align-items-center">
                 <div>
                     <h5 class="fw-bold m-0">Списък с предали</h5>
                     <div class="small text-muted mt-1">Детайлна справка за всички опити</div>
