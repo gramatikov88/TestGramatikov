@@ -511,37 +511,26 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                         <?php endif; ?>
                                     </td>
                                     <td class="pe-4 text-end">
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-light rounded-circle" type="button"
-                                                data-bs-toggle="dropdown" data-bs-display="static">
-                                                <i class="bi bi-three-dots-vertical"></i>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg">
-                                                <li><a class="dropdown-item"
-                                                        href="attempt_review.php?id=<?= (int) $attemptRow['id'] ?>"><i
-                                                            class="bi bi-eye me-2 text-muted"></i> Преглед</a></li>
-                                                <li><a class="dropdown-item"
-                                                        href="student_attempt.php?id=<?= (int) $attemptRow['id'] ?>"
-                                                        target="_blank"><i class="bi bi-box-arrow-up-right me-2 text-muted"></i>
-                                                        Виж като ученик</a></li>
-                                                <?php if (!empty($attemptRow['submitted_at'])): ?>
-                                                    <li>
-                                                        <hr class="dropdown-divider">
-                                                    </li>
-                                                    <li><a class="dropdown-item small"
-                                                            href="test_log_event.php?attempt_id=<?= (int) $attemptRow['id'] ?>"><i
-                                                                class="bi bi-activity me-2 text-muted"></i> Журнал</a></li>
-                                                <?php endif; ?>
-                                                <li>
-                                                    <hr class="dropdown-divider">
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item text-danger confirm-delete"
-                                                        href="attempt_delete.php?id=<?= (int) $attemptRow['id'] ?>&return_url=<?= urlencode($_SERVER['REQUEST_URI']) ?>">
-                                                        <i class="bi bi-trash me-2"></i> Изтрий
-                                                    </a>
-                                                </li>
-                                            </ul>
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <a class="btn btn-sm btn-outline-primary"
+                                                href="attempt_review.php?id=<?= (int) $attemptRow['id'] ?>"
+                                                title="Преглед и Оценяване">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            
+                                            <?php if (!empty($attemptRow['submitted_at'])): ?>
+                                                <a class="btn btn-sm btn-outline-secondary"
+                                                    href="test_log_event.php?attempt_id=<?= (int) $attemptRow['id'] ?>"
+                                                    title="Журнал на действията">
+                                                    <i class="bi bi-activity"></i>
+                                                </a>
+                                            <?php endif; ?>
+
+                                            <a class="btn btn-sm btn-outline-danger confirm-delete"
+                                                href="attempt_delete.php?id=<?= (int) $attemptRow['id'] ?>&return_url=<?= urlencode($_SERVER['REQUEST_URI']) ?>"
+                                                title="Изтрий опита">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
