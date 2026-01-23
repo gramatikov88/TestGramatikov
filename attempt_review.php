@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/lib/helpers.php';
 header('Content-Type: text/html; charset=utf-8');
 
 if (empty($_SESSION['user']) || $_SESSION['user']['role'] !== 'teacher') {
@@ -44,26 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['teacher_grade'])) {
     }
 }
 
-function percent($s, $m)
-{
-    if ($m > 0 && $s !== null)
-        return round(($s / $m) * 100, 2);
-    return null;
-}
-function grade_from_percent($p)
-{
-    if ($p === null)
-        return null;
-    if ($p >= 90)
-        return 6;
-    if ($p >= 80)
-        return 5;
-    if ($p >= 65)
-        return 4;
-    if ($p >= 50)
-        return 3;
-    return 2;
-}
+// Functions moved to lib/helpers.php
 
 $p = percent($attempt['score_obtained'], $attempt['max_score']);
 $autoGrade = grade_from_percent($p);
@@ -159,7 +141,8 @@ while ($row = $aaStmt->fetch()) {
                         class="text-muted small"><?= htmlspecialchars($attempt['submitted_at'] ? format_date($attempt['submitted_at']) : format_date($attempt['started_at'])) ?></span>
                 </div>
                 <h1 class="display-6 fw-bold m-0">
-                    <?= htmlspecialchars($attempt['first_name'] . ' ' . $attempt['last_name']) ?></h1>
+                    <?= htmlspecialchars($attempt['first_name'] . ' ' . $attempt['last_name']) ?>
+                </h1>
                 <div class="text-muted mt-1">
                     <i class="bi bi-folder2-open me-1"></i> <?= htmlspecialchars($attempt['assignment_title']) ?>
                     <span class="mx-2">•</span>
@@ -336,7 +319,8 @@ while ($row = $aaStmt->fetch()) {
                                 <div class="text-muted small text-uppercase tracking-wider fw-bold mb-1">Числен отговор на
                                     ученика</div>
                                 <div class="fs-5 fw-medium font-monospace">
-                                    <?= htmlspecialchars($studentAns['numeric_value'] ?? '—') ?></div>
+                                    <?= htmlspecialchars($studentAns['numeric_value'] ?? '—') ?>
+                                </div>
                             </div>
                             <?php if (!empty($answers[0]['content'])): ?>
                                 <div
