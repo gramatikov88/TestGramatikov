@@ -25,7 +25,7 @@ require_once __DIR__ . '/../config.php';
 </script>
 <link rel="stylesheet" href="<?= htmlspecialchars(app_url('assets/css/theme.css')) ?>?v=<?= time() ?>">
 
-<header class="sticky-top glass-header z-3">
+<header class="sticky-top glass-header" style="z-index: 9999;">
     <nav class="navbar navbar-expand-lg py-3">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center gap-2" href="index.php">
