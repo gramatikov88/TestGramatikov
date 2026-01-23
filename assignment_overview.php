@@ -442,10 +442,10 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                         <div class="small text-body">
                                             <?php if (!empty($attemptRow['submitted_at'])): ?>
                                                 <div><?= format_date($attemptRow['submitted_at']) ?></div>
-                                                <div class="text-muted opacity-75" style="font-size: 0.75rem;">Предаден</div>
+                                                <div class="text-body-secondary opacity-75" style="font-size: 0.75rem;">Предаден</div>
                                             <?php else: ?>
                                                 <div><?= format_date($attemptRow['started_at']) ?></div>
-                                                <div class="text-muted opacity-75" style="font-size: 0.75rem;">Започнат</div>
+                                                <div class="text-body-secondary opacity-75" style="font-size: 0.75rem;">Започнат</div>
                                             <?php endif; ?>
                                         </div>
                                     </td>
@@ -458,7 +458,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                                 <span class="fw-bold small text-body"><?= $percentValue ?>%</span>
                                             </div>
                                         <?php else: ?>
-                                            <span class="text-muted">—</span>
+                                            <span class="text-body-secondary">—</span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
@@ -467,7 +467,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                         <?php elseif ($autoGrade): ?>
                                             <span class="badge bg-light text-secondary border rounded-pill px-3"><?= $autoGrade ?> (Авт)</span>
                                         <?php else: ?>
-                                            <span class="text-muted small">—</span>
+                                            <span class="text-body-secondary small">—</span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
@@ -552,12 +552,14 @@ $pageTitle = 'Задание: ' . $assignment['title'];
             const ctx = document.getElementById('attemptScoresChart');
             if (!ctx) return;
             
-            // Get CSS Variables -- wait for next tick for vars to be active if needed, but usually fine
-            // We'll hardcode defaults similar to theme if vars fail or use computed logic
             const style = getComputedStyle(document.body);
-            // Fallback colors if vars not readable (rare)
-            const primaryColor = style.getPropertyValue('--tg-primary') || '#2563eb';
-            const primaryRgb = style.getPropertyValue('--tg-primary-rgb') || '37, 99, 235';
+            const bodyColor = style.getPropertyValue('--tg-body-color') || '#ffffff';
+            const primaryColor = style.getPropertyValue('--tg-primary') || '#94a3b8';
+            const primaryRgb = style.getPropertyValue('--tg-primary-rgb') || '148, 163, 184';
+            
+            // Set defaults for dark mode visibility
+            Chart.defaults.color = bodyColor;
+            Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
             
             const labels = <?= $chartLabelsJson ?>;
             const dataValues = <?= $chartPercentsJson ?>;
@@ -595,16 +597,20 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                             beginAtZero: true,
                             max: 100,
                             grid: {
-                                color: 'rgba(0,0,0,0.05)',
+                                color: 'rgba(255,255,255,0.05)',
                                 drawBorder: false
                             },
                             ticks: {
+                                color: bodyColor,
                                 callback: function(value) { return value + '%' }
                             }
                         },
                         x: {
                             grid: { display: false },
-                            ticks: { display: false } // Hide labels if crowded
+                            ticks: { 
+                                display: false, // Hide labels if crowded, or show
+                                color: bodyColor
+                            }
                         }
                     }
                 }
