@@ -164,7 +164,7 @@ while ($row = $aaStmt->fetch()) {
                 <div>
                     <div class="text-muted small text-uppercase tracking-wider fw-bold mb-1">Резултат</div>
                     <div class="d-flex align-items-baseline gap-2">
-                        <span class="display-4 fw-bold text-dark"><?= (float) $attempt['score_obtained'] ?></span>
+                        <span class="display-4 fw-bold text-body"><?= (float) $attempt['score_obtained'] ?></span>
                         <span class="text-muted fs-4">/ <?= (float) $attempt['max_score'] ?> т.</span>
                     </div>
                 </div>
