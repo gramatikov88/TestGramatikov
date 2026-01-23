@@ -16,7 +16,7 @@ ensure_test_theme_and_q_media($pdo);
 
 // Functions moved to lib/helpers.php
 
-$assignmentId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$assignmentId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 if ($assignmentId <= 0) {
     header('Location: dashboard.php');
     exit;
@@ -28,7 +28,7 @@ $stmt = $pdo->prepare('SELECT a.*, t.title AS test_title, t.is_strict_mode
                        WHERE a.id = :id AND a.assigned_by_teacher_id = :tid');
 $stmt->execute([
     ':id' => $assignmentId,
-    ':tid' => (int)$user['id'],
+    ':tid' => (int) $user['id'],
 ]);
 $assignment = $stmt->fetch();
 if (!$assignment) {
@@ -44,17 +44,17 @@ $classesStmt = $pdo->prepare('SELECT c.id, c.grade, c.section, c.school_year, c.
                               ORDER BY c.school_year DESC, c.grade, c.section');
 $classesStmt->execute([
     ':aid' => $assignmentId,
-    ':tid' => (int)$user['id'],
+    ':tid' => (int) $user['id'],
 ]);
 $classes = $classesStmt->fetchAll();
-$classIds = array_map(fn($c) => (int)$c['id'], $classes);
+$classIds = array_map(fn($c) => (int) $c['id'], $classes);
 
-$selectedClassId = isset($_GET['class_id']) ? (int)$_GET['class_id'] : 0;
+$selectedClassId = isset($_GET['class_id']) ? (int) $_GET['class_id'] : 0;
 if ($selectedClassId && !in_array($selectedClassId, $classIds, true)) {
     $selectedClassId = 0;
 }
 if (!$selectedClassId && $classes) {
-    $selectedClassId = (int)$classes[0]['id'];
+    $selectedClassId = (int) $classes[0]['id'];
 }
 
 $attemptsSql = 'SELECT atp.id, atp.student_id, atp.started_at, atp.submitted_at, atp.status,
@@ -78,7 +78,7 @@ if ($selectedClassId) {
         OR NOT EXISTS (SELECT 1 FROM assignment_students ast2 WHERE ast2.assignment_id = atp.assignment_id)
     )';
 }
-$attemptsSql .= ' ORDER BY COALESCE(atp.submitted_at, atp.started_at) DESC, atp.id DESC';
+$attemptsSql .= ' ORDER BY u.first_name ASC, u.last_name ASC, atp.id DESC';
 $attemptStmt = $pdo->prepare($attemptsSql);
 $attemptStmt->execute($attemptParams);
 $attempts = $attemptStmt->fetchAll();
@@ -141,8 +141,8 @@ $gradeDistributionJson = json_encode($gradeDistribution, JSON_NUMERIC_CHECK);
 $selectedClassLabel = null;
 if ($selectedClassId) {
     foreach ($classes as $classRow) {
-        if ((int)$classRow['id'] === $selectedClassId) {
-$selectedClassLabel = sprintf('%s%s - %s', $classRow['grade'], $classRow['section'], $classRow['school_year']);
+        if ((int) $classRow['id'] === $selectedClassId) {
+            $selectedClassLabel = sprintf('%s%s - %s', $classRow['grade'], $classRow['section'], $classRow['school_year']);
             break;
         }
     }
@@ -178,12 +178,15 @@ $pageTitle = 'Задание: ' . $assignment['title'];
 
     <main class="container my-5">
         <!-- Header -->
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-5 animate-fade-up">
+        <div
+            class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-5 animate-fade-up">
             <div>
                 <div class="d-flex align-items-center gap-2 mb-1">
                     <h1 class="display-6 fw-bold m-0"><?= htmlspecialchars($assignment['title']) ?></h1>
                     <?php if ($strict_mode_active): ?>
-                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill text-uppercase tracking-wider small px-3">Стриктен режим</span>
+                        <span
+                            class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill text-uppercase tracking-wider small px-3">Стриктен
+                            режим</span>
                     <?php endif; ?>
                 </div>
                 <div class="text-muted d-flex align-items-center gap-2">
@@ -196,8 +199,11 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                 </div>
             </div>
             <div class="d-flex gap-2">
-                <a class="btn btn-outline-secondary rounded-pill px-4" href="dashboard.php"><i class="bi bi-arrow-left me-2"></i> Табло</a>
-                <a class="btn btn-primary rounded-pill px-4 shadow-sm" href="assignments_create.php?id=<?= (int)$assignment['id'] ?>"><i class="bi bi-pencil-square me-2"></i> Редакция</a>
+                <a class="btn btn-outline-secondary rounded-pill px-4" href="dashboard.php"><i
+                        class="bi bi-arrow-left me-2"></i> Табло</a>
+                <a class="btn btn-primary rounded-pill px-4 shadow-sm"
+                    href="assignments_create.php?id=<?= (int) $assignment['id'] ?>"><i
+                        class="bi bi-pencil-square me-2"></i> Редакция</a>
             </div>
         </div>
 
@@ -205,20 +211,24 @@ $pageTitle = 'Задание: ' . $assignment['title'];
         <?php if ($classes): ?>
             <div class="glass-card p-4 mb-5 animate-fade-up delay-100">
                 <form method="get" class="row gy-2 gx-3 align-items-end">
-                    <input type="hidden" name="id" value="<?= (int)$assignment['id'] ?>" />
+                    <input type="hidden" name="id" value="<?= (int) $assignment['id'] ?>" />
                     <div class="col-sm-6 col-md-4 col-lg-3">
-                        <label for="class_id" class="form-label small text-muted text-uppercase tracking-wider fw-bold">Филтър по Клас</label>
-                        <select name="class_id" id="class_id" class="form-select border-0 bg-white bg-opacity-50" onchange="this.form.submit()">
+                        <label for="class_id"
+                            class="form-label small text-muted text-uppercase tracking-wider fw-bold">Филтър по Клас</label>
+                        <select name="class_id" id="class_id" class="form-select border-0 bg-white bg-opacity-50"
+                            onchange="this.form.submit()">
                             <?php foreach ($classes as $option): ?>
-                                <option value="<?= (int)$option['id'] ?>" <?= (int)$option['id'] === $selectedClassId ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($option['grade'] . $option['section']) ?> • <?= htmlspecialchars($option['name']) ?>
+                                <option value="<?= (int) $option['id'] ?>" <?= (int) $option['id'] === $selectedClassId ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($option['grade'] . $option['section']) ?> •
+                                    <?= htmlspecialchars($option['name']) ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <?php if (count($classes) > 1): ?>
                         <div class="col-auto">
-                            <button type="submit" class="btn btn-light rounded-pill px-3"><i class="bi bi-arrow-repeat"></i></button>
+                            <button type="submit" class="btn btn-light rounded-pill px-3"><i
+                                    class="bi bi-arrow-repeat"></i></button>
                         </div>
                     <?php endif; ?>
                 </form>
@@ -234,18 +244,24 @@ $pageTitle = 'Задание: ' . $assignment['title'];
         <?php $assignmentShareLink = app_url('assignment.php?id=' . $assignmentId); ?>
         <div class="glass-card p-0 mb-5 overflow-hidden animate-fade-up delay-200">
             <div class="row g-0">
-                <div class="col-md-3 bg-secondary bg-opacity-10 p-4 d-flex align-items-center justify-content-center border-end border-light border-opacity-10">
-                    <div id="assignmentShareQr" data-url="<?= htmlspecialchars($assignmentShareLink) ?>" class="p-2 bg-white rounded-3 shadow-sm d-inline-block"></div>
+                <div
+                    class="col-md-3 bg-secondary bg-opacity-10 p-4 d-flex align-items-center justify-content-center border-end border-light border-opacity-10">
+                    <div id="assignmentShareQr" data-url="<?= htmlspecialchars($assignmentShareLink) ?>"
+                        class="p-2 bg-white rounded-3 shadow-sm d-inline-block"></div>
                 </div>
                 <div class="col-md-9 p-4 d-flex flex-column justify-content-center">
                     <h5 class="fw-bold mb-2">QR Код за бърз достъп</h5>
-                    <p class="text-muted small mb-4">Споделете този линк или QR код с учениците. Само тези, които са добавени към заданието, ще имат достъп.</p>
-                    
+                    <p class="text-muted small mb-4">Споделете този линк или QR код с учениците. Само тези, които са
+                        добавени към заданието, ще имат достъп.</p>
+
                     <div class="input-group shadow-sm rounded-pill overflow-hidden" style="max-width: 600px;">
                         <span class="input-group-text bg-white border-0 ps-3"><i class="bi bi-link-45deg"></i></span>
-                        <input type="text" class="form-control border-0 bg-white ps-1" id="assignmentShareLink" value="<?= htmlspecialchars($assignmentShareLink) ?>" readonly />
-                        <button class="btn btn-primary px-4" type="button" data-copy-target="#assignmentShareLink">Копирай</button>
-                        <a class="btn btn-outline-secondary px-3" href="<?= htmlspecialchars($assignmentShareLink) ?>" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i></a>
+                        <input type="text" class="form-control border-0 bg-white ps-1" id="assignmentShareLink"
+                            value="<?= htmlspecialchars($assignmentShareLink) ?>" readonly />
+                        <button class="btn btn-primary px-4" type="button"
+                            data-copy-target="#assignmentShareLink">Копирай</button>
+                        <a class="btn btn-outline-secondary px-3" href="<?= htmlspecialchars($assignmentShareLink) ?>"
+                            target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i></a>
                     </div>
                 </div>
             </div>
@@ -257,7 +273,8 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                 <div class="glass-card p-4 h-100 hover-lift">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div class="text-muted small text-uppercase tracking-wider fw-bold">Общо опити</div>
-                        <div class="stat-card-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-people"></i></div>
+                        <div class="stat-card-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-people"></i>
+                        </div>
                     </div>
                     <div class="display-6 fw-bold"><?= $attemptsCount ?></div>
                 </div>
@@ -266,7 +283,8 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                 <div class="glass-card p-4 h-100 hover-lift">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div class="text-muted small text-uppercase tracking-wider fw-bold">Предадени</div>
-                        <div class="stat-card-icon bg-success bg-opacity-10 text-success"><i class="bi bi-check2-circle"></i></div>
+                        <div class="stat-card-icon bg-success bg-opacity-10 text-success"><i
+                                class="bi bi-check2-circle"></i></div>
                     </div>
                     <div class="display-6 fw-bold"><?= $submittedCount ?></div>
                 </div>
@@ -275,16 +293,20 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                 <div class="glass-card p-4 h-100 hover-lift">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div class="text-muted small text-uppercase tracking-wider fw-bold">Среден успех</div>
-                        <div class="stat-card-icon bg-info bg-opacity-10 text-info"><i class="bi bi-graph-up-arrow"></i></div>
+                        <div class="stat-card-icon bg-info bg-opacity-10 text-info"><i class="bi bi-graph-up-arrow"></i>
+                        </div>
                     </div>
-                    <div class="display-6 fw-bold"><?= $averagePercent !== null ? $averagePercent . '<span class="fs-5 text-muted ms-1">%</span>' : '—' ?></div>
+                    <div class="display-6 fw-bold">
+                        <?= $averagePercent !== null ? $averagePercent . '<span class="fs-5 text-muted ms-1">%</span>' : '—' ?>
+                    </div>
                 </div>
             </div>
             <div class="col-sm-6 col-lg-3">
                 <div class="glass-card p-4 h-100 hover-lift <?= $strictViolations > 0 ? 'border-danger' : '' ?>">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div class="text-muted small text-uppercase tracking-wider fw-bold">Нарушения</div>
-                        <div class="stat-card-icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-exclamation-triangle"></i></div>
+                        <div class="stat-card-icon bg-danger bg-opacity-10 text-danger"><i
+                                class="bi bi-exclamation-triangle"></i></div>
                     </div>
                     <div class="display-6 fw-bold text-danger"><?= $strictViolations ?></div>
                 </div>
@@ -298,12 +320,14 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h5 class="fw-bold m-0">Резултати</h5>
                         <?php if ($bestPercent !== null): ?>
-                            <span class="badge bg-success rounded-pill px-3 shadow-sm">Най-добър: <?= $bestPercent ?>%</span>
+                            <span class="badge bg-success rounded-pill px-3 shadow-sm">Най-добър:
+                                <?= $bestPercent ?>%</span>
                         <?php endif; ?>
                     </div>
                     <div style="height: 300px;">
                         <?php if ($attemptsCount === 0): ?>
-                            <div class="h-100 d-flex align-items-center justify-content-center text-muted border rounded-3 bg-light bg-opacity-50">
+                            <div
+                                class="h-100 d-flex align-items-center justify-content-center text-muted border rounded-3 bg-light bg-opacity-50">
                                 Няма достатъчно данни за графика.
                             </div>
                         <?php else: ?>
@@ -322,11 +346,11 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                         </div>
                     <?php else: ?>
                         <div class="d-flex flex-column gap-3">
-                            <?php foreach ([6, 5, 4, 3, 2] as $grade): 
+                            <?php foreach ([6, 5, 4, 3, 2] as $grade):
                                 $count = $gradeDistribution[$grade] ?? 0;
                                 $maxCount = max($gradeDistribution) ?: 1;
                                 $width = ($count / $maxCount) * 100;
-                                $colorClass = match($grade) {
+                                $colorClass = match ($grade) {
                                     6 => 'bg-success',
                                     5 => 'bg-primary',
                                     4 => 'bg-info',
@@ -334,14 +358,15 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                     2 => 'bg-danger',
                                     default => 'bg-secondary'
                                 };
-                            ?>
+                                ?>
                                 <div>
                                     <div class="d-flex justify-content-between small fw-bold mb-1">
                                         <span>Оценка <?= $grade ?></span>
                                         <span class="text-muted"><?= $count ?></span>
                                     </div>
                                     <div class="progress" style="height: 8px; background: rgba(0,0,0,0.05);">
-                                        <div class="progress-bar <?= $colorClass ?> rounded-pill" style="width: <?= $width ?>%"></div>
+                                        <div class="progress-bar <?= $colorClass ?> rounded-pill" style="width: <?= $width ?>%">
+                                        </div>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -353,14 +378,16 @@ $pageTitle = 'Задание: ' . $assignment['title'];
 
         <!-- Attempts List -->
         <div class="glass-card animate-fade-up delay-300">
-            <div class="p-4 border-bottom border-light border-opacity-10 bg-secondary bg-opacity-10 d-flex flex-wrap gap-3 justify-content-between align-items-center">
+            <div
+                class="p-4 border-bottom border-light border-opacity-10 bg-secondary bg-opacity-10 d-flex flex-wrap gap-3 justify-content-between align-items-center">
                 <div>
                     <h5 class="fw-bold m-0">Списък с предали</h5>
                     <div class="small text-muted mt-1">Детайлна справка за всички опити</div>
                 </div>
                 <div class="d-flex gap-3 small text-muted">
                     <?php if ($assignment['due_at']): ?>
-                        <div class="d-flex align-items-center gap-1"><i class="bi bi-clock"></i> Краен срок: <?= format_date($assignment['due_at']) ?></div>
+                        <div class="d-flex align-items-center gap-1"><i class="bi bi-clock"></i> Краен срок:
+                            <?= format_date($assignment['due_at']) ?></div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -372,7 +399,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                     <p class="text-muted">Щом учениците започнат да решават, резултатите ще се появят тук.</p>
                 </div>
             <?php else: ?>
-                <?php 
+                <?php
                 // Debug if user sees empty table despite count > 0
                 if (isset($_GET['debug'])) {
                     echo '<pre class="bg-dark text-white p-3 m-3 rounded">';
@@ -383,7 +410,8 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                 <div class="table-responsive" style="overflow: visible;">
                     <!-- Force color:inherit to ensure text is white in dark mode -->
                     <table class="table table-hover align-middle mb-0" style="background: transparent; color: inherit;">
-                        <thead class="text-uppercase small tracking-wider opacity-75" style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <thead class="text-uppercase small tracking-wider opacity-75"
+                            style="border-bottom: 1px solid rgba(255,255,255,0.1);">
                             <tr>
                                 <th class="ps-4 border-0">Ученик</th>
                                 <th class="border-0">Време</th>
@@ -396,17 +424,18 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                         <tbody class="border-top-0">
                             <?php foreach ($attempts as $idx => $attemptRow): ?>
                                 <?php
-                                $fName = (string)($attemptRow['first_name'] ?? '');
-                                $lName = (string)($attemptRow['last_name'] ?? '');
+                                $fName = (string) ($attemptRow['first_name'] ?? '');
+                                $lName = (string) ($attemptRow['last_name'] ?? '');
                                 $fullName = trim($fName . ' ' . $lName);
-                                if ($fullName === '') $fullName = 'Anonymous';
-                                $email = (string)($attemptRow['email'] ?? '');
-                                
+                                if ($fullName === '')
+                                    $fullName = 'Anonymous';
+                                $email = (string) ($attemptRow['email'] ?? '');
+
                                 $percentValue = $attemptRow['percent'];
                                 $autoGrade = $attemptRow['auto_grade'];
                                 $teacherGrade = $attemptRow['teacher_grade'];
-                                $statusKey = (string)($attemptRow['status'] ?? '');
-                                
+                                $statusKey = (string) ($attemptRow['status'] ?? '');
+
                                 $statusLabel = match ($statusKey) {
                                     'in_progress' => 'Работи',
                                     'submitted' => 'Предаден',
@@ -423,7 +452,8 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                 <tr class="border-light border-opacity-50">
                                     <td class="ps-4">
                                         <div class="d-flex align-items-center gap-3">
-                                            <div class="avatar-initials rounded-circle bg-white text-primary border shadow-sm d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px;">
+                                            <div class="avatar-initials rounded-circle bg-white text-primary border shadow-sm d-flex align-items-center justify-content-center fw-bold"
+                                                style="width: 40px; height: 40px;">
                                                 <?= mb_substr($fullName, 0, 1) ?>
                                             </div>
                                             <div>
@@ -446,8 +476,10 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                     <td>
                                         <?php if ($percentValue !== null): ?>
                                             <div class="d-flex align-items-center gap-2">
-                                                <div class="progress flex-grow-1" style="width: 60px; height: 6px; background: rgba(0,0,0,0.1);">
-                                                    <div class="progress-bar <?= $percentValue >= 50 ? 'bg-success' : 'bg-danger' ?> rounded-pill" style="width: <?= $percentValue ?>%"></div>
+                                                <div class="progress flex-grow-1"
+                                                    style="width: 60px; height: 6px; background: rgba(0,0,0,0.1);">
+                                                    <div class="progress-bar <?= $percentValue >= 50 ? 'bg-success' : 'bg-danger' ?> rounded-pill"
+                                                        style="width: <?= $percentValue ?>%"></div>
                                                 </div>
                                                 <span class="fw-bold small text-body"><?= $percentValue ?>%</span>
                                             </div>
@@ -457,9 +489,10 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                     </td>
                                     <td>
                                         <?php if ($teacherGrade): ?>
-                                            <span class="badge bg-primary rounded-pill px-3"><?= (int)$teacherGrade ?></span>
+                                            <span class="badge bg-primary rounded-pill px-3"><?= (int) $teacherGrade ?></span>
                                         <?php elseif ($autoGrade): ?>
-                                            <span class="badge bg-light text-secondary border rounded-pill px-3"><?= $autoGrade ?> (Авт)</span>
+                                            <span class="badge bg-light text-secondary border rounded-pill px-3"><?= $autoGrade ?>
+                                                (Авт)</span>
                                         <?php else: ?>
                                             <span class="small opacity-50">—</span>
                                         <?php endif; ?>
@@ -469,21 +502,41 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                             <?= htmlspecialchars($statusLabel) ?>
                                         </span>
                                         <?php if (!empty($attemptRow['strict_violation'])): ?>
-                                            <i class="bi bi-exclamation-triangle-fill text-danger ms-1" title="Нарушение на стриктен режим"></i>
+                                            <i class="bi bi-exclamation-triangle-fill text-danger ms-1"
+                                                title="Нарушение на стриктен режим"></i>
                                         <?php endif; ?>
                                     </td>
                                     <td class="pe-4 text-end">
                                         <div class="dropdown">
-                                            <button class="btn btn-sm btn-light rounded-circle" type="button" data-bs-toggle="dropdown">
+                                            <button class="btn btn-sm btn-light rounded-circle" type="button"
+                                                data-bs-toggle="dropdown">
                                                 <i class="bi bi-three-dots-vertical"></i>
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg">
-                                                <li><a class="dropdown-item" href="attempt_review.php?id=<?= (int)$attemptRow['id'] ?>"><i class="bi bi-eye me-2 text-muted"></i> Преглед</a></li>
-                                                <li><a class="dropdown-item" href="student_attempt.php?id=<?= (int)$attemptRow['id'] ?>" target="_blank"><i class="bi bi-box-arrow-up-right me-2 text-muted"></i> Виж като ученик</a></li>
+                                                <li><a class="dropdown-item"
+                                                        href="attempt_review.php?id=<?= (int) $attemptRow['id'] ?>"><i
+                                                            class="bi bi-eye me-2 text-muted"></i> Преглед</a></li>
+                                                <li><a class="dropdown-item"
+                                                        href="student_attempt.php?id=<?= (int) $attemptRow['id'] ?>"
+                                                        target="_blank"><i class="bi bi-box-arrow-up-right me-2 text-muted"></i>
+                                                        Виж като ученик</a></li>
                                                 <?php if (!empty($attemptRow['submitted_at'])): ?>
-                                                    <li><hr class="dropdown-divider"></li>
-                                                    <li><a class="dropdown-item small" href="test_log_event.php?attempt_id=<?= (int)$attemptRow['id'] ?>"><i class="bi bi-activity me-2 text-muted"></i> Журнал</a></li>
+                                                    <li>
+                                                        <hr class="dropdown-divider">
+                                                    </li>
+                                                    <li><a class="dropdown-item small"
+                                                            href="test_log_event.php?attempt_id=<?= (int) $attemptRow['id'] ?>"><i
+                                                                class="bi bi-activity me-2 text-muted"></i> Журнал</a></li>
                                                 <?php endif; ?>
+                                                <li>
+                                                    <hr class="dropdown-divider">
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item text-danger confirm-delete"
+                                                        href="attempt_delete.php?id=<?= (int) $attemptRow['id'] ?>&return_url=<?= urlencode($_SERVER['REQUEST_URI']) ?>">
+                                                        <i class="bi bi-trash me-2"></i> Изтрий
+                                                    </a>
+                                                </li>
                                             </ul>
                                         </div>
                                     </td>
@@ -503,7 +556,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script>
         // QR Code
-        (function() {
+        (function () {
             var qrBox = document.getElementById('assignmentShareQr');
             if (qrBox && typeof QRCode === 'function') {
                 var shareUrl = qrBox.getAttribute('data-url');
@@ -519,18 +572,18 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                     });
                 }
             }
-            
+
             // Clipboard Copy
-            document.querySelectorAll('[data-copy-target]').forEach(function(btn) {
-                btn.addEventListener('click', function() {
+            document.querySelectorAll('[data-copy-target]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
                     var target = document.querySelector(btn.getAttribute('data-copy-target'));
                     if (!target) return;
-                    navigator.clipboard.writeText(target.value).then(function() {
+                    navigator.clipboard.writeText(target.value).then(function () {
                         var originalText = btn.innerHTML;
                         btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
                         btn.classList.add('btn-success');
                         btn.classList.remove('btn-primary');
-                        setTimeout(function() {
+                        setTimeout(function () {
                             btn.innerHTML = originalText;
                             btn.classList.remove('btn-success');
                             btn.classList.add('btn-primary');
@@ -542,78 +595,87 @@ $pageTitle = 'Задание: ' . $assignment['title'];
 
         // Chart
         <?php if ($attemptsCount > 0): ?>
-        (function() {
-            const ctx = document.getElementById('attemptScoresChart');
-            if (!ctx) return;
-            
-            // Robust Dark Mode Detection
-            const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark' 
-                            || document.body.getAttribute('data-bs-theme') === 'dark'
-                            || window.matchMedia('(prefers-color-scheme: dark)').matches;
-            
-            // Hardcoded accessible colors to ensure visibility regardless of CSS var failure
-            const textColor = isDarkMode ? '#f1f5f9' : '#1e293b'; // Slate-100 vs Slate-900
-            const gridColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
-            
-            const style = getComputedStyle(document.body);
-            const primaryRgb = style.getPropertyValue('--tg-primary-rgb') || '148, 163, 184';
-            const primaryColor = style.getPropertyValue('--tg-primary') || '#94a3b8';
+                (function () {
+                    // Confirm delete
+                    document.querySelectorAll('.confirm-delete').forEach(function (el) {
+                        el.addEventListener('click', function (e) {
+                            if (!confirm('Сигурни ли сте, че искате да изтриете този опит? Това действие е необратимо.')) {
+                                e.preventDefault();
+                            }
+                        });
+                    });
 
-            const labels = <?= $chartLabelsJson ?>;
-            const dataValues = <?= $chartPercentsJson ?>;
-            
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Успеваемост (%)',
-                        data: dataValues,
-                        backgroundColor: `rgba(${primaryRgb}, 0.25)`,
-                        borderColor: primaryColor,
-                        borderWidth: 2,
-                        borderRadius: 6,
-                        hoverBackgroundColor: `rgba(${primaryRgb}, 0.45)`,
-                        maxBarThickness: 40
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.parsed.y + '%';
+                    const ctx = document.getElementById('attemptScoresChart');
+                    if (!ctx) return;
+
+                    // Robust Dark Mode Detection
+                    const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark'
+                        || document.body.getAttribute('data-bs-theme') === 'dark'
+                        || window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+                    // Hardcoded accessible colors to ensure visibility regardless of CSS var failure
+                    const textColor = isDarkMode ? '#f1f5f9' : '#1e293b'; // Slate-100 vs Slate-900
+                    const gridColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+
+                    const style = getComputedStyle(document.body);
+                    const primaryRgb = style.getPropertyValue('--tg-primary-rgb') || '148, 163, 184';
+                    const primaryColor = style.getPropertyValue('--tg-primary') || '#94a3b8';
+
+                    const labels = <?= $chartLabelsJson ?>;
+                    const dataValues = <?= $chartPercentsJson ?>;
+
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Успеваемост (%)',
+                                data: dataValues,
+                                backgroundColor: `rgba(${primaryRgb}, 0.25)`,
+                                borderColor: primaryColor,
+                                borderWidth: 2,
+                                borderRadius: 6,
+                                hoverBackgroundColor: `rgba(${primaryRgb}, 0.45)`,
+                                maxBarThickness: 40
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            return context.parsed.y + '%';
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    grid: {
+                                        color: gridColor,
+                                        drawBorder: false
+                                    },
+                                    ticks: {
+                                        color: textColor,
+                                        callback: function (value) { return value + '%' }
+                                    }
+                                },
+                                x: {
+                                    grid: { display: false },
+                                    ticks: {
+                                        display: false,
+                                        color: textColor
+                                    }
                                 }
                             }
                         }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            grid: {
-                                color: gridColor,
-                                drawBorder: false
-                            },
-                            ticks: {
-                                color: textColor,
-                                callback: function(value) { return value + '%' }
-                            }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { 
-                                display: false,
-                                color: textColor
-                            }
-                        }
-                    }
-                }
-            });
-        })();
+                    });
+                })();
         <?php endif; ?>
     </script>
 </body>
