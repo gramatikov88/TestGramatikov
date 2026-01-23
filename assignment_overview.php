@@ -387,9 +387,18 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                     <p class="text-muted">Щом учениците започнат да решават, резултатите ще се появят тук.</p>
                 </div>
             <?php else: ?>
+                <?php 
+                // Debug if user sees empty table despite count > 0
+                if (isset($_GET['debug'])) {
+                    echo '<pre class="bg-dark text-white p-3 m-3 rounded">';
+                    print_r($attempts[0] ?? 'No attempts data?');
+                    echo '</pre>';
+                }
+                ?>
                 <div class="table-responsive" style="overflow: visible;">
-                    <table class="table table-hover align-middle mb-0" style="background: transparent;">
-                        <thead class="bg-body-secondary text-uppercase text-muted small tracking-wider">
+                    <!-- Force color:inherit to ensure text is white in dark mode -->
+                    <table class="table table-hover align-middle mb-0" style="background: transparent; color: inherit;">
+                        <thead class="text-uppercase small tracking-wider opacity-75" style="border-bottom: 1px solid rgba(255,255,255,0.1);">
                             <tr>
                                 <th class="ps-4 border-0">Ученик</th>
                                 <th class="border-0">Време</th>

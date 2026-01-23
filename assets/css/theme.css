@@ -101,6 +101,13 @@ h6 {
     box-shadow: var(--tg-glass-shadow);
 }
 
+/* Force table text in glass cards to inherit color (fixes dark mode invisible text) */
+.glass-card .table {
+    color: inherit;
+    --bs-table-color: inherit;
+    --bs-table-hover-color: inherit;
+}
+
 .glass-panel {
     background: rgba(255, 255, 255, 0.5);
     backdrop-filter: blur(8px);
