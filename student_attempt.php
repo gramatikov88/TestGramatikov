@@ -119,7 +119,7 @@ $gradeColor = get_grade_color_class($grade);
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div class="d-flex gap-3">
-                            <span class="badge bg-light text-dark align-self-start mt-1 border">№<?= $idx+1 ?></span>
+                            <span class="badge bg-body-secondary text-body align-self-start mt-1 border">№<?= $idx+1 ?></span>
                             <div class="lead fs-6"><?= nl2br(htmlspecialchars($q['body'])) ?></div>
                         </div>
                         <div class="text-end ms-3 flex-shrink-0">
@@ -175,7 +175,7 @@ $gradeColor = get_grade_color_class($grade);
                                 $isSelected = in_array((int)$a['id'], $sels, true);
                                 $isThisCorrect = (int)$a['is_correct'] === 1;
                             ?>
-                                <div class="d-flex align-items-center gap-2 mb-2 p-2 rounded-2 <?= $isSelected ? 'bg-light' : '' ?>">
+                                <div class="d-flex align-items-center gap-2 mb-2 p-2 rounded-2 <?= $isSelected ? 'bg-secondary bg-opacity-10' : '' ?>">
                                     <?php if ($show_keys): ?>
                                         <i class="bi <?= $isThisCorrect ? 'bi-check-square-fill text-success' : ($isSelected ? 'bi-x-square-fill text-danger' : 'bi-square text-muted opacity-25') ?>"></i>
                                     <?php else: ?>
@@ -188,7 +188,7 @@ $gradeColor = get_grade_color_class($grade);
                         <?php elseif ($q['qtype'] === 'short_answer' || $q['qtype'] === 'numeric'): ?>
                             <div class="mb-2">
                                 <span class="text-muted small text-uppercase fw-bold">Вашият отговор:</span>
-                                <div class="p-2 border rounded-2 bg-white mt-1 <?= $isCorrect ? 'border-success text-success bg-success bg-opacity-10' : 'border-danger text-danger bg-danger bg-opacity-10' ?>">
+                                <div class="p-2 border rounded-2 bg-body-secondary mt-1 <?= $isCorrect ? 'border-success text-success bg-success bg-opacity-10' : 'border-danger text-danger bg-danger bg-opacity-10' ?>">
                                     <?= htmlspecialchars($q['qtype']==='numeric' ? $studentAns['numeric_value'] : $studentAns['free_text'] ?? '(няма отговор)') ?>
                                 </div>
                             </div>

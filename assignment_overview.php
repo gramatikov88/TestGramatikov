@@ -250,7 +250,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
         <div class="glass-card p-0 mb-5 overflow-hidden animate-fade-up delay-200">
             <div class="row g-0">
                 <div class="col-md-3 bg-secondary bg-opacity-10 p-4 d-flex align-items-center justify-content-center border-end border-light border-opacity-10">
-                    <div id="assignmentShareQr" data-url="<?= htmlspecialchars($assignmentShareLink) ?>" class="p-2 bg-white rounded-3 shadow-sm"></div>
+                    <div id="assignmentShareQr" data-url="<?= htmlspecialchars($assignmentShareLink) ?>" class="p-2 bg-white rounded-3 shadow-sm d-inline-block"></div>
                 </div>
                 <div class="col-md-9 p-4 d-flex flex-column justify-content-center">
                     <h5 class="fw-bold mb-2">QR Код за бърз достъп</h5>
@@ -387,9 +387,9 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                     <p class="text-muted">Щом учениците започнат да решават, резултатите ще се появят тук.</p>
                 </div>
             <?php else: ?>
-                <div class="table-responsive">
+                <div class="table-responsive" style="overflow: visible;">
                     <table class="table table-hover align-middle mb-0" style="background: transparent;">
-                        <thead class="bg-light bg-opacity-50 text-uppercase text-muted small tracking-wider">
+                        <thead class="bg-body-secondary text-uppercase text-muted small tracking-wider">
                             <tr>
                                 <th class="ps-4 border-0">Ученик</th>
                                 <th class="border-0">Време</th>

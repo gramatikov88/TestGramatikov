@@ -127,7 +127,7 @@ $items = $stmt->fetchAll();
                             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                                 <div class="d-flex flex-column gap-1">
                                     <div class="d-flex align-items-center gap-2">
-                                        <h5 class="fw-bold mb-0 text-dark">
+                                        <h5 class="fw-bold mb-0 text-body">
                                             <?= htmlspecialchars($item['title']) ?>
                                         </h5>
                                         <?php if ($needsGrade > 0): ?>

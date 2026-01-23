@@ -291,14 +291,14 @@ $heroSubtitle = $user['role'] === 'teacher'
                             LEFT JOIN assignment_classes ac ON ac.assignment_id = a.id
                             LEFT JOIN classes c ON c.id = ac.class_id
                             WHERE a.assigned_by_teacher_id = :tid
-                            -- Filter out Zombies (Expired AND No Grading Needed)
+                            -- Show: Active (Future Due Date) OR Recently Expired (Last 30 days) OR Needs Grading
                             AND (
-                                (a.due_at IS NOT NULL AND a.due_at > :now) -- Still active
+                                (a.due_at IS NULL OR a.due_at > DATE_SUB(:now, INTERVAL 30 DAY))
                                 OR 
                                 (SELECT COUNT(DISTINCT aa.attempt_id) 
                                  FROM attempt_answers aa 
                                  JOIN attempts atp ON atp.id = aa.attempt_id 
-                                 WHERE atp.assignment_id = a.id AND aa.score_awarded IS NULL) > 0 -- Needs grading (even if expired)
+                                 WHERE atp.assignment_id = a.id AND aa.score_awarded IS NULL) > 0
                             )
                             ORDER BY 
                                 (needs_grading_count > 0) DESC, -- Burning first
