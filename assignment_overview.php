@@ -517,7 +517,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                                 title="Преглед и Оценяване">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            
+
                                             <?php if (!empty($attemptRow['submitted_at'])): ?>
                                                 <a class="btn btn-sm btn-outline-secondary"
                                                     href="test_log_event.php?attempt_id=<?= (int) $attemptRow['id'] ?>"
@@ -543,8 +543,6 @@ $pageTitle = 'Задание: ' . $assignment['title'];
     </main>
 
     <?php include __DIR__ . '/components/footer.php'; ?>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script>

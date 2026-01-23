@@ -105,6 +105,18 @@ $gradeColor = get_grade_color_class($grade);
         <?php endif; ?>
     </div>
 
+    <!-- Grading Scale Legend -->
+    <div class="glass-card p-3 mb-4">
+        <small class="text-uppercase text-muted fw-bold tracking-wider d-block mb-2">Скала за оценяване</small>
+        <div class="d-flex gap-2 flex-wrap">
+            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 p-2">Отличен 6 (90-100%)</span>
+            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 p-2">Много добър 5 (80-89%)</span>
+            <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 p-2">Добър 4 (65-79%)</span>
+            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 p-2">Среден 3 (50-64%)</span>
+            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 p-2">Слаб 2 (<50%)</span>
+        </div>
+    </div>
+
     <!-- Questions List -->
     <div class="d-flex flex-column gap-3">
         <?php foreach ($questions as $idx => $q): 
