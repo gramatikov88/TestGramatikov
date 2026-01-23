@@ -417,9 +417,12 @@ $heroSubtitle = $user['role'] === 'teacher'
                         </div>
                         <div class="d-flex flex-wrap gap-2">
                             <?php foreach ($teacher['classes'] as $cls): ?>
-                                <span class="badge bg-white text-dark border py-2 px-3 rounded-pill fw-normal shadow-sm">
-                                    <?= htmlspecialchars($cls['grade'] . $cls['section']) ?>
-                                </span>
+                                <a href="classes_create.php?id=<?= (int) $cls['id'] ?>" class="text-decoration-none hover-lift"
+                                    title="Редактирай клас">
+                                    <span class="badge bg-white text-dark border py-2 px-3 rounded-pill fw-normal shadow-sm">
+                                        <?= htmlspecialchars($cls['grade'] . $cls['section']) ?>
+                                    </span>
+                                </a>
                             <?php endforeach; ?>
                         </div>
                     </div>
