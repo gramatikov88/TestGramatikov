@@ -69,7 +69,8 @@ require_once __DIR__ . '/../config.php';
                         <!-- Teacher Manage Menu -->
                         <?php if ($_SESSION['user']['role'] === 'teacher'): ?>
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle fw-medium" href="#" role="button" data-bs-toggle="dropdown">
+                                <a class="nav-link dropdown-toggle fw-medium" href="#" role="button" data-bs-toggle="dropdown"
+                                    data-bs-display="static">
                                     Управление
                                 </a>
                                 <ul class="dropdown-menu glass-card border-0 p-2 shadow-lg">
@@ -89,7 +90,7 @@ require_once __DIR__ . '/../config.php';
                         <?php endif; ?>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button"
-                                data-bs-toggle="dropdown" aria-expanded="false">
+                                data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
                                 <span
                                     class="avatar-initials rounded-circle bg-primary bg-opacity-10 text-primary fw-bold d-flex align-items-center justify-content-center"
                                     style="width: 32px; height: 32px; font-size: 0.8rem;">
