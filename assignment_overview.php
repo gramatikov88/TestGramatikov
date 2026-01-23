@@ -201,6 +201,9 @@ $pageTitle = 'Задание: ' . $assignment['title'];
             <div class="d-flex gap-2">
                 <a class="btn btn-outline-secondary rounded-pill px-4" href="dashboard.php"><i
                         class="bi bi-arrow-left me-2"></i> Табло</a>
+                <a class="btn btn-outline-danger rounded-pill px-4 confirm-delete-assignment"
+                    href="assignment_delete.php?id=<?= (int) $assignment['id'] ?>"><i class="bi bi-trash me-2"></i>
+                    Изтрий</a>
                 <a class="btn btn-primary rounded-pill px-4 shadow-sm"
                     href="assignments_create.php?id=<?= (int) $assignment['id'] ?>"><i
                         class="bi bi-pencil-square me-2"></i> Редакция</a>
@@ -387,7 +390,8 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                 <div class="d-flex gap-3 small text-muted">
                     <?php if ($assignment['due_at']): ?>
                         <div class="d-flex align-items-center gap-1"><i class="bi bi-clock"></i> Краен срок:
-                            <?= format_date($assignment['due_at']) ?></div>
+                            <?= format_date($assignment['due_at']) ?>
+                        </div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -509,7 +513,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                     <td class="pe-4 text-end">
                                         <div class="dropdown">
                                             <button class="btn btn-sm btn-light rounded-circle" type="button"
-                                                data-bs-toggle="dropdown">
+                                                data-bs-toggle="dropdown" data-bs-display="static">
                                                 <i class="bi bi-three-dots-vertical"></i>
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg">
@@ -600,6 +604,15 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                     document.querySelectorAll('.confirm-delete').forEach(function (el) {
                         el.addEventListener('click', function (e) {
                             if (!confirm('Сигурни ли сте, че искате да изтриете този опит? Това действие е необратимо.')) {
+                                e.preventDefault();
+                            }
+                        });
+                    });
+
+                    // Confirm assignment delete
+                    document.querySelectorAll('.confirm-delete-assignment').forEach(function (el) {
+                        el.addEventListener('click', function (e) {
+                            if (!confirm('ВНИМАНИЕ: Сигурни ли сте, че искате да изтриете ЦЯЛОТО ЗАДАНИЕ?\n\nВсички опити, оценки и данни за него ще бъдат изтрити завинаги!')) {
                                 e.preventDefault();
                             }
                         });
