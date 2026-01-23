@@ -380,7 +380,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
         </div>
 
         <!-- Attempts List -->
-        <div class="glass-card animate-fade-up delay-300">
+        <div class="glass-card delay-300">
             <div
                 class="p-4 border-bottom border-light border-opacity-10 bg-secondary bg-opacity-10 d-flex flex-wrap gap-3 justify-content-between align-items-center">
                 <div>
