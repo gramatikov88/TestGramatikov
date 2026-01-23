@@ -59,7 +59,10 @@ function format_date($date, $format = 'd.m.Y H:i')
 {
     if (!$date)
         return '—';
-    return date($format, strtotime($date));
+    $ts = strtotime($date);
+    if ($ts === false || $ts <= 0)
+        return '—';
+    return date($format, $ts);
 }
 
 /**

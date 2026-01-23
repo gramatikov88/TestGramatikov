@@ -434,7 +434,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                             </div>
                                             <div>
                                                 <div class="fw-bold fs-6"><?= htmlspecialchars($fullName) ?></div>
-                                                <div class="small opacity-75"><?= htmlspecialchars($email) ?></div>
+                                                <div class="small text-secondary"><?= htmlspecialchars($email) ?></div>
                                             </div>
                                         </div>
                                     </td>
@@ -442,10 +442,10 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                         <div class="small">
                                             <?php if (!empty($attemptRow['submitted_at'])): ?>
                                                 <div><?= format_date($attemptRow['submitted_at']) ?></div>
-                                                <div class="opacity-75 small">Предаден</div>
+                                                <div class="small text-secondary">Предаден</div>
                                             <?php else: ?>
                                                 <div><?= format_date($attemptRow['started_at']) ?></div>
-                                                <div class="opacity-75 small">Започнат</div>
+                                                <div class="small text-secondary">Започнат</div>
                                             <?php endif; ?>
                                         </div>
                                     </td>
