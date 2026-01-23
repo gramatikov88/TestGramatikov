@@ -40,8 +40,9 @@
     --tg-primary: #94A3B8;
     /* Light Slate */
     --tg-primary-rgb: 148, 163, 184;
-    --tg-secondary: #64748B;
-    --tg-secondary-rgb: 100, 116, 139;
+    --tg-secondary: #CBD5E1;
+    /* Slate 300 - Much lighter for readability */
+    --tg-secondary-rgb: 203, 213, 225;
 
     --tg-success: #A3B18A;
     /* Lighter Sage */
