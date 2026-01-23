@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/lib/helpers.php';
 header('Content-Type: text/html; charset=utf-8');
 
 if (empty($_SESSION['user']) || ($_SESSION['user']['role'] ?? null) !== 'teacher') {
@@ -13,23 +14,7 @@ $pdo = db();
 ensure_attempts_grade($pdo);
 ensure_test_theme_and_q_media($pdo);
 
-function percent($score, $max) {
-    if ($score === null || $max === null || $max <= 0) {
-        return null;
-    }
-    return round(($score / $max) * 100, 2);
-}
-
-function grade_from_percent(?float $percent): ?int {
-    if ($percent === null) {
-        return null;
-    }
-    if ($percent >= 90) return 6;
-    if ($percent >= 80) return 5;
-    if ($percent >= 65) return 4;
-    if ($percent >= 50) return 3;
-    return 2;
-}
+// Functions moved to lib/helpers.php
 
 $assignmentId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($assignmentId <= 0) {
