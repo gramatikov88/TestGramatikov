@@ -171,14 +171,14 @@ if ($pdo) {
                                JOIN tests t ON t.id = a.test_id
                                LEFT JOIN assignment_classes ac ON ac.assignment_id = a.id
                                LEFT JOIN class_students cs ON cs.class_id = ac.class_id AND cs.student_id = :sid
-                               LEFT JOIN assignment_students ast ON ast.assignment_id = a.id AND ast.student_id = :sid
+                                 LEFT JOIN assignment_students ast ON ast.assignment_id = a.id AND ast.student_id = :sid
                                WHERE a.is_published = 1
                                  AND (cs.student_id IS NOT NULL OR ast.student_id IS NOT NULL)
-                                 AND (a.open_at IS NULL OR a.open_at <= NOW())
-                                 AND (a.close_at IS NULL OR a.close_at >= NOW())
+                                 AND (a.open_at IS NULL OR a.open_at <= :now)
+                                 AND (a.close_at IS NULL OR a.close_at >= :now)
                                ORDER BY (a.due_at IS NULL), a.due_at ASC
                                LIMIT 20');
-        $stmt->execute([':sid' => (int) $user['id']]);
+        $stmt->execute([':sid' => (int) $user['id'], ':now' => date('Y-m-d H:i:s')]);
         $student['open_assignments'] = $stmt->fetchAll();
 
         // Map attempts

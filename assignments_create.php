@@ -250,21 +250,43 @@ if (isset($_GET['delete'])) {
                     <textarea name="description" class="form-control"
                         rows="2"><?= htmlspecialchars($form['description']) ?></textarea>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">От</label>
+            </div>
+
+            <div class="card-header bg-white border-top">
+                <strong>График и Достъп</strong>
+            </div>
+            <div class="card-body row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">1. Начало (Open Date)</label>
                     <input type="datetime-local" name="open_at" class="form-control"
                         value="<?= $form['open_at'] ? str_replace(' ', 'T', $form['open_at']) : '' ?>" />
+                    <div class="form-text small">
+                        Кога заданието става видимо за учениците.
+                        <br><em>Оставете празно за "веднага".</em>
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">Срок</label>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">2. Краен срок (Due Date)</label>
                     <input type="datetime-local" name="due_at" class="form-control"
                         value="<?= $form['due_at'] ? str_replace(' ', 'T', $form['due_at']) : '' ?>" />
+                    <div class="form-text small">
+                        Препоръчителен срок. След тази дата заданието се маркира като "Закъсняло", но е **все още достъпно**.
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">До</label>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold text-danger">3. Затваряне (Close Date)</label>
                     <input type="datetime-local" name="close_at" class="form-control"
                         value="<?= $form['close_at'] ? str_replace(' ', 'T', $form['close_at']) : '' ?>" />
+                    <div class="form-text small">
+                        Твърд край. След тази дата заданието **изчезва** и не може да бъде решавано повече.
+                    </div>
                 </div>
+            </div>
+
+            <div class="card-header bg-white border-top">
+                <strong>Настройки на Теста</strong>
+            </div>
+            <div class="card-body row g-3">
                 <div class="col-md-3">
                     <label class="form-label">Лимит опити</label>
                     <input type="number" min="0" name="attempt_limit" class="form-control"

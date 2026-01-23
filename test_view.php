@@ -126,8 +126,8 @@ if ($mode === 'take' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new RuntimeException('Достигнат е лимитът на опитите.');
         }
 
-        $ins = $pdo->prepare('INSERT INTO attempts (assignment_id, test_id, student_id, attempt_no, status, started_at) VALUES (:aid,:tid,:sid,:no, "in_progress", NOW())');
-        $ins->execute([':aid' => $assignment_id, ':tid' => $test_id, ':sid' => $user['id'], ':no' => $attempt_no]);
+        $ins = $pdo->prepare('INSERT INTO attempts (assignment_id, test_id, student_id, attempt_no, status, started_at) VALUES (:aid,:tid,:sid,:no, "in_progress", :now)');
+        $ins->execute([':aid' => $assignment_id, ':tid' => $test_id, ':sid' => $user['id'], ':no' => $attempt_no, ':now' => date('Y-m-d H:i:s')]);
         $attempt_id_actual = (int) $pdo->lastInsertId();
 
         $score = 0.0;
@@ -189,8 +189,8 @@ if ($mode === 'take' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 ->execute([':att' => $attempt_id_actual, ':qid' => $qid, ':sel' => $selIds, ':ft' => $ft, ':num' => $num, ':ok' => $is_correct, ':aw' => $award]);
         }
 
-        $pdo->prepare('UPDATE attempts SET status = "submitted", submitted_at = NOW(), duration_sec = NULL, score_obtained = :s, max_score = :m WHERE id = :id')
-            ->execute([':s' => $score, ':m' => $max, ':id' => $attempt_id_actual]);
+        $pdo->prepare('UPDATE attempts SET status = "submitted", submitted_at = :now, duration_sec = NULL, score_obtained = :s, max_score = :m WHERE id = :id')
+            ->execute([':s' => $score, ':m' => $max, ':id' => $attempt_id_actual, ':now' => date('Y-m-d H:i:s')]);
         $pdo->commit();
         $result = ['score' => $score, 'max' => $max];
     } catch (Throwable $e) {
