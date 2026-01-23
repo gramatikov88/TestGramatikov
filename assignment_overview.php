@@ -433,19 +433,19 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                                 <?= mb_substr($fullName, 0, 1) ?>
                                             </div>
                                             <div>
-                                                <div class="fw-bold text-body fs-6"><?= htmlspecialchars($fullName) ?></div>
-                                                <div class="small text-muted"><?= htmlspecialchars($email) ?></div>
+                                                <div class="fw-bold fs-6"><?= htmlspecialchars($fullName) ?></div>
+                                                <div class="small opacity-75"><?= htmlspecialchars($email) ?></div>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="small text-body">
+                                        <div class="small">
                                             <?php if (!empty($attemptRow['submitted_at'])): ?>
                                                 <div><?= format_date($attemptRow['submitted_at']) ?></div>
-                                                <div class="text-body-secondary opacity-75" style="font-size: 0.75rem;">Предаден</div>
+                                                <div class="opacity-75 small">Предаден</div>
                                             <?php else: ?>
                                                 <div><?= format_date($attemptRow['started_at']) ?></div>
-                                                <div class="text-body-secondary opacity-75" style="font-size: 0.75rem;">Започнат</div>
+                                                <div class="opacity-75 small">Започнат</div>
                                             <?php endif; ?>
                                         </div>
                                     </td>
@@ -458,7 +458,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                                 <span class="fw-bold small text-body"><?= $percentValue ?>%</span>
                                             </div>
                                         <?php else: ?>
-                                            <span class="text-body-secondary">—</span>
+                                            <span class="opacity-50">—</span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
@@ -467,7 +467,7 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                         <?php elseif ($autoGrade): ?>
                                             <span class="badge bg-light text-secondary border rounded-pill px-3"><?= $autoGrade ?> (Авт)</span>
                                         <?php else: ?>
-                                            <span class="text-body-secondary small">—</span>
+                                            <span class="small opacity-50">—</span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
@@ -552,15 +552,19 @@ $pageTitle = 'Задание: ' . $assignment['title'];
             const ctx = document.getElementById('attemptScoresChart');
             if (!ctx) return;
             
+            // Robust Dark Mode Detection
+            const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark' 
+                            || document.body.getAttribute('data-bs-theme') === 'dark'
+                            || window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            // Hardcoded accessible colors to ensure visibility regardless of CSS var failure
+            const textColor = isDarkMode ? '#f1f5f9' : '#1e293b'; // Slate-100 vs Slate-900
+            const gridColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+            
             const style = getComputedStyle(document.body);
-            const bodyColor = style.getPropertyValue('--tg-body-color') || '#ffffff';
-            const primaryColor = style.getPropertyValue('--tg-primary') || '#94a3b8';
             const primaryRgb = style.getPropertyValue('--tg-primary-rgb') || '148, 163, 184';
-            
-            // Set defaults for dark mode visibility
-            Chart.defaults.color = bodyColor;
-            Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
-            
+            const primaryColor = style.getPropertyValue('--tg-primary') || '#94a3b8';
+
             const labels = <?= $chartLabelsJson ?>;
             const dataValues = <?= $chartPercentsJson ?>;
             
@@ -597,19 +601,19 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                             beginAtZero: true,
                             max: 100,
                             grid: {
-                                color: 'rgba(255,255,255,0.05)',
+                                color: gridColor,
                                 drawBorder: false
                             },
                             ticks: {
-                                color: bodyColor,
+                                color: textColor,
                                 callback: function(value) { return value + '%' }
                             }
                         },
                         x: {
                             grid: { display: false },
                             ticks: { 
-                                display: false, // Hide labels if crowded, or show
-                                color: bodyColor
+                                display: false,
+                                color: textColor
                             }
                         }
                     }
