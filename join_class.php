@@ -34,11 +34,10 @@ if ($pdo && $code !== '') {
     $stmt->execute([':token' => $code]);
     $class = $stmt->fetch();
     if (!$class) {
-        $error = 'This invitation is no longer valid or the code is incorrect.';
+        $error = 'Кодът не е валиден или поканата е изтекла. Моля, проверете кода и опитайте отново.';
     }
-} elseif ($code === '') {
-    $error = 'Missing invitation code.';
 }
+$showCodeForm = ($code === '' && !$error);
 
 $user = $_SESSION['user'] ?? null;
 if (!empty($_SESSION['pending_class_code']) && $user) {
@@ -135,13 +134,77 @@ if ($class) {
                     <div class="d-flex gap-3 align-items-center">
                         <i class="bi bi-exclamation-circle-fill fs-3 text-danger"></i>
                         <div>
-                            <div class="fw-bold">Възникна грешка</div>
+                            <div class="fw-bold">Невалиден код</div>
                             <div><?= htmlspecialchars($error) ?></div>
                         </div>
                     </div>
                 </div>
-                <div class="text-center">
-                    <a href="index.php" class="btn btn-primary rounded-pill px-4">Към началото</a>
+                <!-- Show the form again so they can retry -->
+                <div class="glass-card overflow-hidden">
+                    <div class="bg-primary bg-opacity-10 p-5 text-center border-bottom border-light">
+                        <div class="d-inline-flex align-items-center justify-content-center bg-white rounded-circle shadow-sm mb-3"
+                            style="width: 80px; height: 80px;">
+                            <i class="bi bi-people-fill text-primary display-5"></i>
+                        </div>
+                        <h1 class="display-6 fw-bold mb-1">Присъедини се към клас</h1>
+                        <div class="text-muted small text-uppercase tracking-wider fw-bold">Въведи покана</div>
+                    </div>
+                    <div class="p-5">
+                        <form method="get" action="join_class.php">
+                            <label class="form-label small text-uppercase fw-bold text-muted tracking-wider">Код за присъединяване</label>
+                            <div class="input-group input-group-lg mb-4">
+                                <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-key-fill text-primary"></i></span>
+                                <input type="text" name="code" class="form-control border-start-0 text-uppercase fw-bold ls-3"
+                                    placeholder="XXXXXX" maxlength="6" autocomplete="off" autofocus
+                                    style="letter-spacing: 0.3em; font-size: 1.5rem;"
+                                    value="<?= htmlspecialchars($rawCode) ?>" />
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow fw-bold py-3">
+                                    <i class="bi bi-arrow-right-circle-fill me-2"></i>Провери кода
+                                </button>
+                            </div>
+                        </form>
+                        <div class="text-center mt-4">
+                            <a href="dashboard.php" class="btn btn-outline-secondary rounded-pill px-4">Отказ</a>
+                        </div>
+                    </div>
+                </div>
+            <?php elseif ($showCodeForm): ?>
+                <!-- No code provided – show entry form -->
+                <div class="glass-card overflow-hidden">
+                    <div class="bg-primary bg-opacity-10 p-5 text-center border-bottom border-light">
+                        <div class="d-inline-flex align-items-center justify-content-center bg-white rounded-circle shadow-sm mb-3"
+                            style="width: 80px; height: 80px;">
+                            <i class="bi bi-people-fill text-primary display-5"></i>
+                        </div>
+                        <h1 class="display-6 fw-bold mb-1">Присъедини се към клас</h1>
+                        <p class="text-muted mb-0">Въведи 6-символния код, даден от учителя.</p>
+                    </div>
+                    <div class="p-5">
+                        <?php if ($statusMessage === 'error'): ?>
+                        <div class="alert alert-danger border-0 rounded-4 mb-4">
+                            <i class="bi bi-x-circle-fill me-2"></i>Не успяхме да те добавим. Опитай отново.
+                        </div>
+                        <?php endif; ?>
+                        <form method="get" action="join_class.php">
+                            <label class="form-label small text-uppercase fw-bold text-muted tracking-wider mb-2">Код за присъединяване</label>
+                            <div class="input-group input-group-lg mb-4">
+                                <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-key-fill text-primary"></i></span>
+                                <input type="text" name="code" class="form-control border-start-0 fw-bold"
+                                    placeholder="Напр. AB3X7Z" maxlength="6" autocomplete="off" autofocus
+                                    style="letter-spacing: 0.3em; font-size: 1.5rem; text-transform: uppercase;" />
+                            </div>
+                            <div class="d-grid mb-3">
+                                <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow fw-bold py-3">
+                                    <i class="bi bi-arrow-right-circle-fill me-2"></i>Влез в класа
+                                </button>
+                            </div>
+                        </form>
+                        <div class="text-center">
+                            <a href="dashboard.php" class="btn btn-outline-secondary rounded-pill px-4">← Към таблото</a>
+                        </div>
+                    </div>
                 </div>
             <?php else: ?>
 
