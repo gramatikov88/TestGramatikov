@@ -167,20 +167,30 @@ if ($pdo) {
         $student['classes'] = $stmt->fetchAll();
 
         // Student: open assignments
+        // Note: using :sid1 / :sid2 because PDO does not reliably handle the same
+        // named placeholder used more than once in a single prepared statement.
         $stmt = $pdo->prepare('SELECT DISTINCT a.id, a.title, a.description, a.open_at, a.due_at, a.close_at, t.title AS test_title
                                FROM assignments a
                                JOIN tests t ON t.id = a.test_id
-                               LEFT JOIN assignment_classes ac ON ac.assignment_id = a.id
-                               LEFT JOIN class_students cs ON cs.class_id = ac.class_id AND cs.student_id = :sid
-                                 LEFT JOIN assignment_students ast ON ast.assignment_id = a.id AND ast.student_id = :sid
                                WHERE a.is_published = 1
-                                 AND (cs.student_id IS NOT NULL OR ast.student_id IS NOT NULL)
                                  AND (a.open_at IS NULL OR a.open_at <= :now)
                                  AND (a.close_at IS NULL OR a.close_at >= :now)
+                                 AND (
+                                     EXISTS (
+                                         SELECT 1 FROM assignment_classes ac
+                                         JOIN class_students cs ON cs.class_id = ac.class_id
+                                         WHERE ac.assignment_id = a.id AND cs.student_id = :sid1
+                                     )
+                                     OR EXISTS (
+                                         SELECT 1 FROM assignment_students ast
+                                         WHERE ast.assignment_id = a.id AND ast.student_id = :sid2
+                                     )
+                                 )
                                ORDER BY (a.due_at IS NULL), a.due_at ASC
                                LIMIT 20');
-        $stmt->execute([':sid' => (int) $user['id'], ':now' => date('Y-m-d H:i:s')]);
+        $stmt->execute([':sid1' => (int) $user['id'], ':sid2' => (int) $user['id'], ':now' => date('Y-m-d H:i:s')]);
         $student['open_assignments'] = $stmt->fetchAll();
+
 
         // Map attempts
         $student['open_attempts_map'] = [];
