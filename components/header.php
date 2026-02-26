@@ -10,6 +10,27 @@ if (!function_exists('percent')) {
     }
 }
 require_once __DIR__ . '/../config.php';
+
+// For students: load their classes for profile dropdown
+$_headerStudentClasses = [];
+if (isset($_SESSION['user']) && ($_SESSION['user']['role'] ?? '') === 'student') {
+    try {
+        $__hpdo = db();
+        $__hstmt = $__hpdo->prepare(
+            'SELECT c.grade, c.section, c.name, c.school_year, u.first_name AS tf, u.last_name AS tl
+             FROM classes c
+             JOIN class_students cs ON cs.class_id = c.id
+             JOIN users u ON u.id = c.teacher_id
+             WHERE cs.student_id = :sid
+             ORDER BY c.school_year DESC, c.grade, c.section
+             LIMIT 3'
+        );
+        $__hstmt->execute([':sid' => (int) $_SESSION['user']['id']]);
+        $_headerStudentClasses = $__hstmt->fetchAll();
+    } catch (Throwable $_e) {
+        $_headerStudentClasses = [];
+    }
+}
 ?>
 <!-- Theme Script -->
 <script>
@@ -103,9 +124,37 @@ require_once __DIR__ . '/../config.php';
                                         <?= htmlspecialchars($_SESSION['user']['first_name'] . ' ' . ($_SESSION['user']['last_name'] ?? '')) ?>
                                     </h6>
                                 </li>
-                                <li>
-                                    <hr class="dropdown-divider opacity-10">
-                                </li>
+                                <?php if (($_SESSION['user']['role'] ?? '') === 'student'): ?>
+                                    <?php if (!empty($_headerStudentClasses)): ?>
+                                        <li>
+                                            <div class="px-3 py-1">
+                                                <?php foreach ($_headerStudentClasses as $_hcls): ?>
+                                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                                        <span
+                                                            class="badge bg-primary bg-opacity-10 text-primary rounded-pill fw-bold px-2">
+                                                            <?= htmlspecialchars(trim($_hcls['grade'] . ($_hcls['section'] ?? ''))) ?>
+                                                        </span>
+                                                        <span class="small text-muted text-truncate" style="max-width:140px;">
+                                                            <?= htmlspecialchars(trim(($_hcls['tf'] ?? '') . ' ' . ($_hcls['tl'] ?? ''))) ?>
+                                                        </span>
+                                                    </div>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        </li>
+                                        <li>
+                                            <hr class="dropdown-divider opacity-10">
+                                        </li>
+                                    <?php endif; ?>
+                                    <li><a class="dropdown-item rounded-2 d-flex align-items-center gap-2"
+                                            href="my_attempts.php"><i class="bi bi-journal-check text-muted"></i> Моите
+                                            опити</a></li>
+                                    <li><a class="dropdown-item rounded-2 d-flex align-items-center gap-2"
+                                            href="join_class.php"><i class="bi bi-person-plus text-muted"></i> Присъедини се към
+                                            клас</a></li>
+                                    <li>
+                                        <hr class="dropdown-divider opacity-10">
+                                    </li>
+                                <?php endif; ?>
                                 <li><a class="dropdown-item rounded-2 text-danger d-flex align-items-center gap-2"
                                         href="logout.php"><i class="bi bi-box-arrow-right"></i> Изход</a></li>
                             </ul>

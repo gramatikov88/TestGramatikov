@@ -157,9 +157,10 @@ if ($pdo) {
 
     } elseif ($user['role'] === 'student') {
         // Student logic
-        $stmt = $pdo->prepare('SELECT c.*
+        $stmt = $pdo->prepare('SELECT c.*, u.first_name AS teacher_first, u.last_name AS teacher_last
                                FROM classes c
                                JOIN class_students cs ON cs.class_id = c.id
+                               JOIN users u ON u.id = c.teacher_id
                                WHERE cs.student_id = :sid
                                ORDER BY c.school_year DESC, c.grade, c.section');
         $stmt->execute([':sid' => (int) $user['id']]);
@@ -485,11 +486,12 @@ $heroSubtitle = $user['role'] === 'teacher'
                     <?php endif; ?>
                 </div>
 
-                <!-- THE HORIZON (Stats & History) -->
+                <!-- THE HORIZON (Stats, Classes & History) -->
                 <div class="col-lg-5">
                     <h5 class="fw-bold text-uppercase tracking-wider text-muted mb-4"><i
                             class="bi bi-journal-richtext me-2"></i>История</h5>
 
+                    <!-- Stats summary -->
                     <div class="glass-card p-4 mb-4">
                         <div class="row text-center">
                             <div class="col-6 border-end">
@@ -503,21 +505,71 @@ $heroSubtitle = $user['role'] === 'teacher'
                         </div>
                     </div>
 
+                    <!-- My Classes Card -->
+                    <?php if (!empty($student['classes'])): ?>
+                        <div class="glass-card overflow-hidden mb-4">
+                            <div
+                                class="p-3 border-bottom bg-white bg-opacity-25 d-flex justify-content-between align-items-center">
+                                <span class="fw-bold small text-muted"><i class="bi bi-people-fill me-2 text-primary"></i>МОИТЕ
+                                    КЛАСОВЕ</span>
+                                <a href="join_class.php" class="btn btn-sm btn-outline-primary rounded-pill px-3"
+                                    style="font-size:0.75rem;"><i class="bi bi-plus-lg me-1"></i>Добави</a>
+                            </div>
+                            <div class="list-group list-group-flush">
+                                <?php foreach ($student['classes'] as $cls):
+                                    $clsLabel = htmlspecialchars(trim($cls['grade'] . ($cls['section'] ?? '')));
+                                    $clsName = htmlspecialchars($cls['name'] ?? '');
+                                    $clsYear = htmlspecialchars($cls['school_year'] ?? '');
+                                    $teacherName = htmlspecialchars(trim(($cls['teacher_first'] ?? '') . ' ' . ($cls['teacher_last'] ?? '')));
+                                    ?>
+                                    <div class="list-group-item bg-transparent p-3 border-light">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
+                                                style="width:42px;height:42px;font-size:1rem;">
+                                                <?= $clsLabel ?>
+                                            </div>
+                                            <div class="flex-grow-1 min-w-0">
+                                                <?php if ($clsName !== ''): ?>
+                                                    <div class="fw-semibold text-truncate"><?= $clsName ?></div>
+                                                <?php else: ?>
+                                                    <div class="fw-semibold text-truncate">Клас <?= $clsLabel ?></div>
+                                                <?php endif; ?>
+                                                <div class="small text-muted">
+                                                    <?php if ($teacherName !== ''): ?>
+                                                        <i class="bi bi-person-fill me-1"></i><?= $teacherName ?>
+                                                    <?php endif; ?>
+                                                    <?php if ($clsYear !== ''): ?>
+                                                        <span class="mx-1 opacity-50">•</span><?= $clsYear ?>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- Recent attempts list -->
                     <div class="list-group list-group-flush glass-card overflow-hidden">
-                        <?php foreach ($student['recent_attempts'] as $atp):
-                            $pct = percent($atp['score_obtained'], $atp['max_score']);
-                            $grd = grade_from_percent($pct);
-                            ?>
-                            <a href="student_attempt.php?id=<?= $atp['id'] ?>"
-                                class="list-group-item list-group-item-action bg-transparent p-3 d-flex justify-content-between align-items-center">
-                                <div class="text-truncate me-2">
-                                    <div class="fw-semibold"><?= htmlspecialchars($atp['assignment_title']) ?></div>
-                                    <div class="small text-muted"><?= format_date($atp['submitted_at']) ?></div>
-                                </div>
-                                <span
-                                    class="badge bg-<?= get_grade_color_class($grd) ?>-subtle text-<?= get_grade_color_class($grd) ?> rounded-pill fs-6"><?= $grd ?></span>
-                            </a>
-                        <?php endforeach; ?>
+                        <?php if (empty($student['recent_attempts'])): ?>
+                            <div class="p-4 text-center text-muted small">Нямаш решени тестове още.</div>
+                        <?php else: ?>
+                            <?php foreach ($student['recent_attempts'] as $atp):
+                                $pct = percent($atp['score_obtained'], $atp['max_score']);
+                                $grd = grade_from_percent($pct);
+                                ?>
+                                <a href="student_attempt.php?id=<?= $atp['id'] ?>"
+                                    class="list-group-item list-group-item-action bg-transparent p-3 d-flex justify-content-between align-items-center">
+                                    <div class="text-truncate me-2">
+                                        <div class="fw-semibold"><?= htmlspecialchars($atp['assignment_title']) ?></div>
+                                        <div class="small text-muted"><?= format_date($atp['submitted_at']) ?></div>
+                                    </div>
+                                    <span
+                                        class="badge bg-<?= get_grade_color_class($grd) ?>-subtle text-<?= get_grade_color_class($grd) ?> rounded-pill fs-6"><?= $grd ?></span>
+                                </a>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

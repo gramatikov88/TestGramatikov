@@ -49,26 +49,7 @@ $q = $pdo->prepare('SELECT atp.*, a.title AS assignment_title, t.title AS test_t
 $q->execute($params);
 $attempts = $q->fetchAll();
 
-function percent($s, $m)
-{
-    if ($m > 0 && $s !== null)
-        return round(($s / $m) * 100, 2);
-    return null;
-}
-function grade_from_percent($p)
-{
-    if ($p === null)
-        return null;
-    if ($p >= 90)
-        return 6;
-    if ($p >= 80)
-        return 5;
-    if ($p >= 65)
-        return 4;
-    if ($p >= 50)
-        return 3;
-    return 2;
-}
+// percent() and grade_from_percent() are defined in lib/helpers.php
 ?>
 <!DOCTYPE html>
 <html lang="bg">
