@@ -361,8 +361,9 @@ if ($mode === 'take' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php include __DIR__ . '/components/footer.php'; ?>
     <style>
         .hover-bg-light:hover {
-            background-color: rgba(255, 255, 255, 0.9) !important;
+            background-color: rgba(var(--tg-primary-rgb, 99, 102, 241), 0.15) !important;
             border-color: var(--tg-primary) !important;
+            color: inherit !important;
         }
 
         .cursor-pointer {
