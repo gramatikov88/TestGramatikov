@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS test_logs (
         'question_change_answer',
         'navigate_next',
         'navigate_prev',
+        'navigate_focus',
         'tab_hidden',
         'tab_visible',
         'fullscreen_enter',
@@ -21,7 +22,13 @@ CREATE TABLE IF NOT EXISTS test_logs (
         'page_reload',
         'timeout',
         'forced_finish',
-        'suspicious_pattern'
+        'suspicious_pattern',
+        'copy_attempt',
+        'paste_attempt',
+        'mouse_leave',
+        'context_menu',
+        'keyboard_shortcut',
+        'screen_info'
     ) NOT NULL,
     ip VARCHAR(45) DEFAULT NULL,
     user_agent VARCHAR(255) DEFAULT NULL,

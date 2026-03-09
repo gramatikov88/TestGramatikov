@@ -331,6 +331,23 @@ function ensure_test_logs_table(PDO $pdo): void
                     // ignore
                 }
             }
+            // Expand ENUM to include new action types
+            try {
+                $pdo->exec(
+                    "ALTER TABLE test_logs MODIFY COLUMN action ENUM(
+                        'test_start','test_resume','test_submit',
+                        'question_show','question_answer','question_change_answer',
+                        'navigate_next','navigate_prev','navigate_focus',
+                        'tab_hidden','tab_visible',
+                        'fullscreen_enter','fullscreen_exit',
+                        'page_reload','timeout','forced_finish','suspicious_pattern',
+                        'copy_attempt','paste_attempt','mouse_leave','context_menu',
+                        'keyboard_shortcut','screen_info'
+                    ) NOT NULL"
+                );
+            } catch (Throwable $e) {
+                // ignore if already up to date
+            }
         }
     } catch (Throwable $e) {
         // ignore
@@ -357,6 +374,13 @@ function test_log_allowed_actions(): array
     'timeout',
     'forced_finish',
     'suspicious_pattern',
+    'navigate_focus',
+    'copy_attempt',
+    'paste_attempt',
+    'mouse_leave',
+    'context_menu',
+    'keyboard_shortcut',
+    'screen_info',
     ];
     return $allowed;
 }
