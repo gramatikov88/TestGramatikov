@@ -115,6 +115,7 @@ if ($mode === 'preview') {
 $result = null;
 
 if ($mode === 'take' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify();
     // Handle submission (same internal logic as before, just kept clean)
     try {
         $pdo->beginTransaction();
@@ -284,6 +285,7 @@ if ($mode === 'take' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form method="post" id="testForm">
+                <?= csrf_field() ?>
                 <?php foreach ($questions as $idx => $q): ?>
                     <div class="glass-card mb-4 position-relative">
                         <div class="card-body p-4">

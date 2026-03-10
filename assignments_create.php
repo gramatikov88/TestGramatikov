@@ -109,6 +109,7 @@ ensure_assignment_tokens($pdo);
 
 /* ------------------------------- POST -------------------------------- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify();
     // Sticky от POST
     $form['title'] = trim((string) ($_POST['title'] ?? ''));
     $form['description'] = trim((string) ($_POST['description'] ?? ''));
@@ -227,6 +228,7 @@ if (isset($_GET['delete'])) {
         <?php endif; ?>
 
         <form method="post" class="card shadow-sm mb-4">
+            <?= csrf_field() ?>
             <div class="card-header bg-white"><strong>Основни данни</strong></div>
             <div class="card-body row g-3">
                 <div class="col-md-6">

@@ -89,6 +89,7 @@ if ($pdo) {
     if ($user['role'] === 'teacher') {
         // Handle teacher grade update
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['__action']) && $_POST['__action'] === 'set_grade') {
+            csrf_verify();
             $attempt_id = (int) ($_POST['attempt_id'] ?? 0);
             $grade = isset($_POST['teacher_grade']) && $_POST['teacher_grade'] !== '' ? (int) $_POST['teacher_grade'] : null;
             if ($attempt_id > 0 && ($grade === null || ($grade >= 2 && $grade <= 6))) {

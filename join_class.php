@@ -77,6 +77,7 @@ if ($class && $pdo && $isStudent) {
 }
 
 if ($class && $pdo && $isStudent && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['__action'] ?? '') === 'join_class') {
+    csrf_verify();
     if (!$alreadyMember) {
         try {
             $ins = $pdo->prepare('INSERT IGNORE INTO class_students (class_id, student_id) VALUES (:cid, :sid)');
@@ -151,11 +152,14 @@ if ($class) {
                     </div>
                     <div class="p-5">
                         <form method="get" action="join_class.php">
-                            <label class="form-label small text-uppercase fw-bold text-muted tracking-wider">Код за присъединяване</label>
+                            <label class="form-label small text-uppercase fw-bold text-muted tracking-wider">Код за
+                                присъединяване</label>
                             <div class="input-group input-group-lg mb-4">
-                                <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-key-fill text-primary"></i></span>
-                                <input type="text" name="code" class="form-control border-start-0 text-uppercase fw-bold ls-3"
-                                    placeholder="XXXXXX" maxlength="6" autocomplete="off" autofocus
+                                <span class="input-group-text bg-transparent border-end-0"><i
+                                        class="bi bi-key-fill text-primary"></i></span>
+                                <input type="text" name="code"
+                                    class="form-control border-start-0 text-uppercase fw-bold ls-3" placeholder="XXXXXX"
+                                    maxlength="6" autocomplete="off" autofocus
                                     style="letter-spacing: 0.3em; font-size: 1.5rem;"
                                     value="<?= htmlspecialchars($rawCode) ?>" />
                             </div>
@@ -183,14 +187,16 @@ if ($class) {
                     </div>
                     <div class="p-5">
                         <?php if ($statusMessage === 'error'): ?>
-                        <div class="alert alert-danger border-0 rounded-4 mb-4">
-                            <i class="bi bi-x-circle-fill me-2"></i>Не успяхме да те добавим. Опитай отново.
-                        </div>
+                            <div class="alert alert-danger border-0 rounded-4 mb-4">
+                                <i class="bi bi-x-circle-fill me-2"></i>Не успяхме да те добавим. Опитай отново.
+                            </div>
                         <?php endif; ?>
                         <form method="get" action="join_class.php">
-                            <label class="form-label small text-uppercase fw-bold text-muted tracking-wider mb-2">Код за присъединяване</label>
+                            <label class="form-label small text-uppercase fw-bold text-muted tracking-wider mb-2">Код за
+                                присъединяване</label>
                             <div class="input-group input-group-lg mb-4">
-                                <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-key-fill text-primary"></i></span>
+                                <span class="input-group-text bg-transparent border-end-0"><i
+                                        class="bi bi-key-fill text-primary"></i></span>
                                 <input type="text" name="code" class="form-control border-start-0 fw-bold"
                                     placeholder="Напр. AB3X7Z" maxlength="6" autocomplete="off" autofocus
                                     style="letter-spacing: 0.3em; font-size: 1.5rem; text-transform: uppercase;" />
@@ -297,6 +303,7 @@ if ($class) {
                                         </button>
                                     <?php else: ?>
                                         <form method="post" class="d-grid">
+                                            <?= csrf_field() ?>
                                             <input type="hidden" name="__action" value="join_class" />
                                             <button type="submit"
                                                 class="btn btn-primary btn-lg rounded-pill shadow-lg hover-lift py-3 fw-bold">

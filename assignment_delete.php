@@ -7,8 +7,15 @@ if (empty($_SESSION['user']) || $_SESSION['user']['role'] !== 'teacher') {
     die('Access denied');
 }
 
+// Must be a POST request with a valid CSRF token
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    die('Method Not Allowed');
+}
+csrf_verify();
+
 $user = $_SESSION['user'];
-$id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+$id = isset($_POST['id']) ? (int) $_POST['id'] : 0;
 
 if ($id <= 0) {
     die('Invalid ID');
@@ -29,5 +36,6 @@ if (!$stmt->fetch()) {
 // Assuming ON DELETE CASCADE layout or simple delete.
 $pdo->prepare('DELETE FROM assignments WHERE id = :id')->execute([':id' => $id]);
 
-header('Location: dashboard.php');
+$returnUrl = isset($_POST['return_url']) ? sanitize_redirect_path((string) $_POST['return_url']) : 'dashboard.php';
+header('Location: ' . ($returnUrl ?: 'dashboard.php'));
 exit;

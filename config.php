@@ -34,6 +34,49 @@ function generate_token(int $bytes = 16): string
     return rtrim(strtr(base64_encode(random_bytes($bytes)), '+/', '-_'), '=');
 }
 
+// ---------------------------------------------------------------------------
+// CSRF helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Return the current session CSRF token, generating one if needed.
+ * Requires an active session before calling.
+ */
+function csrf_token(): string
+{
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if (empty($_SESSION['_csrf_token'])) {
+        $_SESSION['_csrf_token'] = generate_token(32);
+    }
+    return $_SESSION['_csrf_token'];
+}
+
+/**
+ * Return a ready-made hidden <input> element with the CSRF token.
+ * Drop <?= csrf_field() ?> inside every <form method="post">.
+ */
+function csrf_field(): string
+{
+    return '<input type="hidden" name="_csrf" value="' . htmlspecialchars(csrf_token(), ENT_QUOTES) . '">';
+}
+
+/**
+ * Verify the CSRF token submitted via POST.
+ * Terminates with HTTP 403 if the token is absent or invalid.
+ * Call this at the top of every POST handler before processing data.
+ */
+function csrf_verify(): void
+{
+    $submitted = (string) ($_POST['_csrf'] ?? '');
+    $expected = csrf_token();
+    if ($submitted === '' || !hash_equals($expected, $submitted)) {
+        http_response_code(403);
+        exit('Невалидна заявка (CSRF). Моля, опреснете страницата и опитайте отново.');
+    }
+}
+
 function send_app_mail(string $to, string $subject, string $body): bool
 {
     $fromEmail = getenv('APP_MAIL_FROM') ?: 'no-reply@testgramatikov.local';

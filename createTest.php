@@ -114,6 +114,7 @@ if ($editing && $test['subject_id'] && !isset($subjectChoices[$test['subject_id'
 
 /* ---------------- Handle POST ---------------- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify();
     // Collect Vars
     $isImport = isset($_POST['import_excel']);
     $title = trim((string) ($_POST['title'] ?? ''));
@@ -375,6 +376,7 @@ $view = [
         </div>
 
         <form method="post" enctype="multipart/form-data" id="wizardForm" onsubmit="return validateForm()">
+            <?= csrf_field() ?>
             <!-- STEP 1: SETUP -->
             <div id="step-1" class="wizard-step animate-fade-in">
                 <div class="text-center mb-5">
@@ -567,6 +569,7 @@ $view = [
     <div class="modal fade" id="importModal" tabindex="-1">
         <div class="modal-dialog">
             <form class="modal-content glass-card border-0 shadow-lg" method="post" enctype="multipart/form-data">
+                <?= csrf_field() ?>
                 <div class="modal-header border-bottom-0">
                     <h5 class="modal-title fw-bold">Импорт от Excel</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

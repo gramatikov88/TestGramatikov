@@ -170,7 +170,7 @@ $result = null;
 $error_msg = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
+    csrf_verify();
     $formAttemptId = isset($_POST['attempt_id']) ? (int) $_POST['attempt_id'] : 0;
 
     $attemptRow = null;
@@ -567,12 +567,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php if ($result): ?>
             <div class="alert alert-success">Резултат:
                 <strong><?= (float) $result['score'] ?>/<?= (float) $result['max'] ?></strong>
-                (<?= (float) $result['percent'] ?>%)</div>
+                (<?= (float) $result['percent'] ?>%)
+            </div>
         <?php elseif ($error_msg): ?>
             <div class="alert alert-danger"><?= htmlspecialchars($error_msg) ?></div>
         <?php endif; ?>
 
         <form method="post" id="assignmentForm">
+            <?= csrf_field() ?>
             <input type="hidden" name="attempt_id" id="attemptIdInput"
                 value="<?= $activeAttemptId ? (int) $activeAttemptId : 0 ?>" />
             <input type="hidden" name="strict_flag" id="strictFlag" value="0" />

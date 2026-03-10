@@ -77,6 +77,7 @@ $item = $stmt->fetch();
 
 // Handle AJAX Grade Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'grade') {
+    csrf_verify();
     header('Content-Type: application/json');
     $ansId = (int) $_POST['answer_id'];
     $points = (float) $_POST['points'];
@@ -281,6 +282,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             formData.append('action', 'grade');
             formData.append('answer_id', '<?= $item['answer_id'] ?? 0 ?>');
             formData.append('points', points);
+            formData.append('_csrf', '<?= csrf_token() ?>');
 
             fetch('grading_batch.php?assignment_id=<?= $assignment_id ?>&question_id=<?= $question_id ?>', {
                 method: 'POST',

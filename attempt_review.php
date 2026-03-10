@@ -36,6 +36,7 @@ if (!$attempt || (int) $attempt['assigned_by_teacher_id'] !== (int) $teacher['id
 
 // Update teacher_grade
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['teacher_grade'])) {
+    csrf_verify();
     $grade = $_POST['teacher_grade'] !== '' ? (int) $_POST['teacher_grade'] : null;
     if ($grade === null || ($grade >= 2 && $grade <= 6)) {
         $pdo->prepare('UPDATE attempts SET teacher_grade = :g WHERE id = :id')->execute([':g' => $grade, ':id' => $attempt_id]);
@@ -186,6 +187,7 @@ while ($row = $aaStmt->fetch()) {
 
                 <div class="ms-lg-auto border-start ps-lg-4 border-light">
                     <form method="post" class="d-flex flex-column gap-2">
+                        <?= csrf_field() ?>
                         <label class="small text-muted text-uppercase tracking-wider fw-bold">Оценка от Учител</label>
                         <div class="d-flex gap-2">
                             <select name="teacher_grade" class="form-select border-0 bg-white"

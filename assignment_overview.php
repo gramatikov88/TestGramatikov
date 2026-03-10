@@ -201,9 +201,14 @@ $pageTitle = 'Задание: ' . $assignment['title'];
             <div class="d-flex gap-2">
                 <a class="btn btn-outline-secondary rounded-pill px-4" href="dashboard.php"><i
                         class="bi bi-arrow-left me-2"></i> Табло</a>
-                <a class="btn btn-outline-danger rounded-pill px-4 confirm-delete-assignment"
-                    href="assignment_delete.php?id=<?= (int) $assignment['id'] ?>"><i class="bi bi-trash me-2"></i>
-                    Изтрий</a>
+                <form method="post" action="assignment_delete.php" class="d-inline"
+                    onsubmit="return confirm('ВНИМАНИЕ: Сигурни ли сте, че искате да изтриете ЦЯЛОТО ЗАДАНИЕ?\n\nВсички опити, оценки и данни за него ще бъдат изтрити завинаги!')">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="id" value="<?= (int) $assignment['id'] ?>" />
+                    <button type="submit" class="btn btn-outline-danger rounded-pill px-4"><i
+                            class="bi bi-trash me-2"></i>
+                        Изтрий</button>
+                </form>
                 <a class="btn btn-primary rounded-pill px-4 shadow-sm"
                     href="assignments_create.php?id=<?= (int) $assignment['id'] ?>"><i
                         class="bi bi-pencil-square me-2"></i> Редакция</a>
@@ -526,11 +531,17 @@ $pageTitle = 'Задание: ' . $assignment['title'];
                                                 </a>
                                             <?php endif; ?>
 
-                                            <a class="btn btn-sm btn-outline-danger confirm-delete"
-                                                href="attempt_delete.php?id=<?= (int) $attemptRow['id'] ?>&return_url=<?= urlencode($_SERVER['REQUEST_URI']) ?>"
-                                                title="Изтрий опита">
-                                                <i class="bi bi-trash"></i>
-                                            </a>
+                                            <form method="post" action="attempt_delete.php"
+                                                class="d-inline confirm-delete-form">
+                                                <?= csrf_field() ?>
+                                                <input type="hidden" name="id" value="<?= (int) $attemptRow['id'] ?>" />
+                                                <input type="hidden" name="return_url"
+                                                    value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger confirm-delete"
+                                                    title="Изтрий опита">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>
@@ -587,23 +598,16 @@ $pageTitle = 'Задание: ' . $assignment['title'];
         // Chart
         <?php if ($attemptsCount > 0): ?>
                 (function () {
-                    // Confirm delete
-                    document.querySelectorAll('.confirm-delete').forEach(function (el) {
-                        el.addEventListener('click', function (e) {
+                    // Confirm delete attempt
+                    document.querySelectorAll('.confirm-delete-form').forEach(function (form) {
+                        form.addEventListener('submit', function (e) {
                             if (!confirm('Сигурни ли сте, че искате да изтриете този опит? Това действие е необратимо.')) {
                                 e.preventDefault();
                             }
                         });
                     });
 
-                    // Confirm assignment delete
-                    document.querySelectorAll('.confirm-delete-assignment').forEach(function (el) {
-                        el.addEventListener('click', function (e) {
-                            if (!confirm('ВНИМАНИЕ: Сигурни ли сте, че искате да изтриете ЦЯЛОТО ЗАДАНИЕ?\n\nВсички опити, оценки и данни за него ще бъдат изтрити завинаги!')) {
-                                e.preventDefault();
-                            }
-                        });
-                    });
+                    // Confirm assignment delete (handled via onsubmit inline)
 
                     const ctx = document.getElementById('attemptScoresChart');
                     if (!ctx) return;

@@ -7,9 +7,16 @@ if (empty($_SESSION['user']) || $_SESSION['user']['role'] !== 'teacher') {
     die('Access denied');
 }
 
+// Must be a POST request with a valid CSRF token
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    die('Method Not Allowed');
+}
+csrf_verify();
+
 $user = $_SESSION['user'];
-$attemptId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
-$returnUrl = isset($_GET['return_url']) ? $_GET['return_url'] : 'dashboard.php';
+$attemptId = isset($_POST['id']) ? (int) $_POST['id'] : 0;
+$returnUrl = isset($_POST['return_url']) ? $_POST['return_url'] : 'dashboard.php';
 
 if ($attemptId <= 0) {
     die('Invalid attempt ID');
